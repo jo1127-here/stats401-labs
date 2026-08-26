@@ -3,11 +3,9 @@ let students = 40;
 
 console.log(course);
 console.log(students);
-
 let data = [10, 20, 30, 40, 50];
 
 console.log(data);
-
 let student = {
     name: "Alice",
     score: 85
@@ -15,7 +13,6 @@ let student = {
 
 console.log(student.name);
 console.log(student.score);
-
 let students = [
     {name: "Alice", score: 85},
     {name: "Bob", score: 72},
