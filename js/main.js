@@ -22,4 +22,4 @@ let students = [
     {name: "Carol", score: 91}
 ];
 
-console.log(studentsData);
+console.log(students);
