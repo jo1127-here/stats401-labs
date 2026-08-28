@@ -1,50 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-
     <title>Lab 2 - Multivariate Visualization</title>
 
-    <link rel="stylesheet"
-          href="../css/style.css">
+    <link rel="stylesheet" href="../css/style.css">
 </head>
 
 <body>
 
-<header>
-    <h1>STATS 401</h1>
-    <p>Data Acquisition and Visualization</p>
-</header>
-
-<nav class="lab-nav">
-    <a href="../lab1/index.html">Lab 1</a>
-    <a href="../lab2/index.html">Lab 2</a>
-    <a href="../lab3/index.html">Lab 3</a>
-    <a href="../lab4/index.html">Lab 4</a>
-    <a href="../lab5/index.html">Lab 5</a>
-    <a href="../lab6/index.html">Lab 6</a>
-    <a href="../lab7/index.html">Lab 7</a>
-    <a href="../lab8/index.html">Lab 8</a>
-    <a href="../lab9/index.html">Lab 9</a>
-    <a href="../lab10/index.html">Lab 10</a>
-</nav>
-
-<main>
-    <h2>Lab 2: Multivariate Visualization with D3</h2>
-
-    <p>
-        This visualization explores the relationship among
-        study hours, exam score, major, and year level.
-    </p>
+    <h1>Lab 2 — Multivariate Visualization with D3</h1>
+    <h2>Cities Multivariate Data</h2>
 
     <div id="chart"></div>
-    <div id="tooltip" class="tooltip"></div>
-</main>
 
-<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-<script src="lab2.js"></script>
+    <h2>Design Justification</h2>
+
+    <p>
+        I used position, size, and color to represent the four
+        variables in the dataset. Population is mapped to the
+        x-position because it is a ratio variable and its numeric
+        values can be compared directly. Temperature is mapped to
+        the y-position because it is an interval variable and the
+        vertical position makes differences in temperature easy to
+        observe. Development level is represented by circle size,
+        with larger circles indicating higher development levels.
+        Region is represented by color so that cities from the same
+        region can be quickly identified. City names are shown as
+        labels, and tooltips provide additional information when
+        the viewer moves over a circle.
+    </p>
+
+    <div id="tooltip" class="tooltip"></div>
+
+    <p>
+        <a href="../index.html">Back to Home</a>
+    </p>
+
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="lab2.js"></script>
 
 </body>
+
 </html>
