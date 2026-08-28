@@ -1,4 +1,4 @@
-const width = 800;
+const width = 950;
 const height = 550;
 
 const margin = {
@@ -168,10 +168,8 @@ d3.csv("../data/cities_multivariate.csv", d => ({
     // -------------------------
 
     const regionLegend = svg.append("g")
-        .attr(
-            "transform",
-            `translate(${width - margin.right + 25}, 70)`
-        );
+        .attr( "transform",
+              `translate(${width - 140}, 70)`);
 
     regionLegend.append("text")
         .attr("font-weight", "bold")
@@ -202,11 +200,9 @@ d3.csv("../data/cities_multivariate.csv", d => ({
     // -------------------------
 
     const developmentLegend = svg.append("g")
-        .attr(
-            "transform",
-            `translate(${width - margin.right + 25}, 220)`
-        );
-
+        .attr("transform",
+              `translate(${width - 140}, 220)`);
+    
     developmentLegend.append("text")
         .attr("font-weight", "bold")
         .text("Development Level");
