@@ -1,4 +1,4 @@
-const width = 800;
+const width = 1000;
 const height = 550;
 
 const margin = {
@@ -26,13 +26,17 @@ d3.csv("../data/cities_multivariate.csv", d => ({
         .attr("width", width)
         .attr("height", height);
 
+    // -------------------------
+    // Scales
+    // -------------------------
+
     // Population → X position
     const xScale = d3.scaleLinear()
         .domain(d3.extent(data, d => d.population))
         .nice()
         .range([
             margin.left,
-            width - margin.right
+            620
         ]);
 
     // Temperature → Y position
@@ -69,6 +73,10 @@ d3.csv("../data/cities_multivariate.csv", d => ({
             25
         ]);
 
+    // -------------------------
+    // Axes
+    // -------------------------
+
     // X axis
     svg.append("g")
         .attr(
@@ -87,7 +95,7 @@ d3.csv("../data/cities_multivariate.csv", d => ({
 
     // X axis label
     svg.append("text")
-        .attr("x", (margin.left + width - margin.right) / 2)
+        .attr("x", 350)
         .attr("y", height - 20)
         .attr("text-anchor", "middle")
         .text("Population (millions)");
@@ -100,20 +108,47 @@ d3.csv("../data/cities_multivariate.csv", d => ({
         .attr("text-anchor", "middle")
         .text("Average Temperature (°C)");
 
+    // -------------------------
     // Draw circles
+    // -------------------------
+
     svg.selectAll(".student-point")
         .data(data)
         .join("circle")
         .attr("class", "student-point")
-        .attr("cx", d => xScale(d.population))
-        .attr("cy", d => yScale(d.temp_c))
-        .attr("r", d => sizeScale(d.development_level))
-        .attr("fill", d => colorScale(d.region))
+
+        // Population → X
+        .attr(
+            "cx",
+            d => xScale(d.population)
+        )
+
+        // Temperature → Y
+        .attr(
+            "cy",
+            d => yScale(d.temp_c)
+        )
+
+        // Development level → Size
+        .attr(
+            "r",
+            d => sizeScale(d.development_level)
+        )
+
+        // Region → Color
+        .attr(
+            "fill",
+            d => colorScale(d.region)
+        )
+
         .attr("opacity", 0.8)
         .attr("stroke", "black")
         .attr("stroke-width", 1)
 
-        // Mouse over
+        // -------------------------
+        // Tooltip
+        // -------------------------
+
         .on("mouseover", function(event, d) {
 
             tooltip
@@ -125,9 +160,9 @@ d3.csv("../data/cities_multivariate.csv", d => ({
                     Development: ${d.development_level}<br>
                     Region: ${d.region}
                 `);
+
         })
 
-        // Mouse move
         .on("mousemove", function(event) {
 
             tooltip
@@ -139,24 +174,35 @@ d3.csv("../data/cities_multivariate.csv", d => ({
                     "top",
                     `${event.pageY + 10}px`
                 );
+
         })
 
-        // Mouse out
         .on("mouseout", function() {
 
             tooltip
                 .style("opacity", 0);
+
         });
 
-    // City labels
+
+    // -------------------------
+    // City Labels
+    // -------------------------
+
     svg.selectAll(".city-label")
         .data(data)
         .join("text")
         .attr("class", "city-label")
-        .attr("x", d => xScale(d.population))
+        .attr(
+            "x",
+            d => xScale(d.population)
+        )
         .attr(
             "y",
-            d => yScale(d.temp_c) - sizeScale(d.development_level) - 7
+            d =>
+                yScale(d.temp_c)
+                - sizeScale(d.development_level)
+                - 7
         )
         .attr("text-anchor", "middle")
         .attr("font-size", "11px")
@@ -169,9 +215,9 @@ d3.csv("../data/cities_multivariate.csv", d => ({
 
     const regionLegend = svg.append("g")
         .attr(
-        "transform",
-        `translate(${width - 80}, 70)`
-    );
+            "transform",
+            "translate(700, 70)"
+        );
 
     regionLegend.append("text")
         .attr("font-weight", "bold")
@@ -184,12 +230,16 @@ d3.csv("../data/cities_multivariate.csv", d => ({
         .attr("class", "region-item")
         .attr(
             "transform",
-            (d, i) => `translate(0, ${25 + i * 25})`
+            (d, i) =>
+                `translate(0, ${25 + i * 25})`
         );
 
     regionItems.append("circle")
         .attr("r", 7)
-        .attr("fill", d => colorScale(d));
+        .attr(
+            "fill",
+            d => colorScale(d)
+        );
 
     regionItems.append("text")
         .attr("x", 15)
@@ -203,10 +253,10 @@ d3.csv("../data/cities_multivariate.csv", d => ({
 
     const developmentLegend = svg.append("g")
         .attr(
-        "transform",
-        `translate(${width - 80}, 220)`
-    );
-    
+            "transform",
+            "translate(700, 220)"
+        );
+
     developmentLegend.append("text")
         .attr("font-weight", "bold")
         .text("Development Level");
@@ -224,11 +274,15 @@ d3.csv("../data/cities_multivariate.csv", d => ({
         .attr("class", "development-item")
         .attr(
             "transform",
-            (d, i) => `translate(0, ${35 + i * 55})`
+            (d, i) =>
+                `translate(0, ${35 + i * 55})`
         );
 
     developmentItems.append("circle")
-        .attr("r", d => sizeScale(d))
+        .attr(
+            "r",
+            d => sizeScale(d)
+        )
         .attr("fill", "gray")
         .attr("opacity", 0.8)
         .attr("stroke", "black");
