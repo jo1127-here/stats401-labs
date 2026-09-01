@@ -3,16 +3,120 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Lab 3</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Lab 3 - Web Data Acquisition</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f7f7f7;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .description {
+            max-width: 900px;
+            margin: 0 auto 30px auto;
+            line-height: 1.6;
+        }
+
+        .table-container {
+            max-width: 1100px;
+            margin: auto;
+            overflow-x: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: #eeeeee;
+            cursor: pointer;
+            padding: 12px;
+            border: 1px solid #cccccc;
+        }
+
+        td {
+            padding: 10px;
+            border: 1px solid #dddddd;
+        }
+
+        th:hover {
+            background-color: #dddddd;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .hint {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+    </style>
 </head>
 
 <body>
 
-    <h1>Lab 3</h1>
+    <h1>Lab 3: Web Data Acquisition</h1>
 
-    <p>Lab 3 will be added here.</p>
+    <div class="description">
 
-    <a href="../index.html">Back to Home</a>
+        <p>
+            This dataset contains information about books collected
+            from the Books to Scrape website.
+        </p>
+
+        <p>
+            <strong>Dataset:</strong> Public Book Records
+        </p>
+
+        <p>
+            <strong>Data source:</strong> Books to Scrape
+        </p>
+
+        <p>
+            <strong>Method:</strong> HTML scraping using Python,
+            requests, and BeautifulSoup
+        </p>
+
+        <p>
+            <strong>Records collected:</strong> 1,000
+        </p>
+
+    </div>
+
+    <p class="hint">
+        Click a column heading to sort the table.
+    </p>
+
+    <div class="table-container">
+
+        <table id="data-table">
+
+            <thead></thead>
+
+            <tbody></tbody>
+
+        </table>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+
+    <script src="lab3.js"></script>
 
 </body>
 
