@@ -1,3 +1,4 @@
+
 d3.csv("../data/lab3_data.csv").then(function(data) {
 
     const columns = ["title", "price", "rating", "page"];
