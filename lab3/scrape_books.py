@@ -2,15 +2,21 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import time
+import os
 
 
-BASE_URL = "https://books.toscrape.com/catalogue/page-{}.html"
+# Find the repository folder
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+
+# Create data folder if it does not exist
+os.makedirs(DATA_DIR, exist_ok=True)
 
 records = []
 
 for page in range(1, 51):
 
-    url = BASE_URL.format(page)
+    url = f"https://books.toscrape.com/catalogue/page-{page}.html"
 
     try:
         response = requests.get(
@@ -29,11 +35,25 @@ for page in range(1, 51):
 
         for book in books:
 
+            # Title
             title = book.select_one("h3 a")["title"]
 
-            price_text = book.select_one(".price_color").get_text(strip=True)
-            price = float(price_text.replace("£", ""))
+            # Price
+            price_text = book.select_one(
+                ".price_color"
+            ).get_text(strip=True)
 
+            # Remove currency symbols and encoding artifact
+            price_text = (
+                price_text
+                .replace("£", "")
+                .replace("Â", "")
+                .strip()
+            )
+
+            price = float(price_text)
+
+            # Rating
             rating_classes = book.select_one(
                 "p.star-rating"
             ).get("class", [])
@@ -54,22 +74,24 @@ for page in range(1, 51):
 
         print(f"Page {page}: {len(books)} books collected")
 
-        # Basic rate limiting
+        # Rate limiting
         time.sleep(1)
 
     except requests.RequestException as e:
         print(f"Error accessing page {page}: {e}")
 
-    except Exception as e:
+    except (ValueError, KeyError, AttributeError) as e:
         print(f"Error processing page {page}: {e}")
 
 
-# Convert to DataFrame
+# Create DataFrame
 df = pd.DataFrame(records)
 
 print("\nTotal records:", len(df))
 
 # Save CSV
-df.to_csv("../data/lab3_data.csv", index=False)
+output_file = os.path.join(DATA_DIR, "lab3_data.csv")
 
-print("CSV saved to ../data/lab3_data.csv")
+df.to_csv(output_file, index=False)
+
+print(f"CSV saved to: {output_file}")
