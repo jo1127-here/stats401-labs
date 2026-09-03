@@ -20,6 +20,7 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
         .text(function(d) {
             return d;
         })
+        .style("cursor", "pointer")
         .on("click", function(event, column) {
 
             data.sort(function(a, b) {
@@ -27,6 +28,7 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
                 let valueA = a[column];
                 let valueB = b[column];
 
+                // Convert numeric columns to numbers
                 if (column === "price" || column === "page") {
                     valueA = Number(valueA);
                     valueB = Number(valueB);
@@ -48,6 +50,7 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
             updateTable();
         });
 
+    // Update table rows
     function updateTable() {
 
         tbody.selectAll("tr").remove();
@@ -70,6 +73,7 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
             });
     }
 
+    // Display table initially
     updateTable();
 
 }).catch(function(error) {
@@ -79,42 +83,5 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
     d3.select("#table-container")
         .append("p")
         .text("Error loading dataset.");
-
-});
-                if (valueA > valueB) {
-                    return ascending ? 1 : -1;
-                }
-
-                return 0;
-            });
-
-            ascending = !ascending;
-
-            updateTable();
-        });
-
-    function updateTable() {
-
-        tbody.selectAll("tr").remove();
-
-        const rows = tbody.selectAll("tr")
-            .data(data)
-            .enter()
-            .append("tr");
-
-        rows.selectAll("td")
-            .data(function(row) {
-                return columns.map(function(column) {
-                    return row[column];
-                });
-            })
-            .enter()
-            .append("td")
-            .text(function(d) {
-                return d;
-            });
-    }
-
-    updateTable();
 
 });
