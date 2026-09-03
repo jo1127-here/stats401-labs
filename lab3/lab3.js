@@ -1,69 +1,74 @@
-d3.csv("../data/lab3_data.csv").then(data => {
+d3.csv("../data/lab3_data.csv").then(function(data) {
 
-    const columns = data.columns;
+    const columns = ["title", "price", "rating", "page"];
 
     let ascending = true;
 
-    const table = d3.select("#data-table");
+    const table = d3.select("#table-container")
+        .append("table");
 
-    const header = table
-        .select("thead")
-        .append("tr");
+    const thead = table.append("thead");
+    const tbody = table.append("tbody");
 
-    header
-        .selectAll("th")
+    const headerRow = thead.append("tr");
+
+    headerRow.selectAll("th")
         .data(columns)
-        .join("th")
-        .text(d => d)
-        .style("cursor", "pointer")
+        .enter()
+        .append("th")
+        .text(function(d) {
+            return d;
+        })
         .on("click", function(event, column) {
 
-            data.sort((a, b) => {
+            data.sort(function(a, b) {
+
+                let valueA = a[column];
+                let valueB = b[column];
 
                 if (column === "price" || column === "page") {
-
-                    return ascending
-                        ? d3.ascending(+a[column], +b[column])
-                        : d3.descending(+a[column], +b[column]);
-
-                } else {
-
-                    return ascending
-                        ? d3.ascending(a[column], b[column])
-                        : d3.descending(a[column], b[column]);
-
+                    valueA = +valueA;
+                    valueB = +valueB;
                 }
 
+                if (valueA < valueB) {
+                    return ascending ? -1 : 1;
+                }
+
+                if (valueA > valueB) {
+                    return ascending ? 1 : -1;
+                }
+
+                return 0;
             });
 
             ascending = !ascending;
 
-            updateRows();
-
+            updateTable();
         });
 
+    function updateTable() {
 
-    function updateRows() {
+        tbody.selectAll("tr").remove();
 
-        const rows = table
-            .select("tbody")
-            .selectAll("tr")
-            .data(data);
+        const rows = tbody.selectAll("tr")
+            .data(data)
+            .enter()
+            .append("tr");
 
-        rows
-            .join("tr")
-            .selectAll("td")
-            .data(row => {
-
-                return columns.map(column => row[column]);
-
+        rows.selectAll("td")
+            .data(function(row) {
+                return columns.map(function(column) {
+                    return row[column];
+                });
             })
-            .join("td")
-            .text(d => d);
-
+            .enter()
+            .append("td")
+            .text(function(d) {
+                return d;
+            });
     }
 
-
-    updateRows();
+    updateTable();
 
 });
