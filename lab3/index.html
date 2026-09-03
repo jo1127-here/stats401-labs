@@ -15,18 +15,19 @@
             margin: 40px;
         }
 
-        h1 {
-            margin-bottom: 10px;
+        nav {
+            margin-bottom: 30px;
         }
 
-        .description {
-            margin-bottom: 30px;
-            line-height: 1.6;
+        nav a {
+            margin-right: 20px;
+            text-decoration: none;
         }
 
         table {
             border-collapse: collapse;
             width: 100%;
+            margin-top: 20px;
         }
 
         th, td {
@@ -52,40 +53,37 @@
 
 <body>
 
+    <!-- Navigation -->
+    <nav>
+        <a href="../index.html">Back Home</a>
+    </nav>
+
     <h1>Lab 3: Web Data Acquisition</h1>
 
-    <div class="description">
+    <p>
+        This dataset contains information about books collected from
+        Books to Scrape.
+    </p>
 
-        <p>
-            This dataset contains information about books collected from
-            Books to Scrape.
-        </p>
+    <p>
+        The data were collected programmatically using Python,
+        requests, and BeautifulSoup.
+    </p>
 
-        <p>
-            The data were collected programmatically using Python,
-            requests, and BeautifulSoup.
-        </p>
+    <p>
+        The scraper collected 1,000 book records from 50 pages.
+    </p>
 
-        <p>
-            The scraper automatically navigates through 50 pages and
-            collects 1,000 book records.
-        </p>
+    <p>
+        Each record contains the book title, price, rating, and page number.
+        Click the column headings to sort the data.
+    </p>
 
-        <p>
-            Each record contains the book title, price, rating, and page
-            number.
-        </p>
-
-        <p>
-            Click a column heading to sort the table. Click again to
-            reverse the sorting order.
-        </p>
-
-    </div>
-
+    <!-- Table -->
     <div id="table-container"></div>
 
     <script src="lab3.js"></script>
 
 </body>
+
 </html>
