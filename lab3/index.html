@@ -7,64 +7,46 @@
 
     <title>Lab 3 - Web Data Acquisition</title>
 
-    <style>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 
+    <style>
         body {
             font-family: Arial, sans-serif;
             margin: 40px;
-            background-color: #f7f7f7;
         }
 
         h1 {
-            text-align: center;
+            margin-bottom: 10px;
         }
 
         .description {
-            max-width: 900px;
-            margin: 0 auto 30px auto;
+            margin-bottom: 30px;
             line-height: 1.6;
         }
 
-        .table-container {
-            max-width: 1100px;
-            margin: auto;
-            overflow-x: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
+        table {
+            border-collapse: collapse;
+            width: 100%;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
         }
 
         th {
-            background-color: #eeeeee;
             cursor: pointer;
-            padding: 12px;
-            border: 1px solid #cccccc;
-        }
-
-        td {
-            padding: 10px;
-            border: 1px solid #dddddd;
+            background-color: #f2f2f2;
         }
 
         th:hover {
-            background-color: #dddddd;
+            background-color: #ddd;
         }
 
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
-
-        .hint {
-            text-align: center;
-            margin-bottom: 15px;
-            color: #555;
-        }
-
     </style>
 </head>
 
@@ -75,49 +57,35 @@
     <div class="description">
 
         <p>
-            This dataset contains information about books collected
-            from the Books to Scrape website.
+            This dataset contains information about books collected from
+            Books to Scrape.
         </p>
 
         <p>
-            <strong>Dataset:</strong> Public Book Records
+            The data were collected programmatically using Python,
+            requests, and BeautifulSoup.
         </p>
 
         <p>
-            <strong>Data source:</strong> Books to Scrape
+            The scraper automatically navigates through 50 pages and
+            collects 1,000 book records.
         </p>
 
         <p>
-            <strong>Method:</strong> HTML scraping using Python,
-            requests, and BeautifulSoup
+            Each record contains the book title, price, rating, and page
+            number.
         </p>
 
         <p>
-            <strong>Records collected:</strong> 1,000
+            Click a column heading to sort the table. Click again to
+            reverse the sorting order.
         </p>
 
     </div>
 
-    <p class="hint">
-        Click a column heading to sort the table.
-    </p>
-
-    <div class="table-container">
-
-        <table id="data-table">
-
-            <thead></thead>
-
-            <tbody></tbody>
-
-        </table>
-
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <div id="table-container"></div>
 
     <script src="lab3.js"></script>
 
 </body>
-
 </html>
