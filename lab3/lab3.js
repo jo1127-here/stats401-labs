@@ -18,46 +18,44 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
         .text("No.");
 
     // Other columns
-    headerRow.selectAll("th")
-        .data(columns)
-        .enter()
-        .append("th")
-        .text(function(d) {
-            return d;
-        })
-        .style("cursor", "pointer")
-        .on("click", function(event, column) {
+    columns.forEach(function(column) {
 
-            data.sort(function(a, b) {
+        headerRow.append("th")
+            .text(column)
+            .style("cursor", "pointer")
+            .on("click", function() {
 
-                let valueA = a[column];
-                let valueB = b[column];
+                data.sort(function(a, b) {
 
-                if (column === "price" ||
-                    column === "rating" ||
-                    column === "page") {
+                    let valueA = a[column];
+                    let valueB = b[column];
 
-                    valueA = Number(valueA);
-                    valueB = Number(valueB);
-                }
+                    if (column === "price" ||
+                        column === "rating" ||
+                        column === "page") {
 
-                if (valueA < valueB) {
-                    return ascending ? -1 : 1;
-                }
+                        valueA = Number(valueA);
+                        valueB = Number(valueB);
+                    }
 
-                if (valueA > valueB) {
-                    return ascending ? 1 : -1;
-                }
+                    if (valueA < valueB) {
+                        return ascending ? -1 : 1;
+                    }
 
-                return 0;
+                    if (valueA > valueB) {
+                        return ascending ? 1 : -1;
+                    }
+
+                    return 0;
+                });
+
+                ascending = !ascending;
+
+                updateTable();
             });
+    });
 
-            ascending = !ascending;
-
-            updateTable();
-        });
-
-    // Create table rows
+    // Update table
     function updateTable() {
 
         tbody.selectAll("tr").remove();
@@ -77,10 +75,10 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
                     .text(row[column]);
 
             });
-
         });
     }
 
+    // Display table
     updateTable();
 
 }).catch(function(error) {
