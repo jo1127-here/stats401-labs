@@ -13,12 +13,18 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
     // Create column headings
     const headerRow = thead.append("tr");
 
-    headerRow.selectAll("th")
+    // Row number heading
+    headerRow.append("th")
+        .text("No.");
+
+    // Data column headings
+    headerRow.selectAll("th.data-header")
         .data(columns)
         .enter()
         .append("th")
-        .text(function(d) {
-            return d;
+        .attr("class", "data-header")
+        .text(function(column) {
+            return column;
         })
         .style("cursor", "pointer")
         .on("click", function(event, column) {
@@ -29,7 +35,10 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
                 let valueB = b[column];
 
                 // Convert numeric columns to numbers
-                if (column === "price" || column === "page") {
+                if (column === "price" ||
+                    column === "rating" ||
+                    column === "page") {
+
                     valueA = Number(valueA);
                     valueB = Number(valueB);
                 }
@@ -45,22 +54,32 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
                 return 0;
             });
 
+            // Switch sorting direction
             ascending = !ascending;
 
             updateTable();
         });
 
-    // Update table rows
+    // Update table
     function updateTable() {
 
+        // Remove old rows
         tbody.selectAll("tr").remove();
 
+        // Create new rows
         const rows = tbody.selectAll("tr")
             .data(data)
             .enter()
             .append("tr");
 
-        rows.selectAll("td")
+        // Add row numbers
+        rows.append("td")
+            .text(function(row, index) {
+                return index + 1;
+            });
+
+        // Add data
+        rows.selectAll("td.data-cell")
             .data(function(row) {
                 return columns.map(function(column) {
                     return row[column];
@@ -68,8 +87,9 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
             })
             .enter()
             .append("td")
-            .text(function(d) {
-                return d;
+            .attr("class", "data-cell")
+            .text(function(value) {
+                return value;
             });
     }
 
@@ -85,3 +105,4 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
         .text("Error loading dataset.");
 
 });
+```
