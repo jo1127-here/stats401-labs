@@ -1,3 +1,4 @@
+
 d3.csv("../data/lab3_data.csv").then(function(data) {
 
     const columns = ["title", "price", "rating", "page"];
@@ -13,18 +14,18 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
     // Create column headings
     const headerRow = thead.append("tr");
 
-    // Row number heading
+    // Add No. heading
     headerRow.append("th")
         .text("No.");
 
-    // Data column headings
+    // Add other headings
     headerRow.selectAll("th.data-header")
         .data(columns)
         .enter()
         .append("th")
         .attr("class", "data-header")
-        .text(function(column) {
-            return column;
+        .text(function(d) {
+            return d;
         })
         .style("cursor", "pointer")
         .on("click", function(event, column) {
@@ -54,32 +55,29 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
                 return 0;
             });
 
-            // Switch sorting direction
             ascending = !ascending;
 
             updateTable();
         });
 
-    // Update table
+    // Update table rows
     function updateTable() {
 
-        // Remove old rows
         tbody.selectAll("tr").remove();
 
-        // Create new rows
         const rows = tbody.selectAll("tr")
             .data(data)
             .enter()
             .append("tr");
 
-        // Add row numbers
+        // Add row number
         rows.append("td")
-            .text(function(row, index) {
-                return index + 1;
+            .text(function(d, i) {
+                return i + 1;
             });
 
         // Add data
-        rows.selectAll("td.data-cell")
+        rows.selectAll("td.data")
             .data(function(row) {
                 return columns.map(function(column) {
                     return row[column];
@@ -87,9 +85,9 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
             })
             .enter()
             .append("td")
-            .attr("class", "data-cell")
-            .text(function(value) {
-                return value;
+            .attr("class", "data")
+            .text(function(d) {
+                return d;
             });
     }
 
@@ -105,4 +103,3 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
         .text("Error loading dataset.");
 
 });
-```
