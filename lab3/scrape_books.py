@@ -2,15 +2,19 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import time
-import os
+import re
+from pathlib import Path
 
 
-# Find the repository folder
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, "data")
+# Find the project root directory
+PROJECT_DIR = Path(__file__).resolve().parent.parent
 
-# Create data folder if it does not exist
-os.makedirs(DATA_DIR, exist_ok=True)
+# Create the data folder
+DATA_DIR = PROJECT_DIR / "data"
+DATA_DIR.mkdir(exist_ok=True)
+
+# Output CSV
+OUTPUT_FILE = DATA_DIR / "lab3_data.csv"
 
 records = []
 
@@ -43,15 +47,14 @@ for page in range(1, 51):
                 ".price_color"
             ).get_text(strip=True)
 
-            # Remove currency symbols and encoding artifact
-            price_text = (
-                price_text
-                .replace("£", "")
-                .replace("Â", "")
-                .strip()
-            )
+            # Extract only the number from the price
+            match = re.search(r"\d+\.\d+", price_text)
 
-            price = float(price_text)
+            if match:
+                price = float(match.group())
+            else:
+                print(f"Could not read price: {price_text}")
+                continue
 
             # Rating
             rating_classes = book.select_one(
@@ -74,24 +77,23 @@ for page in range(1, 51):
 
         print(f"Page {page}: {len(books)} books collected")
 
-        # Rate limiting
+        # Basic rate limiting
         time.sleep(1)
 
     except requests.RequestException as e:
         print(f"Error accessing page {page}: {e}")
 
-    except (ValueError, KeyError, AttributeError) as e:
+    except Exception as e:
         print(f"Error processing page {page}: {e}")
 
 
 # Create DataFrame
 df = pd.DataFrame(records)
 
-print("\nTotal records:", len(df))
+print()
+print("Total records:", len(df))
 
 # Save CSV
-output_file = os.path.join(DATA_DIR, "lab3_data.csv")
+df.to_csv(OUTPUT_FILE, index=False)
 
-df.to_csv(output_file, index=False)
-
-print(f"CSV saved to: {output_file}")
+print(f"CSV saved to: {OUTPUT_FILE}")
