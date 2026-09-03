@@ -1,4 +1,3 @@
-
 d3.csv("../data/lab3_data.csv").then(function(data) {
 
     const columns = ["title", "price", "rating", "page"];
@@ -11,19 +10,18 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
     const thead = table.append("thead");
     const tbody = table.append("tbody");
 
-    // Create column headings
+    // Create header
     const headerRow = thead.append("tr");
 
-    // Add No. heading
+    // No. column
     headerRow.append("th")
         .text("No.");
 
-    // Add other headings
-    headerRow.selectAll("th.data-header")
+    // Other columns
+    headerRow.selectAll("th")
         .data(columns)
         .enter()
         .append("th")
-        .attr("class", "data-header")
         .text(function(d) {
             return d;
         })
@@ -35,7 +33,6 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
                 let valueA = a[column];
                 let valueB = b[column];
 
-                // Convert numeric columns to numbers
                 if (column === "price" ||
                     column === "rating" ||
                     column === "page") {
@@ -60,38 +57,30 @@ d3.csv("../data/lab3_data.csv").then(function(data) {
             updateTable();
         });
 
-    // Update table rows
+    // Create table rows
     function updateTable() {
 
         tbody.selectAll("tr").remove();
 
-        const rows = tbody.selectAll("tr")
-            .data(data)
-            .enter()
-            .append("tr");
+        data.forEach(function(row, i) {
 
-        // Add row number
-        rows.append("td")
-            .text(function(d, i) {
-                return i + 1;
+            const tr = tbody.append("tr");
+
+            // No.
+            tr.append("td")
+                .text(i + 1);
+
+            // Data
+            columns.forEach(function(column) {
+
+                tr.append("td")
+                    .text(row[column]);
+
             });
 
-        // Add data
-        rows.selectAll("td.data")
-            .data(function(row) {
-                return columns.map(function(column) {
-                    return row[column];
-                });
-            })
-            .enter()
-            .append("td")
-            .attr("class", "data")
-            .text(function(d) {
-                return d;
-            });
+        });
     }
 
-    // Display table initially
     updateTable();
 
 }).catch(function(error) {
