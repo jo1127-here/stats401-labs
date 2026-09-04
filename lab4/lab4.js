@@ -3,17 +3,15 @@ d3.csv(
     d => ({
         ...d,
 
-        likes: +d.likes,
-
-        retweets: +d.retweets,
-
+        tweet_length: +d.tweet_length,
+        word_count: +d.word_count,
         sentiment_score: +d.sentiment_score
-
     })
 )
 .then(data => {
 
-    console.log(data);
+    console.log("Loaded data:", data);
+    console.log("Number of tweets:", data.length);
 
 
     // =========================
@@ -21,11 +19,10 @@ d3.csv(
     // =========================
 
     const width = 900;
-
     const height = 550;
 
     const margin = {
-        top: 50,
+        top: 60,
         right: 40,
         bottom: 70,
         left: 80
@@ -49,8 +46,9 @@ d3.csv(
     const x = d3.scaleLinear()
         .domain([
             0,
-            d3.max(data, d => d.retweets)
+            d3.max(data, d => d.tweet_length)
         ])
+        .nice()
         .range([
             margin.left,
             width - margin.right
@@ -110,7 +108,7 @@ d3.csv(
             "text-anchor",
             "middle"
         )
-        .text("Number of Retweets");
+        .text("Tweet Length (Characters)");
 
 
     // =========================
@@ -148,7 +146,7 @@ d3.csv(
         )
         .attr(
             "y",
-            25
+            30
         )
         .attr(
             "text-anchor",
@@ -163,7 +161,7 @@ d3.csv(
             "bold"
         )
         .text(
-            "Tweet Sentiment vs. Retweets"
+            "Tweet Sentiment vs. Tweet Length"
         );
 
 
@@ -189,7 +187,7 @@ d3.csv(
 
         .attr(
             "cx",
-            d => x(d.retweets)
+            d => x(d.tweet_length)
         )
 
         .attr(
@@ -208,16 +206,19 @@ d3.csv(
                 .style("opacity", 1)
                 .html(`
                     <strong>Tweet:</strong>
-                    ${d.tweet_text_raw}<br><br>
+                    ${d.text}<br><br>
 
                     <strong>Sentiment:</strong>
-                    ${d.sentiment}<br>
+                    ${d.roberta_sentiment}<br>
 
                     <strong>Sentiment Score:</strong>
                     ${d.sentiment_score.toFixed(3)}<br>
 
-                    <strong>Retweets:</strong>
-                    ${d.retweets}
+                    <strong>Tweet Length:</strong>
+                    ${d.tweet_length} characters<br>
+
+                    <strong>Word Count:</strong>
+                    ${d.word_count}
                 `);
 
         })
