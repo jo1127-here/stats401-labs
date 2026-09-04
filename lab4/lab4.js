@@ -44,6 +44,7 @@ d3.csv("../data/lab4_clean_tweets.csv", d => ({
             ).length;
 
             return {
+                total: total,
                 Negative: negative / total,
                 Neutral: neutral / total,
                 Positive: positive / total
@@ -52,13 +53,13 @@ d3.csv("../data/lab4_clean_tweets.csv", d => ({
         d => d.length_group
     );
 
-    // Convert to normal objects
+    // 3. Convert to normal objects
     const summary = groups.map(([length_group, values]) => ({
         length_group,
         ...values
     }));
 
-    // Keep groups in the correct order
+    // 4. Keep groups in correct order
     const order = [
         "0–20",
         "21–40",
@@ -76,46 +77,58 @@ d3.csv("../data/lab4_clean_tweets.csv", d => ({
             order.indexOf(b.length_group)
     );
 
-    // 3. Chart dimensions
+    // 5. Chart dimensions
     const margin = {
-        top: 50,
-        right: 30,
-        bottom: 70,
+        top: 70,
+        right: 180,
+        bottom: 80,
         left: 70
     };
 
     const width = 800 - margin.left - margin.right;
     const height = 500 - margin.top - margin.bottom;
 
-    // 4. Create SVG
+    // 6. Create SVG
     const svg = d3.select("#chart")
         .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
+        .attr(
+            "width",
+            width + margin.left + margin.right
+        )
+        .attr(
+            "height",
+            height + margin.top + margin.bottom
+        )
         .append("g")
         .attr(
             "transform",
             `translate(${margin.left},${margin.top})`
         );
 
-    // 5. X scale
+    // 7. X scale
     const x = d3.scaleBand()
         .domain(summary.map(d => d.length_group))
         .range([0, width])
         .padding(0.2);
 
-    // 6. Y scale
+    // 8. Y scale
     const y = d3.scaleLinear()
         .domain([0, 1])
         .range([height, 0]);
 
-    // 7. Stack data
+    // 9. Stack data
+    const keys = [
+        "Negative",
+        "Neutral",
+        "Positive"
+    ];
+
     const stack = d3.stack()
-        .keys(["Negative", "Neutral", "Positive"]);
+        .keys(keys);
 
     const stackedData = stack(summary);
 
-    // 8. Draw bars
+    // 10. Draw bars
     svg.selectAll(".layer")
         .data(stackedData)
         .join("g")
@@ -128,7 +141,9 @@ d3.csv("../data/lab4_clean_tweets.csv", d => ({
         .attr("height", d => y(d[0]) - y(d[1]))
         .attr("width", x.bandwidth())
         .attr("fill", (d, i, nodes) => {
-            const key = d3.select(nodes[i].parentNode).datum().key;
+
+            const key =
+                d3.select(nodes[i].parentNode).datum().key;
 
             if (key === "Negative") {
                 return "#e74c3c";
@@ -141,39 +156,104 @@ d3.csv("../data/lab4_clean_tweets.csv", d => ({
             return "#2ecc71";
         });
 
-    // 9. X axis
+    // 11. Add total tweet count above each bar
+    svg.selectAll(".total-label")
+        .data(summary)
+        .join("text")
+        .attr("class", "total-label")
+        .attr(
+            "x",
+            d => x(d.length_group) + x.bandwidth() / 2
+        )
+        .attr("y", -15)
+        .attr("text-anchor", "middle")
+        .style("font-size", "12px")
+        .style("font-weight", "bold")
+        .text(d => `n = ${d.total}`);
+
+    // 12. X axis
     svg.append("g")
-        .attr("transform", `translate(0,${height})`)
+        .attr(
+            "transform",
+            `translate(0,${height})`
+        )
         .call(d3.axisBottom(x));
 
-    // 10. Y axis
+    // 13. Y axis
     svg.append("g")
         .call(
             d3.axisLeft(y)
                 .tickFormat(d3.format(".0%"))
         );
 
-    // 11. X axis label
+    // 14. X axis label
     svg.append("text")
         .attr("x", width / 2)
         .attr("y", height + 55)
         .attr("text-anchor", "middle")
+        .style("font-size", "14px")
         .text("Tweet Length (characters)");
 
-    // 12. Y axis label
+    // 15. Y axis label
     svg.append("text")
         .attr("transform", "rotate(-90)")
         .attr("x", -height / 2)
         .attr("y", -50)
         .attr("text-anchor", "middle")
+        .style("font-size", "14px")
         .text("Percentage of Tweets");
 
-    // 13. Chart title
+    // 16. Chart title
     svg.append("text")
         .attr("x", width / 2)
-        .attr("y", -20)
+        .attr("y", -40)
         .attr("text-anchor", "middle")
         .style("font-size", "18px")
         .style("font-weight", "bold")
-        .text("Tweet Sentiment Distribution by Tweet Length");
+        .text(
+            "Tweet Sentiment Distribution by Tweet Length"
+        );
+
+    // 17. Legend
+    const legend = svg.append("g")
+        .attr(
+            "transform",
+            `translate(${width + 30}, 20)`
+        );
+
+    const legendItems = [
+        {
+            label: "Negative",
+            color: "#e74c3c"
+        },
+        {
+            label: "Neutral",
+            color: "#95a5a6"
+        },
+        {
+            label: "Positive",
+            color: "#2ecc71"
+        }
+    ];
+
+    legendItems.forEach((item, i) => {
+
+        const row = legend.append("g")
+            .attr(
+                "transform",
+                `translate(0, ${i * 30})`
+            );
+
+        row.append("rect")
+            .attr("width", 18)
+            .attr("height", 18)
+            .attr("fill", item.color);
+
+        row.append("text")
+            .attr("x", 25)
+            .attr("y", 14)
+            .style("font-size", "13px")
+            .text(item.label);
+    });
+
 });
