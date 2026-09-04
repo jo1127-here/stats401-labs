@@ -2,17 +2,105 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
-    <title>Lab 4</title>
+
+    <title>Lab 4 - Cleaning Web Data</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #fafafa;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        h2 {
+            margin-top: 40px;
+        }
+
+        #chart {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .bar:hover {
+            opacity: 0.7;
+        }
+
+        .axis-label {
+            font-size: 14px;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: white;
+            border: 1px solid #999;
+            padding: 10px;
+            pointer-events: none;
+            font-size: 13px;
+        }
+
+        .analysis {
+            max-width: 900px;
+            margin: 40px auto;
+            line-height: 1.6;
+        }
+
+    </style>
+
 </head>
+
 
 <body>
 
-    <h1>Lab 4</h1>
+    <h1>Lab 4: Cleaning Web Data for Visualization</h1>
 
-    <p>Lab 4 will be added here.</p>
+    <p style="text-align:center;">
+        STATS 401: Data Acquisition and Visualization
+    </p>
 
-    <a href="../index.html">Back to Home</a>
+
+    <h2>Tweet Sentiment and Retweets</h2>
+
+    <div id="chart"></div>
+
+
+    <div class="analysis">
+
+        <h2>Short Analysis</h2>
+
+        <p>
+            This visualization uses a dataset containing at least
+            1,000 tweets. The raw data was cleaned using pandas by
+            removing duplicate records, handling missing values,
+            converting numeric variables, parsing dates, and
+            standardizing text and categorical variables.
+            Sentiment was estimated using a RoBERTa-based
+            Transformer model. Each tweet was assigned a predicted
+            sentiment category and a continuous sentiment score.
+            The visualization compares tweet sentiment with the
+            number of retweets. Each point represents a tweet,
+            with the horizontal position representing retweets and
+            the vertical position representing sentiment score.
+            The visualization can be used to examine whether tweets
+            with different sentiment levels receive different
+            amounts of engagement. The sentiment predictions are
+            model-generated estimates rather than ground-truth
+            labels.
+        </p>
+
+    </div>
+
+
+    <script src="lab4.js"></script>
 
 </body>
 
