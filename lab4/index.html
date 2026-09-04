@@ -2,41 +2,35 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
-
     <title>Lab 4 - Cleaning Web Data</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <link rel="stylesheet" href="../css/style.css">
 
     <style>
-
         body {
             font-family: Arial, sans-serif;
-            margin: 40px;
-            background: #fafafa;
+            margin: 30px;
+            background-color: #fafafa;
         }
 
         h1 {
             text-align: center;
-        }
-
-        h2 {
-            margin-top: 40px;
+            color: #333;
         }
 
         #chart {
             display: flex;
             justify-content: center;
-            margin-top: 30px;
+            margin: 20px auto;
         }
 
-        .bar:hover {
-            opacity: 0.7;
+        .dot {
+            opacity: 0.6;
         }
 
-        .axis-label {
-            font-size: 14px;
+        .dot:hover {
+            opacity: 1;
         }
 
         .tooltip {
@@ -49,57 +43,60 @@
         }
 
         .analysis {
-            max-width: 900px;
+            width: 90%;
             margin: 40px auto;
             line-height: 1.6;
         }
-
     </style>
-
 </head>
-
 
 <body>
 
-    <h1>Lab 4: Cleaning Web Data for Visualization</h1>
+    <h1>Lab 4 — Cleaning Web Data</h1>
 
-    <p style="text-align:center;">
-        STATS 401: Data Acquisition and Visualization
+    <h2>Tweet Sentiment and Tweet Length</h2>
+
+    <p>
+        This dataset contains 10,000 tweets from the Sentiment140 dataset.
+        The raw tweet data was cleaned using Python and pandas by removing
+        missing tweets and duplicate records, standardizing text, and
+        creating tweet-level attributes such as tweet length and word count.
     </p>
 
+    <p>
+        Sentiment was analyzed using a RoBERTa-based Transformer model.
+        Each tweet was assigned a predicted sentiment category and a
+        continuous sentiment score.
+    </p>
 
-    <h2>Tweet Sentiment and Retweets</h2>
+    <p>
+        Number of records: 10,000
+    </p>
 
     <div id="chart"></div>
-
 
     <div class="analysis">
 
         <h2>Short Analysis</h2>
 
         <p>
-            This visualization uses a dataset containing at least
-            1,000 tweets. The raw data was cleaned using pandas by
-            removing duplicate records, handling missing values,
-            converting numeric variables, parsing dates, and
-            standardizing text and categorical variables.
-            Sentiment was estimated using a RoBERTa-based
-            Transformer model. Each tweet was assigned a predicted
-            sentiment category and a continuous sentiment score.
-            The visualization compares tweet sentiment with the
-            number of retweets. Each point represents a tweet,
-            with the horizontal position representing retweets and
-            the vertical position representing sentiment score.
-            The visualization can be used to examine whether tweets
-            with different sentiment levels receive different
-            amounts of engagement. The sentiment predictions are
-            model-generated estimates rather than ground-truth
-            labels.
+            The scatter plot compares tweet length with sentiment score.
+            Each point represents one tweet. The horizontal position
+            represents the number of characters in the tweet, while the
+            vertical position represents its sentiment score. This
+            visualization allows us to examine whether tweet length is
+            associated with more positive or negative sentiment. The
+            sentiment scores are model-generated estimates rather than
+            manually verified ground-truth labels.
         </p>
 
     </div>
 
+    <p>
+        <a href="../index.html">Back to Home</a>
+    </p>
 
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
     <script src="lab4.js"></script>
 
 </body>
