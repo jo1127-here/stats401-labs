@@ -1,0 +1,87 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #f7f7f7;
+    color: #222;
+}
+
+.container {
+    width: 1100px;
+    margin: 30px auto;
+    background: white;
+    padding: 30px;
+}
+
+h1 {
+    margin-bottom: 10px;
+}
+
+h2 {
+    margin-top: 40px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 8px;
+}
+
+.legend {
+    display: flex;
+    gap: 25px;
+    flex-wrap: wrap;
+    margin: 15px 0;
+    padding: 15px;
+    background: #f1f1f1;
+}
+
+#chart {
+    width: 900px;
+    height: 650px;
+    margin: auto;
+}
+
+.links line {
+    stroke-opacity: 0.6;
+}
+
+.nodes circle {
+    stroke: #333;
+    stroke-width: 1.5px;
+}
+
+.nodes rect {
+    stroke: #333;
+    stroke-width: 1.5px;
+}
+
+.nodes polygon {
+    stroke: #333;
+    stroke-width: 1.5px;
+}
+
+.station-label {
+    font-size: 11px;
+    pointer-events: none;
+}
+
+.tooltip {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    background: white;
+    border: 1px solid #999;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 13px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+#matrix {
+    overflow-x: auto;
+    margin-top: 20px;
+}
+
+.matrix-label {
+    font-size: 9px;
+}
+
+.question {
+    margin-bottom: 25px;
+}
