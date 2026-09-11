@@ -355,7 +355,7 @@ Promise.all([
 
     const legend = svg.append("g")
         .attr("class", "legend")
-        .attr("transform", "translate(15, 15)");
+        .attr("transform", "translate(15, 400)");
 
 
     // District legend
@@ -385,7 +385,7 @@ Promise.all([
 
     const typeLegend = svg.append("g")
         .attr("class", "type-legend")
-        .attr("transform", "translate(530, 15)");
+        .attr("transform", "translate(520, 400)");
 
     typeLegend.append("text")
         .attr("font-size", 10)
