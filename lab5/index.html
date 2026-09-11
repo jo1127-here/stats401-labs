@@ -1,19 +1,156 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <title>Lab 5</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Lab 5 - Interactive Network Visualization</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 
 <body>
 
-    <h1>Lab 5</h1>
+    <div class="container">
 
-    <p>Lab 5 will be added here.</p>
+        <h1>Lab 5: Interactive Network Visualization</h1>
 
-    <a href="../index.html">Back to Home</a>
+        <p>
+            This visualization shows a synthetic urban transit network
+            containing 50 stations and 50 direct connections.
+        </p>
+
+        <h2>1. Node-Link Visualization</h2>
+
+        <div class="legend">
+
+            <div>
+                <strong>Node size:</strong>
+                Daily passengers
+            </div>
+
+            <div>
+                <strong>Node color:</strong>
+                District
+            </div>
+
+            <div>
+                <strong>Node shape:</strong>
+                Station type
+            </div>
+
+            <div>
+                <strong>Link width:</strong>
+                Travel time
+            </div>
+
+            <div>
+                <strong>Link color:</strong>
+                Route type
+            </div>
+
+        </div>
+
+        <div id="chart"></div>
+
+        <div id="tooltip" class="tooltip"></div>
+
+
+        <h2>2. Adjacency Matrix</h2>
+
+        <p>
+            Rows and columns represent stations. A filled cell indicates
+            a direct connection between two stations.
+        </p>
+
+        <div id="matrix"></div>
+
+
+        <h2>3. Design Description</h2>
+
+        <h3>Node-Link Design</h3>
+
+        <p>
+            District is represented using node color so that stations
+            belonging to the same district can be visually grouped.
+            Daily passenger volume is represented by node size because
+            larger circles indicate stations with higher passenger volume.
+            Station type is represented by node shape to distinguish
+            Local, Transfer, and Terminal stations.
+        </p>
+
+        <p>
+            Travel time is represented by link width, while route type
+            is represented by link color. Users can drag stations,
+            hover over stations to highlight their connections, and
+            use tooltips to inspect station information.
+        </p>
+
+
+        <h3>Adjacency Matrix Design</h3>
+
+        <p>
+            Each row and column represents a station. A filled cell
+            represents a direct connection. Cell opacity represents
+            travel time, while cell color represents route type.
+            Stations are ordered by district to make groups of stations
+            easier to identify.
+        </p>
+
+
+        <h2>4. Network Questions and Findings</h2>
+
+        <div id="questions">
+
+            <h3>1. Which stations appear central in the network?</h3>
+            <p>
+                The node-link diagram is most useful because stations
+                with many visible connections can be identified directly.
+            </p>
+
+            <h3>2. Which districts are strongly connected to one another?</h3>
+            <p>
+                The node-link diagram is useful because the colors of
+                stations show district membership and the links reveal
+                connections between districts.
+            </p>
+
+            <h3>3. Where are transfer or terminal stations located?</h3>
+            <p>
+                The node-link diagram is useful because station shapes
+                identify different station types and their positions
+                show where they occur in the network.
+            </p>
+
+            <h3>4. Which stations have high passenger volume?</h3>
+            <p>
+                The node-link diagram is useful because passenger volume
+                is encoded by node size. Larger nodes indicate higher
+                passenger volume.
+            </p>
+
+            <h3>5. Where are the longest direct travel-time connections?</h3>
+            <p>
+                Both visualizations can help answer this question.
+                Thick links in the node-link diagram and darker cells
+                in the matrix indicate longer travel times.
+            </p>
+
+            <h3>6. Are particular route types concentrated in particular
+                parts of the network?</h3>
+            <p>
+                Both visualizations can help. Link colors show route
+                types, while the district ordering of the matrix makes
+                regional patterns easier to inspect.
+            </p>
+
+        </div>
+
+    </div>
+
+    <script src="lab5.js"></script>
 
 </body>
-
 </html>
