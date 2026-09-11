@@ -57,10 +57,14 @@
     <h2>Tweet Sentiment and Tweet Length</h2>
 
     <p>
-        This dataset contains 10,000 tweets from the Sentiment140 dataset.
-        The raw tweet data was cleaned using Python and pandas by removing
-        missing tweets and duplicate records, standardizing text, and
-        creating tweet-level attributes such as tweet length and word count.
+        This dataset contains tweets from the Sentiment140 dataset. 
+        The raw tweet data was cleaned using Python and pandas by removing missing tweets and duplicate records, 
+        standardizing tweet text, and creating tweet-level attributes such as tweet length and word count.
+        Sentiment was analyzed using a RoBERTa-based Transformer model. 
+        Each tweet was assigned a predicted sentiment category (Negative, Neutral, or Positive) 
+        and a continuous sentiment score based on the difference between the positive and negative prediction scores.
+        The visualization focuses on tweets with lengths between 21 and 80 characters and compares the distribution 
+        of predicted sentiment across different tweet-length groups.
     </p>
 
     <p>
@@ -70,7 +74,7 @@
     </p>
 
     <p>
-        Number of records: 10,000
+        Number of records: 47
     </p>
 
     <div id="chart"></div>
@@ -80,13 +84,15 @@
         <h2>Short Analysis</h2>
 
         <p>
-            This visualization shows the distribution of RoBERTa-predicted sentiment across different tweet-length groups. 
-            The results suggest that sentiment distribution changes as tweet length increases. For shorter tweets, neutral sentiment 
-            represents the largest proportion, while positive and negative sentiment account for smaller shares. As tweet length increases, 
-            the proportion of neutral tweets decreases substantially, while both positive and negative sentiment increase. In the longest 
-            tweet group (141+ characters), positive sentiment represents the largest share, followed by negative and neutral sentiment. 
-            Overall, longer tweets appear to contain more polarized sentiment, with fewer tweets classified as neutral. 
-            However, this pattern does not imply that tweet length directly causes changes in sentiment.
+            This visualization shows how RoBERTa-predicted sentiment is distributed across different tweet-length groups.
+            For tweets with 21–40 characters, neutral and positive sentiment account for most of the observations, 
+            while negative sentiment represents a smaller proportion. In the 41–60 character group, negative sentiment 
+            becomes the largest category, while positive sentiment remains substantial. For tweets with 61–80 characters, 
+            positive sentiment is again the largest category, followed by neutral and negative sentiment.
+            Overall, the distribution varies across tweet-length groups, suggesting that sentiment composition may 
+            differ for tweets of different lengths. However, the sample size in each group is small, so these differences 
+            should be interpreted cautiously. The visualization shows an association between tweet length and sentiment 
+            distribution, but it does not demonstrate that tweet length causes changes in sentiment.
         </p>
 
     </div>
