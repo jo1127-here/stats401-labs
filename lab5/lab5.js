@@ -1,4 +1,4 @@
-const width = 700;
+const width = 800;
 const height = 500;
 
 const svg = d3.select("#chart")
@@ -89,10 +89,33 @@ Promise.all([
 
     const node = svg.append("g")
         .attr("class", "nodes")
-        .selectAll("circle")
+        .selectAll("path")
         .data(nodes)
-        .join("circle")
-        .attr("r", d => passengerSize(d.daily_passengers))
+        .join("path")
+        .attr("d", d => {
+            const r = passengerSize(d.daily_passengers);
+    
+            if (d.station_type === "Local") {
+                // Circle
+                return d3.symbol()
+                    .type(d3.symbolCircle)
+                    .size(Math.PI * r * r)();
+            }
+    
+            if (d.station_type === "Transfer") {
+                // Square
+                return d3.symbol()
+                    .type(d3.symbolSquare)
+                    .size((r * 1.8) ** 2)();
+            }
+    
+            if (d.station_type === "Terminal") {
+                // Triangle
+                return d3.symbol()
+                    .type(d3.symbolTriangle)
+                    .size((r * 2) ** 2)();
+            }
+        })
         .attr("fill", d => districtColor(d.district))
         .attr("stroke", "white")
         .attr("stroke-width", 1.5)
@@ -164,8 +187,8 @@ Promise.all([
 
         // Keep nodes inside SVG
         nodes.forEach(d => {
-            d.x = Math.max(15, Math.min(width - 40, d.x));
-            d.y = Math.max(15, Math.min(height - 40, d.y));
+            d.x = Math.max(40, Math.min(width - 100, d.x));
+            d.y = Math.max(40, Math.min(height - 80, d.y));
         });
 
 
@@ -355,7 +378,7 @@ Promise.all([
 
     const legend = svg.append("g")
         .attr("class", "legend")
-        .attr("transform", "translate(380, 400)");
+        .attr("transform", "translate(40, 400)");
 
 
     // District legend
@@ -385,20 +408,34 @@ Promise.all([
 
     const typeLegend = svg.append("g")
         .attr("class", "type-legend")
-        .attr("transform", "translate(500, 400)");
-
+        .attr("transform", "translate(40, 455)");
+    
     typeLegend.append("text")
         .attr("font-size", 10)
         .attr("font-weight", "bold")
         .text("Station Type");
-
-    ["Local", "Transfer", "Terminal"].forEach((type, i) => {
-
+    
+    const typeShapes = [
+        { type: "Local", shape: d3.symbolCircle },
+        { type: "Transfer", shape: d3.symbolSquare },
+        { type: "Terminal", shape: d3.symbolTriangle }
+    ];
+    
+    typeShapes.forEach((item, i) => {
+    
+        typeLegend.append("path")
+            .attr("d", d3.symbol()
+                .type(item.shape)
+                .size(60)())
+            .attr("transform", `translate(6, ${18 + i * 15})`)
+            .attr("fill", "none")
+            .attr("stroke", "black");
+    
         typeLegend.append("text")
-            .attr("x", 0)
-            .attr("y", 18 + i * 15)
+            .attr("x", 18)
+            .attr("y", 22 + i * 15)
             .attr("font-size", 9)
-            .text(type);
+            .text(item.type);
     });
 
 
