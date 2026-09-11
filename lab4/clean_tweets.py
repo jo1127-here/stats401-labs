@@ -30,7 +30,7 @@ print(df.isnull().sum())
 # 3. Remove missing tweets
 # ============================================================
 
-df = df.dropna(subset=["text"])
+df = df.dropna(subset=["tweet_text"])
 
 
 # ============================================================
@@ -44,65 +44,98 @@ df = df.drop_duplicates(subset=["tweet_id"])
 # 5. Clean tweet text
 # ============================================================
 
-df["text"] = (
-    df["text"]
+df["tweet_text"] = (
+    df["tweet_text"]
     .astype(str)
     .str.replace(r"\s+", " ", regex=True)
     .str.strip()
 )
 
 # Remove empty tweets
-df = df[df["text"].str.len() > 0]
+df = df[df["tweet_text"].str.len() > 0]
 
 
 # ============================================================
 # 6. Convert date
 # ============================================================
 
-df["date"] = pd.to_datetime(
-    df["date"],
-    format="%a %b %d %H:%M:%S %Z %Y",
+df["created_at"] = pd.to_datetime(
+    df["created_at"],
     errors="coerce"
 )
 
 # We do NOT drop rows with invalid dates.
-# Date is not required for RoBERTa sentiment analysis.
 
 
 # ============================================================
-# 7. Convert original sentiment labels
+# 7. Standardize username
 # ============================================================
 
-# Sentiment140:
-# 0 = Negative
-# 2 = Neutral
-# 4 = Positive
-
-label_map = {
-    0: "Negative",
-    2: "Neutral",
-    4: "Positive"
-}
-
-df["original_sentiment"] = df["target"].map(label_map)
+df["username"] = (
+    df["username"]
+    .astype(str)
+    .str.strip()
+    .str.lstrip("@")
+)
 
 
 # ============================================================
-# 8. Create tweet-level attributes
+# 8. Standardize platform
+# ============================================================
+
+df["platform"] = (
+    df["platform"]
+    .astype(str)
+    .str.strip()
+    .str.lower()
+)
+
+# Capitalize platform names consistently
+df["platform"] = df["platform"].replace({
+    "web": "Web",
+    "mobile": "Mobile",
+    "ios": "iOS",
+    "android": "Android"
+})
+
+
+# ============================================================
+# 9. Standardize country
+# ============================================================
+
+df["country"] = (
+    df["country"]
+    .astype(str)
+    .str.strip()
+    .str.lower()
+)
+
+df["country"] = df["country"].replace({
+    "us": "US",
+    "united states": "US",
+    "uk": "UK",
+    "canada": "Canada",
+    "ca": "Canada"
+})
+
+
+# ============================================================
+# 10. Create tweet-level attributes
 # ============================================================
 
 # Number of characters
-df["tweet_length"] = df["text"].str.len()
+df["tweet_length"] = df["tweet_text"].str.len()
 
 # Number of words
-df["word_count"] = df["text"].str.split().str.len()
+df["word_count"] = df["tweet_text"].str.split().str.len()
 
 
 # ============================================================
-# 9. Prepare text for RoBERTa
+# 11. Prepare text for RoBERTa
 # ============================================================
 
 def prepare_text(text):
+
     text = str(text)
 
     # Replace usernames
@@ -118,21 +151,21 @@ def prepare_text(text):
     return text.strip()
 
 
-df["sentiment_text"] = df["text"].apply(prepare_text)
+df["sentiment_text"] = df["tweet_text"].apply(prepare_text)
 
 # Remove any empty sentiment text
 df = df[df["sentiment_text"].str.len() > 0]
 
 
 # ============================================================
-# 10. Check number of rows before RoBERTa
+# 12. Check number of rows before RoBERTa
 # ============================================================
 
 print("\nRows before RoBERTa:", len(df))
 
 
 # ============================================================
-# 11. Load RoBERTa
+# 13. Load RoBERTa
 # ============================================================
 
 print("\nLoading RoBERTa model...")
@@ -144,7 +177,7 @@ sentiment_model = pipeline(
 
 
 # ============================================================
-# 12. Run sentiment analysis
+# 14. Run sentiment analysis
 # ============================================================
 
 print("Running RoBERTa sentiment analysis...")
@@ -163,14 +196,13 @@ print(results[0])
 
 
 # ============================================================
-# 13. Extract sentiment scores
+# 15. Extract sentiment scores
 # ============================================================
 
 negative_scores = []
 neutral_scores = []
 positive_scores = []
 predicted_sentiments = []
-
 
 for result in results:
 
@@ -201,11 +233,12 @@ for result in results:
 df["roberta_negative"] = negative_scores
 df["roberta_neutral"] = neutral_scores
 df["roberta_positive"] = positive_scores
+
 df["roberta_sentiment"] = predicted_sentiments
 
 
 # ============================================================
-# 14. Create sentiment score
+# 16. Create sentiment score
 # ============================================================
 
 df["sentiment_score"] = (
@@ -215,18 +248,19 @@ df["sentiment_score"] = (
 
 
 # ============================================================
-# 15. Keep useful columns
+# 17. Keep useful columns
 # ============================================================
 
 clean_df = df[
     [
         "tweet_id",
-        "date",
-        "user",
-        "flag",
-        "text",
-        "target",
-        "original_sentiment",
+        "created_at",
+        "username",
+        "platform",
+        "tweet_text",
+        "likes",
+        "retweets",
+        "country",
         "tweet_length",
         "word_count",
         "roberta_negative",
@@ -239,7 +273,7 @@ clean_df = df[
 
 
 # ============================================================
-# 16. Save clean dataset
+# 18. Save clean dataset
 # ============================================================
 
 output_file = "data/lab4_clean_tweets.csv"
@@ -251,7 +285,7 @@ clean_df.to_csv(
 
 
 # ============================================================
-# 17. Print results
+# 19. Print results
 # ============================================================
 
 print("\n================================")
@@ -261,6 +295,7 @@ print("================================")
 print("Final shape:", clean_df.shape)
 
 print("\nRoBERTa sentiment distribution:")
+
 print(
     clean_df["roberta_sentiment"].value_counts()
 )
