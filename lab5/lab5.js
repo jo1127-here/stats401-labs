@@ -1,4 +1,4 @@
-const width = 650;
+const width = 700;
 const height = 500;
 
 const svg = d3.select("#chart")
@@ -164,8 +164,8 @@ Promise.all([
 
         // Keep nodes inside SVG
         nodes.forEach(d => {
-            d.x = Math.max(15, Math.min(width - 15, d.x));
-            d.y = Math.max(15, Math.min(height - 15, d.y));
+            d.x = Math.max(15, Math.min(width - 40, d.x));
+            d.y = Math.max(15, Math.min(height - 40, d.y));
         });
 
 
@@ -355,7 +355,7 @@ Promise.all([
 
     const legend = svg.append("g")
         .attr("class", "legend")
-        .attr("transform", "translate(15, 400)");
+        .attr("transform", "translate(380, 400)");
 
 
     // District legend
@@ -385,7 +385,7 @@ Promise.all([
 
     const typeLegend = svg.append("g")
         .attr("class", "type-legend")
-        .attr("transform", "translate(520, 400)");
+        .attr("transform", "translate(500, 400)");
 
     typeLegend.append("text")
         .attr("font-size", 10)
