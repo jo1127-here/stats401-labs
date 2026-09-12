@@ -567,17 +567,17 @@ matrixNodes.forEach(rowNode => {
 // 15. MATRIX SCALES
 // ============================================================
 
-const matrixSize = 500;
+const matrixSize = 650;
 
 const matrixX = d3.scaleBand()
     .domain(matrixNodes.map(d => d.id))
     .range([0, matrixSize])
-    .padding(0.05);
+    .padding(0.08);
 
 const matrixY = d3.scaleBand()
     .domain(matrixNodes.map(d => d.id))
     .range([0, matrixSize])
-    .padding(0.05);
+    .padding(0.08);
 
 
 // Travel time → cell opacity
@@ -596,21 +596,20 @@ const matrixRouteColor = d3.scaleOrdinal()
     .domain(routeTypes)
     .range(d3.schemeSet2);
 
-
 // ============================================================
 // 16. DRAW MATRIX
 // ============================================================
 
 const matrixSvg = d3.select("#matrix")
     .append("svg")
-    .attr("width", 650)
-    .attr("height", 650);
+    .attr("width", 850)
+    .attr("height", 800);
 
 
 const matrixGroup = matrixSvg.append("g")
     .attr(
         "transform",
-        "translate(100, 80)"
+        "translate(120, 90)"
     );
 
 
@@ -661,15 +660,18 @@ matrixGroup
         "white"
     );
 
-
 // ============================================================
 // 17. MATRIX LABELS
 // ============================================================
 
+// Show every 5th station on the top axis
+const columnLabels = matrixNodes.filter((d, i) => i % 5 === 0);
+
+
 // Column labels
 matrixGroup
     .selectAll(".column-label")
-    .data(matrixNodes)
+    .data(columnLabels)
     .join("text")
     .attr("class", "column-label")
 
@@ -682,26 +684,17 @@ matrixGroup
 
     .attr(
         "y",
-        -10
+        -12
     )
 
     .attr(
         "text-anchor",
-        "start"
+        "middle"
     )
 
     .attr(
         "font-size",
-        8
-    )
-
-    .attr(
-        "transform",
-        d => `
-            rotate(-90,
-            ${matrixX(d.id) + matrixX.bandwidth() / 2},
-            -10)
-        `
+        11
     )
 
     .text(d => d.id);
@@ -716,7 +709,7 @@ matrixGroup
 
     .attr(
         "x",
-        -8
+        -10
     )
 
     .attr(
@@ -738,11 +731,10 @@ matrixGroup
 
     .attr(
         "font-size",
-        8
+        9
     )
 
     .text(d => d.id);
-
 
 // ============================================================
 // 18. MATRIX TOOLTIP
@@ -808,13 +800,12 @@ matrixGroup
 
 matrixSvg
     .append("text")
-    .attr("x", 350)
-    .attr("y", 30)
+    .attr("x", 445)
+    .attr("y", 35)
     .attr("text-anchor", "middle")
-    .attr("font-size", 16)
+    .attr("font-size", 18)
     .attr("font-weight", "bold")
     .text("Station Adjacency Matrix");
-
 
 // ============================================================
 // 20. DEBUG
