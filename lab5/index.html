@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,6 +22,7 @@
             This visualization shows a synthetic urban transit network
             containing 50 stations and 50 direct connections.
         </p>
+
 
         <h2>1. Node-Link Visualization</h2>
 
@@ -60,6 +62,128 @@
 
         <h2>2. Adjacency Matrix</h2>
 
+        <p>
+            Rows and columns represent stations. A filled cell indicates
+            a direct connection between two stations. Cell opacity
+            represents travel time, while cell color represents route type.
+        </p>
+
+        <div id="matrix"></div>
+
+
+        <h2>3. Design Description</h2>
+
+        <h3>Node-Link Design</h3>
+
+        <p>
+            District is represented using node color so that stations
+            belonging to the same district can be visually grouped.
+            Daily passenger volume is represented by node size because
+            larger nodes indicate stations with higher passenger volume.
+            Station type is represented by node shape to distinguish
+            Local, Transfer, and Terminal stations.
+        </p>
+
+        <p>
+            Travel time is represented by link width, while route type
+            is represented by link color. Users can drag stations,
+            hover over stations to highlight their connections, and
+            use tooltips to inspect station information.
+        </p>
+
+
+        <h3>Adjacency Matrix Design</h3>
+
+        <p>
+            Each row and column represents a station. A filled cell
+            represents a direct connection. Cell opacity represents
+            travel time, while cell color represents route type.
+            Stations are ordered by district to make groups of stations
+            easier to identify.
+        </p>
+
+
+        <h2>4. Network Questions and Findings</h2>
+
+        <div id="questions">
+
+            <h3>1. Which stations appear central in the network?</h3>
+            <p>
+                The node-link diagram is most useful for this question.
+                Stations such as s7, s16, s18, s21, s25, s29, s31,
+                s33, s34, and s38 have three direct connections, which
+                is the highest degree in this network. These stations
+                therefore appear more central than stations with only
+                one or two connections.
+            </p>
+
+
+            <h3>2. Which districts are strongly connected to one another?</h3>
+            <p>
+                The adjacency matrix is useful for comparing connections
+                between groups of stations. The South and East districts
+                have the largest number of direct connections between
+                them. The node-link diagram also shows several connections
+                between these two district groups.
+            </p>
+
+
+            <h3>3. Where are transfer or terminal stations located?</h3>
+            <p>
+                The node-link diagram is most useful because station
+                shapes make different station types easy to identify.
+                Transfer and terminal stations are distributed throughout
+                the network rather than being located in only one district.
+                Several of them are also connected to multiple neighboring
+                stations.
+            </p>
+
+
+            <h3>4. Which stations have high passenger volume?</h3>
+            <p>
+                The node-link diagram provides the clearest answer because
+                passenger volume is encoded by node size. Station s50 has
+                the highest daily passenger volume, with 9,850 passengers,
+                followed by the stations with the next largest node sizes.
+            </p>
+
+
+            <h3>5. Where are the longest direct travel-time connections?</h3>
+            <p>
+                Both visualizations can help answer this question.
+                The longest connection is between s7 and s31, with a
+                travel time of 16 minutes. Other long connections include
+                s18-s34 at 15 minutes and s29-s50 at 14 minutes. These
+                connections appear as thicker links in the node-link
+                diagram and as higher-opacity cells in the matrix.
+            </p>
+
+
+            <h3>6. Are particular route types concentrated in particular
+                parts of the network?</h3>
+            <p>
+                The route types are relatively evenly distributed across
+                the network. Express, Shuttle, and Metro routes appear
+                throughout different parts of the network rather than
+                being concentrated in a single district. The node-link
+                diagram makes this spatial distribution easier to see,
+                while the matrix provides another way to compare the
+                pattern across districts.
+            </p>
+
+        </div>
+
+
+        <p class="back-home">
+            <a href="../index.html">← Back Home</a>
+        </p>
+
+    </div>
+
+    <script src="lab5.js"></script>
+
+</body>
+</html>
         <p>
             Rows and columns represent stations. A filled cell indicates
             a direct connection between two stations.
