@@ -164,7 +164,7 @@ const simulation = d3.forceSimulation(nodes)
         "center",
         d3.forceCenter(
             width / 2,
-            height / 2 - 45
+            245,
         )
     )
 
