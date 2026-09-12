@@ -497,21 +497,38 @@ sizeLegend.append("text")
 
 
 // ============================================================
-// 14. DEBUG
-// ============================================================
-
-    // ============================================================
 // 14. ADJACENCY MATRIX
 // ============================================================
+
+// Order stations by district, then by station ID
+const districtOrder = [
+    "Central",
+    "North",
+    "South",
+    "East",
+    "West"
+];
+
+const matrixNodes = [...nodes].sort((a, b) => {
+
+    const districtA = districtOrder.indexOf(a.district);
+    const districtB = districtOrder.indexOf(b.district);
+
+    if (districtA !== districtB) {
+        return districtA - districtB;
+    }
+
+    return d3.ascending(a.id, b.id);
+});
+
 
 // Create matrix data
 const matrixData = [];
 
-nodes.forEach(rowNode => {
+matrixNodes.forEach(rowNode => {
 
-    nodes.forEach(colNode => {
+    matrixNodes.forEach(colNode => {
 
-        // Find connection between the two stations
         const foundLink = links.find(link =>
             (
                 link.source.id === rowNode.id &&
@@ -525,13 +542,13 @@ nodes.forEach(rowNode => {
         );
 
         matrixData.push({
+
             row: rowNode.id,
+
             col: colNode.id,
 
-            // 1 = connected, 0 = not connected
             connected: foundLink ? 1 : 0,
 
-            // Keep link information
             travel_time_min: foundLink
                 ? foundLink.travel_time_min
                 : 0,
@@ -553,14 +570,14 @@ nodes.forEach(rowNode => {
 const matrixSize = 500;
 
 const matrixX = d3.scaleBand()
-    .domain(nodes.map(d => d.id))
+    .domain(matrixNodes.map(d => d.id))
     .range([0, matrixSize])
-    .padding(0.03);
+    .padding(0.05);
 
 const matrixY = d3.scaleBand()
-    .domain(nodes.map(d => d.id))
+    .domain(matrixNodes.map(d => d.id))
     .range([0, matrixSize])
-    .padding(0.03);
+    .padding(0.05);
 
 
 // Travel time → cell opacity
@@ -590,7 +607,6 @@ const matrixSvg = d3.select("#matrix")
     .attr("height", 650);
 
 
-// Main matrix group
 const matrixGroup = matrixSvg.append("g")
     .attr(
         "transform",
@@ -604,13 +620,11 @@ matrixGroup
     .data(matrixData)
     .join("rect")
 
-    // Column = target station
     .attr(
         "x",
         d => matrixX(d.col)
     )
 
-    // Row = source station
     .attr(
         "y",
         d => matrixY(d.row)
@@ -626,8 +640,6 @@ matrixGroup
         matrixY.bandwidth()
     )
 
-    // Connected cells use route type color
-    // Non-connected cells are light gray
     .attr(
         "fill",
         d =>
@@ -636,7 +648,6 @@ matrixGroup
                 : "#eeeeee"
     )
 
-    // Travel time controls opacity
     .attr(
         "fill-opacity",
         d =>
@@ -658,66 +669,84 @@ matrixGroup
 // Column labels
 matrixGroup
     .selectAll(".column-label")
-    .data(nodes)
+    .data(matrixNodes)
     .join("text")
     .attr("class", "column-label")
+
     .attr(
         "x",
         d =>
             matrixX(d.id) +
             matrixX.bandwidth() / 2
     )
+
     .attr(
         "y",
-        -8
+        -10
     )
+
     .attr(
         "text-anchor",
-        "middle"
+        "start"
     )
+
     .attr(
         "font-size",
-        9
+        8
     )
-    .text(d => d.station_name);
+
+    .attr(
+        "transform",
+        d => `
+            rotate(-90,
+            ${matrixX(d.id) + matrixX.bandwidth() / 2},
+            -10)
+        `
+    )
+
+    .text(d => d.id);
 
 
 // Row labels
 matrixGroup
     .selectAll(".row-label")
-    .data(nodes)
+    .data(matrixNodes)
     .join("text")
     .attr("class", "row-label")
+
     .attr(
         "x",
         -8
     )
+
     .attr(
         "y",
         d =>
             matrixY(d.id) +
             matrixY.bandwidth() / 2
     )
+
     .attr(
         "text-anchor",
         "end"
     )
+
     .attr(
         "dominant-baseline",
         "middle"
     )
+
     .attr(
         "font-size",
-        9
+        8
     )
-    .text(d => d.station_name);
+
+    .text(d => d.id);
 
 
 // ============================================================
 // 18. MATRIX TOOLTIP
 // ============================================================
-
-const matrixTooltip = d3.select("#tooltip");
 
 matrixGroup
     .selectAll("rect")
@@ -728,7 +757,7 @@ matrixGroup
             matrixTooltip
                 .style("opacity", 1)
                 .html(`
-                    <strong>${d.row} → ${d.col}</strong>
+                    <strong>${d.row} ↔ ${d.col}</strong>
                     <br>
                     Connected: Yes
                     <br>
@@ -742,10 +771,11 @@ matrixGroup
             matrixTooltip
                 .style("opacity", 1)
                 .html(`
-                    <strong>${d.row} → ${d.col}</strong>
+                    <strong>${d.row} ↔ ${d.col}</strong>
                     <br>
                     Connected: No
                 `);
+
         }
 
     })
@@ -778,12 +808,17 @@ matrixGroup
 
 matrixSvg
     .append("text")
-    .attr("x", 325)
+    .attr("x", 350)
     .attr("y", 30)
     .attr("text-anchor", "middle")
     .attr("font-size", 16)
     .attr("font-weight", "bold")
     .text("Station Adjacency Matrix");
+
+
+// ============================================================
+// 20. DEBUG
+// ============================================================
 
 console.log("Nodes:", nodes);
 console.log("Links:", links);
