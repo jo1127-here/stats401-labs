@@ -502,6 +502,6 @@ sizeLegend.append("text")
 
 console.log("Nodes:", nodes);
 console.log("Links:", links);
-```
+
 
 });
