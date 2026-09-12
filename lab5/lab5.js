@@ -1,5 +1,5 @@
 const width = 800;
-const height = 550;
+const height = 600;
 
 const svg = d3.select("#chart")
     .append("svg")
@@ -500,8 +500,294 @@ sizeLegend.append("text")
 // 14. DEBUG
 // ============================================================
 
+    // ============================================================
+// 14. ADJACENCY MATRIX
+// ============================================================
+
+// Create matrix data
+const matrixData = [];
+
+nodes.forEach(rowNode => {
+
+    nodes.forEach(colNode => {
+
+        // Find connection between the two stations
+        const foundLink = links.find(link =>
+            (
+                link.source.id === rowNode.id &&
+                link.target.id === colNode.id
+            )
+            ||
+            (
+                link.source.id === colNode.id &&
+                link.target.id === rowNode.id
+            )
+        );
+
+        matrixData.push({
+            row: rowNode.id,
+            col: colNode.id,
+
+            // 1 = connected, 0 = not connected
+            connected: foundLink ? 1 : 0,
+
+            // Keep link information
+            travel_time_min: foundLink
+                ? foundLink.travel_time_min
+                : 0,
+
+            route_type: foundLink
+                ? foundLink.route_type
+                : null
+        });
+
+    });
+
+});
+
+
+// ============================================================
+// 15. MATRIX SCALES
+// ============================================================
+
+const matrixSize = 500;
+
+const matrixX = d3.scaleBand()
+    .domain(nodes.map(d => d.id))
+    .range([0, matrixSize])
+    .padding(0.03);
+
+const matrixY = d3.scaleBand()
+    .domain(nodes.map(d => d.id))
+    .range([0, matrixSize])
+    .padding(0.03);
+
+
+// Travel time → cell opacity
+const matrixOpacity = d3.scaleLinear()
+    .domain(
+        d3.extent(
+            links,
+            d => d.travel_time_min
+        )
+    )
+    .range([0.3, 1]);
+
+
+// Route type → cell color
+const matrixRouteColor = d3.scaleOrdinal()
+    .domain(routeTypes)
+    .range(d3.schemeSet2);
+
+
+// ============================================================
+// 16. DRAW MATRIX
+// ============================================================
+
+const matrixSvg = d3.select("#matrix")
+    .append("svg")
+    .attr("width", 650)
+    .attr("height", 650);
+
+
+// Main matrix group
+const matrixGroup = matrixSvg.append("g")
+    .attr(
+        "transform",
+        "translate(100, 80)"
+    );
+
+
+// Draw cells
+matrixGroup
+    .selectAll("rect")
+    .data(matrixData)
+    .join("rect")
+
+    // Column = target station
+    .attr(
+        "x",
+        d => matrixX(d.col)
+    )
+
+    // Row = source station
+    .attr(
+        "y",
+        d => matrixY(d.row)
+    )
+
+    .attr(
+        "width",
+        matrixX.bandwidth()
+    )
+
+    .attr(
+        "height",
+        matrixY.bandwidth()
+    )
+
+    // Connected cells use route type color
+    // Non-connected cells are light gray
+    .attr(
+        "fill",
+        d =>
+            d.connected
+                ? matrixRouteColor(d.route_type)
+                : "#eeeeee"
+    )
+
+    // Travel time controls opacity
+    .attr(
+        "fill-opacity",
+        d =>
+            d.connected
+                ? matrixOpacity(d.travel_time_min)
+                : 1
+    )
+
+    .attr(
+        "stroke",
+        "white"
+    );
+
+
+// ============================================================
+// 17. MATRIX LABELS
+// ============================================================
+
+// Column labels
+matrixGroup
+    .selectAll(".column-label")
+    .data(nodes)
+    .join("text")
+    .attr("class", "column-label")
+    .attr(
+        "x",
+        d =>
+            matrixX(d.id) +
+            matrixX.bandwidth() / 2
+    )
+    .attr(
+        "y",
+        -8
+    )
+    .attr(
+        "text-anchor",
+        "middle"
+    )
+    .attr(
+        "font-size",
+        9
+    )
+    .text(d => d.station_name);
+
+
+// Row labels
+matrixGroup
+    .selectAll(".row-label")
+    .data(nodes)
+    .join("text")
+    .attr("class", "row-label")
+    .attr(
+        "x",
+        -8
+    )
+    .attr(
+        "y",
+        d =>
+            matrixY(d.id) +
+            matrixY.bandwidth() / 2
+    )
+    .attr(
+        "text-anchor",
+        "end"
+    )
+    .attr(
+        "dominant-baseline",
+        "middle"
+    )
+    .attr(
+        "font-size",
+        9
+    )
+    .text(d => d.station_name);
+
+
+// ============================================================
+// 18. MATRIX TOOLTIP
+// ============================================================
+
+const matrixTooltip = d3.select("#tooltip");
+
+matrixGroup
+    .selectAll("rect")
+    .on("mouseover", function(event, d) {
+
+        if (d.connected) {
+
+            matrixTooltip
+                .style("opacity", 1)
+                .html(`
+                    <strong>${d.row} → ${d.col}</strong>
+                    <br>
+                    Connected: Yes
+                    <br>
+                    Travel time: ${d.travel_time_min} min
+                    <br>
+                    Route type: ${d.route_type}
+                `);
+
+        } else {
+
+            matrixTooltip
+                .style("opacity", 1)
+                .html(`
+                    <strong>${d.row} → ${d.col}</strong>
+                    <br>
+                    Connected: No
+                `);
+        }
+
+    })
+
+    .on("mousemove", function(event) {
+
+        matrixTooltip
+            .style(
+                "left",
+                `${event.pageX + 10}px`
+            )
+            .style(
+                "top",
+                `${event.pageY + 10}px`
+            );
+
+    })
+
+    .on("mouseout", function() {
+
+        matrixTooltip
+            .style("opacity", 0);
+
+    });
+
+
+// ============================================================
+// 19. MATRIX TITLE
+// ============================================================
+
+matrixSvg
+    .append("text")
+    .attr("x", 325)
+    .attr("y", 30)
+    .attr("text-anchor", "middle")
+    .attr("font-size", 16)
+    .attr("font-weight", "bold")
+    .text("Station Adjacency Matrix");
+
 console.log("Nodes:", nodes);
 console.log("Links:", links);
+console.log("Matrix:", matrixData);
 
 
 });
