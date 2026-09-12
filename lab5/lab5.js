@@ -193,7 +193,7 @@ simulation.on("tick", () => {
 
         d.y = Math.max(
             40,
-            Math.min(height - 100, d.y)
+            Math.min(470, d.y)
         );
     });
 
