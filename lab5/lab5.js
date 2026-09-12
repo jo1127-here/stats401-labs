@@ -391,7 +391,7 @@ node
 
 const legend = svg.append("g")
     .attr("class", "legend")
-    .attr("transform", "translate(40, 455)");
+    .attr("transform", "translate(40, 500)");
 
 legend.append("text")
     .attr("font-size", 10)
@@ -426,7 +426,7 @@ districts.forEach((district, i) => {
 
 const typeLegend = svg.append("g")
     .attr("class", "type-legend")
-    .attr("transform", "translate(250, 455)");
+    .attr("transform", "translate(250, 500)");
 
 typeLegend.append("text")
     .attr("font-size", 10)
@@ -482,7 +482,7 @@ typeShapes.forEach((item, i) => {
 
 const sizeLegend = svg.append("g")
     .attr("class", "size-legend")
-    .attr("transform", "translate(500, 455)");
+    .attr("transform", "translate(500, 500)");
 
 sizeLegend.append("text")
     .attr("font-size", 10)
