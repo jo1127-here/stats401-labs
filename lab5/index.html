@@ -106,56 +106,66 @@
         <h2>4. Network Questions and Findings</h2>
 
         <div id="questions">
-
+        
             <h3>1. Which stations appear central in the network?</h3>
             <p>
-                The node-link diagram is most useful for this question.
-                Stations such as s7, s16, s18, s21, s25, s29, s31,
-                s33, s34, and s38 have three direct connections, which
-                is the highest degree in this network.
+                The node-link diagram is most useful for identifying central
+                stations. Stations s7, s16, s18, s21, s25, s29, s31, s33,
+                s34, and s38 each have three direct connections, which is the
+                highest degree in the network. These stations therefore appear
+                more central than stations with fewer connections.
             </p>
-
+        
+        
             <h3>2. Which districts are strongly connected to one another?</h3>
             <p>
-                The adjacency matrix is useful for comparing connections
-                between groups of stations. The South and East districts
-                have the largest number of direct connections between
-                them.
+                The adjacency matrix makes it easier to compare connections
+                between district groups. The South and East districts have the
+                largest number of direct connections between them, with 11
+                connections. The node-link diagram also shows several links
+                connecting these two districts.
             </p>
-
+        
+        
             <h3>3. Where are transfer or terminal stations located?</h3>
             <p>
-                The node-link diagram is most useful because station
-                shapes make different station types easy to identify.
-                Transfer and terminal stations are distributed throughout
-                the network rather than being concentrated in one district.
+                Transfer and terminal stations are distributed across different
+                parts of the network rather than being concentrated in one
+                district. The node-link diagram makes these stations easy to
+                identify through their different shapes. Several transfer and
+                terminal stations are also located at highly connected parts
+                of the network.
             </p>
-
+        
+        
             <h3>4. Which stations have high passenger volume?</h3>
             <p>
                 The node-link diagram provides the clearest answer because
-                passenger volume is encoded by node size. Station s50 has
-                the highest daily passenger volume, with 9,850 passengers.
+                passenger volume is represented by node size. Station s50 has
+                the highest daily passenger volume, with 9,850 passengers, and
+                therefore has the largest node size.
             </p>
-
+        
+        
             <h3>5. Where are the longest direct travel-time connections?</h3>
             <p>
-                Both visualizations can help answer this question.
-                The longest connection is between s7 and s31, with a
-                travel time of 16 minutes. Other long connections include
-                s18-s34 at 15 minutes and s29-s50 at 14 minutes.
+                The node-link diagram is most useful for identifying long
+                connections because travel time is represented by link width.
+                The longest connection is s7-s31 at 16 minutes, followed by
+                s18-s34 at 15 minutes and s29-s50 at 14 minutes. These
+                connections also appear as higher-opacity cells in the matrix.
             </p>
-
+        
+        
             <h3>6. Are particular route types concentrated in particular parts of the network?</h3>
             <p>
-                The route types are relatively evenly distributed across
-                the network. Express, Shuttle, and Metro routes appear
-                throughout different parts of the network rather than
-                being concentrated in a single district.
+                Route types are relatively evenly distributed across the network.
+                There are 17 Express routes, 17 Shuttle routes, and 16 Metro
+                routes. The different route types appear throughout the network
+                rather than being concentrated in one particular district.
             </p>
-
+        
         </div>
-
 
         <p class="back-home">
             <a href="../index.html"> Back Home</a>
