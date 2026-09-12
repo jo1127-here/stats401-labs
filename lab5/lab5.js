@@ -391,7 +391,7 @@ node
 
 const legend = svg.append("g")
     .attr("class", "legend")
-    .attr("transform", "translate(40, 500)");
+    .attr("transform", "translate(40, 520)");
 
 legend.append("text")
     .attr("font-size", 10)
@@ -426,7 +426,7 @@ districts.forEach((district, i) => {
 
 const typeLegend = svg.append("g")
     .attr("class", "type-legend")
-    .attr("transform", "translate(250, 500)");
+    .attr("transform", "translate(250, 520)");
 
 typeLegend.append("text")
     .attr("font-size", 10)
@@ -482,7 +482,7 @@ typeShapes.forEach((item, i) => {
 
 const sizeLegend = svg.append("g")
     .attr("class", "size-legend")
-    .attr("transform", "translate(500, 500)");
+    .attr("transform", "translate(500, 520)");
 
 sizeLegend.append("text")
     .attr("font-size", 10)
@@ -671,32 +671,33 @@ const columnLabels = matrixNodes.filter((d, i) => i % 5 === 0);
 // Column labels
 matrixGroup
     .selectAll(".column-label")
-    .data(columnLabels)
+    .data(matrixNodes)
     .join("text")
     .attr("class", "column-label")
-
     .attr(
         "x",
-        d =>
-            matrixX(d.id) +
-            matrixX.bandwidth() / 2
+        d => matrixX(d.id) + matrixX.bandwidth() / 2
     )
-
     .attr(
         "y",
-        -12
+        -10
     )
-
     .attr(
         "text-anchor",
-        "middle"
+        "start"
     )
-
     .attr(
         "font-size",
-        11
+        8
     )
-
+    .attr(
+        "transform",
+        d => `
+            rotate(-90,
+            ${matrixX(d.id) + matrixX.bandwidth() / 2},
+            -10)
+        `
+    )
     .text(d => d.id);
 
 
