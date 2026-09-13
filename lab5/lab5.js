@@ -133,8 +133,8 @@ const label = svg.append("g")
     .selectAll("text")
     .data(nodes)
     .join("text")
-    .text(d => d.station_name)
-    .attr("font-size", 9)
+    .text(d => `S ${d.id}`)
+    .attr("font-size", 7)
     .attr("dx", 9)
     .attr("dy", 3)
     .style("pointer-events", "none");
@@ -660,6 +660,43 @@ matrixGroup
         "white"
     );
 
+
+
+// ============================================================
+// 17. DISTRICT SEPARATORS
+// ============================================================
+
+let previousDistrict = matrixNodes[0].district;
+
+matrixNodes.forEach((d, i) => {
+
+    if (i === 0) return;
+
+    if (d.district !== previousDistrict) {
+
+        const x = matrixX(d.id) - matrixX.step() * 0.04;
+        const y = matrixY(d.id) - matrixY.step() * 0.04;
+
+        matrixGroup.append("line")
+            .attr("x1", x)
+            .attr("x2", x)
+            .attr("y1", 0)
+            .attr("y2", matrixSize)
+            .attr("stroke", "black")
+            .attr("stroke-width", 2);
+
+        matrixGroup.append("line")
+            .attr("x1", 0)
+            .attr("x2", matrixSize)
+            .attr("y1", y)
+            .attr("y2", y)
+            .attr("stroke", "black")
+            .attr("stroke-width", 2);
+
+        previousDistrict = d.district;
+    }
+});
+
 // ============================================================
 // 17. MATRIX LABELS
 // ============================================================
@@ -795,6 +832,36 @@ matrixGroup
     });
 
 
+// ============================================================
+// 19. ROUTE TYPE LEGEND
+// ============================================================
+
+const matrixLegend = matrixSvg.append("g")
+    .attr("class", "matrix-route-legend")
+    .attr("transform", "translate(120, 750)");
+
+matrixLegend.append("text")
+    .attr("font-size", 10)
+    .attr("font-weight", "bold")
+    .text("Route Type");
+
+routeTypes.forEach((type, i) => {
+
+    const row = matrixLegend.append("g")
+        .attr("transform", `translate(${90 + i * 120}, 0)`);
+
+    row.append("rect")
+        .attr("width", 12)
+        .attr("height", 12)
+        .attr("fill", matrixRouteColor(type));
+
+    row.append("text")
+        .attr("x", 18)
+        .attr("y", 10)
+        .attr("font-size", 9)
+        .text(type);
+});
+    
 // ============================================================
 // 19. MATRIX TITLE
 // ============================================================
