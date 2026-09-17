@@ -1,22 +1,19 @@
-
 const width = 1000;
 const height = 550;
 
 const tooltip = d3.select("#tooltip");
 
-// ------------------------------------
 // GDP status colors
-// ------------------------------------
+const statusColor = {
+    "Increase": "green",
+    "Unchanged": "gray",
+    "Decrease": "red"
+};
 
-const statusColor = d3.scaleOrdinal()
-    .domain(["Increase", "Unchanged", "Decrease"])
-    .range(["green", "gray", "red"]);
 
-
-// ------------------------------------
-// Convert GDP CSV into hierarchy
-// ------------------------------------
-
+// ==============================
+// Build hierarchy from CSV
+// ==============================
 function buildHierarchy(data) {
 
     const root = {
@@ -24,39 +21,33 @@ function buildHierarchy(data) {
         children: []
     };
 
-    // Group by continent
-    const continentGroups = d3.group(
-        data,
-        d => d.continent
-    );
+    const continents = d3.group(data, d => d.continent);
 
-    continentGroups.forEach((continentData, continentName) => {
+    continents.forEach((continentData, continentName) => {
 
         const continent = {
             name: continentName,
             children: []
         };
 
-        // Group by area
-        const areaGroups = d3.group(
+        const areas = d3.group(
             continentData,
             d => d.area
         );
 
-        areaGroups.forEach((areaData, areaName) => {
+        areas.forEach((areaData, areaName) => {
 
             const area = {
                 name: areaName,
                 children: []
             };
 
-            // Each country becomes a leaf node
             areaData.forEach(d => {
 
                 area.children.push({
                     name: d.country,
                     gdp: +d.gdp_billion_usd,
-                    status: d.gdp_status
+                    status: d.gdp_status.trim()
                 });
 
             });
@@ -71,192 +62,169 @@ function buildHierarchy(data) {
 }
 
 
-// ------------------------------------
+// ==============================
 // Get continent name
-// ------------------------------------
-
+// ==============================
 function getContinent(d) {
 
-    let node = d;
-
-    while (node.parent && node.parent.depth > 0) {
-        node = node.parent;
-    }
-
-    return node.parent
-        ? node.parent.data.name
-        : node.data.name;
+    // country → area → continent
+    return d.parent.parent.data.name;
 }
 
 
-// ------------------------------------
-// Create one treemap
-// ------------------------------------
+// ==============================
+// Create treemap
+// ==============================
+function createTreemap(container, tileMethod, data) {
 
-function createTreemap(container, tileMethod) {
+    const hierarchyData = buildHierarchy(data);
 
-    // IMPORTANT:
-    // Use your GDP CSV
-    d3.csv("../data/lab6_assignment_gdp.csv")
-        .then(data => {
-
-            // Convert flat CSV → hierarchy
-            const hierarchyData = buildHierarchy(data);
-
-            // Create D3 hierarchy
-            const root = d3.hierarchy(hierarchyData)
-                .sum(d => d.gdp || 0)
-                .sort((a, b) => b.value - a.value);
+    const root = d3.hierarchy(hierarchyData)
+        .sum(d => d.gdp || 0)
+        .sort((a, b) => b.value - a.value);
 
 
-            // ------------------------------------
-            // Treemap layout
-            // ------------------------------------
+    const treemap = d3.treemap()
+        .size([width, height])
+        .paddingInner(3)
+        .paddingOuter(5)
+        .tile(tileMethod);
 
-            const treemap = d3.treemap()
-                .size([width, height])
-                .paddingInner(3)
-                .paddingOuter(5)
-                .tile(tileMethod);
-
-            treemap(root);
+    treemap(root);
 
 
-            // ------------------------------------
-            // SVG
-            // ------------------------------------
-
-            const svg = d3.select(container)
-                .append("svg")
-                .attr("width", width)
-                .attr("height", height);
-
-
-            // ------------------------------------
-            // Country cells
-            // ------------------------------------
-
-            const cells = svg.selectAll(".cell")
-                .data(root.leaves())
-                .join("g")
-                .attr("class", "cell")
-                .attr(
-                    "transform",
-                    d => `translate(${d.x0}, ${d.y0})`
-                );
+    // ==============================
+    // SVG
+    // ==============================
+    const svg = d3.select(container)
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
 
 
-            // ------------------------------------
-            // Rectangle
-            // ------------------------------------
-
-            cells.append("rect")
-                .attr(
-                    "width",
-                    d => d.x1 - d.x0
-                )
-                .attr(
-                    "height",
-                    d => d.y1 - d.y0
-                )
-                .attr(
-                    "fill",
-                    d => statusColor(d.data.status)
-                );
+    // ==============================
+    // Country cells
+    // ==============================
+    const cells = svg.selectAll(".cell")
+        .data(root.leaves())
+        .join("g")
+        .attr("class", "cell")
+        .attr(
+            "transform",
+            d => `translate(${d.x0}, ${d.y0})`
+        );
 
 
-            // ------------------------------------
-            // Country labels
-            // ------------------------------------
+    // ==============================
+    // Rectangle
+    // ==============================
+    cells.append("rect")
+        .attr(
+            "width",
+            d => d.x1 - d.x0
+        )
+        .attr(
+            "height",
+            d => d.y1 - d.y0
+        )
+        .attr(
+            "fill",
+            d => statusColor[d.data.status]
+        );
 
-            cells.append("text")
-                .attr("x", 5)
-                .attr("y", 18)
-                .text(d => d.data.name)
-                .style(
-                    "display",
-                    d =>
-                        d.x1 - d.x0 > 70 &&
-                        d.y1 - d.y0 > 25
-                            ? "block"
-                            : "none"
-                );
+
+    // ==============================
+    // Country label
+    // ==============================
+    cells.append("text")
+        .attr("x", 5)
+        .attr("y", 18)
+        .text(d => d.data.name)
+        .style(
+            "display",
+            d =>
+                d.x1 - d.x0 > 70 &&
+                d.y1 - d.y0 > 25
+                    ? "block"
+                    : "none"
+        );
 
 
-            // ------------------------------------
-            // Tooltip
-            // ------------------------------------
+    // ==============================
+    // Tooltip
+    // ==============================
+    cells
+        .on("mouseover", function(event, d) {
 
-            cells
-                .on("mouseover", function(event, d) {
-
-                    tooltip
-                        .style("opacity", 1)
-                        .html(`
-                            <strong>${d.data.name}</strong><br>
-                            Continent: ${getContinent(d)}<br>
-                            Area: ${d.parent.data.name}<br>
-                            GDP: $${d.data.gdp} billion<br>
-                            Status: ${d.data.status}
-                        `);
-
-                })
-                .on("mousemove", function(event) {
-
-                    tooltip
-                        .style(
-                            "left",
-                            `${event.pageX + 10}px`
-                        )
-                        .style(
-                            "top",
-                            `${event.pageY + 10}px`
-                        );
-
-                })
-                .on("mouseout", function() {
-
-                    tooltip.style("opacity", 0);
-
-                });
+            tooltip
+                .style("opacity", 1)
+                .html(`
+                    <strong>${d.data.name}</strong><br>
+                    Continent: ${getContinent(d)}<br>
+                    Area: ${d.parent.data.name}<br>
+                    GDP: $${d.data.gdp} billion<br>
+                    Status: ${d.data.status}
+                `);
 
         })
+        .on("mousemove", function(event) {
 
-        .catch(error => {
+            tooltip
+                .style(
+                    "left",
+                    `${event.pageX + 10}px`
+                )
+                .style(
+                    "top",
+                    `${event.pageY + 10}px`
+                );
 
-            console.error(
-                "Could not load GDP CSV:",
-                error
-            );
+        })
+        .on("mouseout", function() {
+
+            tooltip.style("opacity", 0);
 
         });
+
 }
 
 
-// ------------------------------------
-// Treemap 1: Squarify
-// ------------------------------------
+// ==============================
+// Load CSV ONCE
+// ==============================
+d3.csv("../data/lab6_assignment_gdp.csv")
+    .then(data => {
 
-createTreemap(
-    "#treemap1",
-    d3.treemapSquarify
-);
+        console.log("GDP data loaded:", data);
+
+        // Squarify
+        createTreemap(
+            "#treemap1",
+            d3.treemapSquarify,
+            data
+        );
+
+        // Binary
+        createTreemap(
+            "#treemap2",
+            d3.treemapBinary,
+            data
+        );
+
+    })
+    .catch(error => {
+
+        console.error(
+            "Could not load GDP CSV:",
+            error
+        );
+
+    });
 
 
-// ------------------------------------
-// Treemap 2: Binary
-// ------------------------------------
-
-createTreemap(
-    "#treemap2",
-    d3.treemapBinary
-);
-
-
-// ------------------------------------
+// ==============================
 // Legend
-// ------------------------------------
-
+// ==============================
 const statuses = [
     "Increase",
     "Unchanged",
@@ -272,14 +240,15 @@ statuses.forEach(status => {
         .style("display", "inline-block")
         .style("margin-right", "20px");
 
-
     item.append("span")
         .style("display", "inline-block")
         .style("width", "14px")
         .style("height", "14px")
         .style("margin-right", "5px")
-        .style("background", statusColor(status));
-
+        .style(
+            "background",
+            statusColor[status]
+        );
 
     item.append("span")
         .text(status);
