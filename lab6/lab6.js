@@ -1,9 +1,11 @@
-const width = 800;
-const height = 450;
+const width = 650;
+const height = 360;
 
 const tooltip = d3.select("#tooltip");
 
+// ==============================
 // GDP status colors
+// ==============================
 const statusColor = {
     "Increase": "green",
     "Unchanged": "gray",
@@ -12,7 +14,11 @@ const statusColor = {
 
 
 // ==============================
-// Build hierarchy from CSV
+// Build hierarchy
+// World
+// ├── Continent
+// │   ├── Area
+// │   │   └── Country
 // ==============================
 function buildHierarchy(data) {
 
@@ -21,7 +27,10 @@ function buildHierarchy(data) {
         children: []
     };
 
-    const continents = d3.group(data, d => d.continent);
+    const continents = d3.group(
+        data,
+        d => d.continent
+    );
 
     continents.forEach((continentData, continentName) => {
 
@@ -63,19 +72,23 @@ function buildHierarchy(data) {
 
 
 // ==============================
-// Get continent name
+// Get continent
 // ==============================
 function getContinent(d) {
 
-    // country → area → continent
     return d.parent.parent.data.name;
+
 }
 
 
 // ==============================
-// Create treemap
+// Create Treemap
 // ==============================
-function createTreemap(container, tileMethod, data) {
+function createTreemap(
+    container,
+    tileMethod,
+    data
+) {
 
     const hierarchyData = buildHierarchy(data);
 
@@ -98,8 +111,12 @@ function createTreemap(container, tileMethod, data) {
     // ==============================
     const svg = d3.select(container)
         .append("svg")
-        .attr("width", width)
-        .attr("height", height);
+        .attr(
+            "viewBox",
+            `0 0 ${width} ${height}`
+        )
+        .attr("width", "100%")
+        .attr("height", "auto");
 
 
     // ==============================
@@ -130,21 +147,29 @@ function createTreemap(container, tileMethod, data) {
         .attr(
             "fill",
             d => statusColor[d.data.status]
+        )
+        .attr(
+            "stroke",
+            "white"
         );
 
 
     // ==============================
-    // Country label
+    // Country labels
     // ==============================
     cells.append("text")
-        .attr("x", 5)
-        .attr("y", 18)
+        .attr("x", 4)
+        .attr("y", 15)
         .text(d => d.data.name)
+        .style(
+            "font-size",
+            "11px"
+        )
         .style(
             "display",
             d =>
-                d.x1 - d.x0 > 70 &&
-                d.y1 - d.y0 > 25
+                d.x1 - d.x0 > 55 &&
+                d.y1 - d.y0 > 22
                     ? "block"
                     : "none"
         );
@@ -167,6 +192,7 @@ function createTreemap(container, tileMethod, data) {
                 `);
 
         })
+
         .on("mousemove", function(event) {
 
             tooltip
@@ -180,9 +206,13 @@ function createTreemap(container, tileMethod, data) {
                 );
 
         })
+
         .on("mouseout", function() {
 
-            tooltip.style("opacity", 0);
+            tooltip.style(
+                "opacity",
+                0
+            );
 
         });
 
@@ -190,12 +220,16 @@ function createTreemap(container, tileMethod, data) {
 
 
 // ==============================
-// Load CSV ONCE
+// Load GDP CSV
 // ==============================
 d3.csv("../data/lab6_assignment_gdp.csv")
     .then(data => {
 
-        console.log("GDP data loaded:", data);
+        console.log(
+            "GDP data loaded:",
+            data
+        );
+
 
         // Squarify
         createTreemap(
@@ -203,6 +237,7 @@ d3.csv("../data/lab6_assignment_gdp.csv")
             d3.treemapSquarify,
             data
         );
+
 
         // Binary
         createTreemap(
@@ -212,6 +247,7 @@ d3.csv("../data/lab6_assignment_gdp.csv")
         );
 
     })
+
     .catch(error => {
 
         console.error(
@@ -237,18 +273,38 @@ statuses.forEach(status => {
 
     const item = legend
         .append("div")
-        .style("display", "inline-block")
-        .style("margin-right", "20px");
+        .style(
+            "display",
+            "inline-block"
+        )
+        .style(
+            "margin-right",
+            "20px"
+        );
+
 
     item.append("span")
-        .style("display", "inline-block")
-        .style("width", "14px")
-        .style("height", "14px")
-        .style("margin-right", "5px")
+        .style(
+            "display",
+            "inline-block"
+        )
+        .style(
+            "width",
+            "14px"
+        )
+        .style(
+            "height",
+            "14px"
+        )
+        .style(
+            "margin-right",
+            "5px"
+        )
         .style(
             "background",
             statusColor[status]
         );
+
 
     item.append("span")
         .text(status);
