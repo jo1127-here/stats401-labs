@@ -1,5 +1,5 @@
-const width = 800;
-const height = 450;
+const width = 100;
+const height = 550;
 
 const tooltip = d3.select("#tooltip");
 
