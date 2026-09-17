@@ -2,113 +2,200 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <title>Lab 6 - GDP Treemaps</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Lab 6 - Treemap</title>
+
+    <!-- D3 -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
 
     <style>
+
         body {
             font-family: Arial, sans-serif;
-            margin: 30px;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px;
+            line-height: 1.5;
         }
+
 
         h1 {
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
+
 
         h2 {
-            margin-top: 40px;
+            margin-top: 35px;
+            margin-bottom: 10px;
         }
 
-        .treemap {
-            margin-top: 15px;
+
+        .description {
+            margin-bottom: 20px;
         }
 
-        .cell rect {
-            stroke: white;
-            stroke-width: 1px;
+
+        .treemap-container {
+            width: 100%;
+            max-width: 650px;
+            margin-bottom: 25px;
         }
+
+
+        .treemap-container svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
 
         .cell text {
             pointer-events: none;
-            font-size: 11px;
+            fill: black;
         }
 
-        .tooltip {
+
+        #legend {
+            margin-top: 15px;
+            margin-bottom: 30px;
+        }
+
+
+        #tooltip {
             position: absolute;
             opacity: 0;
-            pointer-events: none;
             background: white;
-            border: 1px solid #888;
+            border: 1px solid #999;
             padding: 8px 10px;
             border-radius: 4px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            pointer-events: none;
+            font-size: 13px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         }
 
-        .legend {
-            margin-top: 15px;
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
         }
 
-        .legend-item {
-            display: inline-block;
-            margin-right: 20px;
+
+        .footer a {
+            text-decoration: none;
+            color: #333;
+            font-size: 14px;
         }
 
-        .legend-box {
-            width: 14px;
-            height: 14px;
-            display: inline-block;
-            margin-right: 5px;
-            vertical-align: middle;
+
+        .footer a:hover {
+            text-decoration: underline;
         }
 
-        .description {
-            max-width: 900px;
-            line-height: 1.6;
-        }
     </style>
+
 </head>
+
 
 <body>
 
-    <h1>GDP Hierarchical Treemaps</h1>
+    <h1>Lab 6: Treemap Visualization</h1>
 
-    <p>
-        This visualization shows GDP across continents, areas, and countries.
+
+    <p class="description">
+        This visualization compares two treemap layout methods
+        using country GDP data.
+        Rectangle area represents GDP, while color represents
+        GDP status.
     </p>
 
-    <h2>Treemap 1: Squarify</h2>
-    <div id="treemap1" class="treemap"></div>
 
-    <h2>Treemap 2: Binary</h2>
-    <div id="treemap2" class="treemap"></div>
+    <!-- ============================== -->
+    <!-- Treemap 1 -->
+    <!-- ============================== -->
 
-    <h2>GDP Status Legend</h2>
-    <div id="legend" class="legend"></div>
+    <h2>Squarify Treemap</h2>
 
-    <div id="tooltip" class="tooltip"></div>
+    <div
+        id="treemap1"
+        class="treemap-container"
+    ></div>
+
+
+    <!-- ============================== -->
+    <!-- Treemap 2 -->
+    <!-- ============================== -->
+
+    <h2>Binary Treemap</h2>
+
+    <div
+        id="treemap2"
+        class="treemap-container"
+    ></div>
+
+
+    <!-- ============================== -->
+    <!-- Legend -->
+    <!-- ============================== -->
+
+    <h2>GDP Status</h2>
+
+    <div id="legend"></div>
+
+
+    <!-- ============================== -->
+    <!-- Tooltip -->
+    <!-- ============================== -->
+
+    <div id="tooltip"></div>
+
+
+    <!-- ============================== -->
+    <!-- Description -->
+    <!-- ============================== -->
 
     <h2>Design Description</h2>
 
-    <p class="description">
-        GDP amount is represented by rectangle area because larger areas
-        allow users to compare the relative economic size of countries.
-        GDP status is represented using color, allowing users to quickly
-        distinguish countries whose GDP increased, stayed unchanged, or
-        decreased. The first treemap uses the squarify algorithm, which
-        produces rectangles with relatively balanced aspect ratios and can
-        make individual countries easier to inspect. The second treemap
-        uses the binary tiling strategy, which recursively divides the
-        available space into two groups and therefore creates a different
-        spatial organization. Although the two treemaps contain the same
-        hierarchy and GDP values, their different segmentation strategies
-        change the shape and arrangement of the rectangles. This comparison
-        demonstrates how layout algorithms can affect the readability and
-        spatial perception of hierarchical data.
+    <p>
+        The treemap uses rectangle size to represent GDP.
+        Larger GDP values receive larger areas.
+        Green represents an increase in GDP,
+        gray represents no change,
+        and red represents a decrease.
     </p>
 
+    <p>
+        The Squarify layout produces rectangles with
+        relatively balanced aspect ratios.
+        The Binary layout divides the space recursively
+        into two groups.
+    </p>
+
+
+    <!-- ============================== -->
+    <!-- Back Home -->
+    <!-- ============================== -->
+
+    <div class="footer">
+
+        <a href="../index.html">
+            Back Home
+        </a>
+
+    </div>
+
+
+    <!-- JavaScript -->
     <script src="lab6.js"></script>
 
 </body>
+
 </html>
