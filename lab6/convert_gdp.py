@@ -46,7 +46,7 @@ hierarchy = {
 
 # Save JSON
 with open(
-    "../data/lab6_assignment_gdp.json",
+    "../data/lab6_assignment_gdp.csv",
     "w",
     encoding="utf-8"
 ) as f:
