@@ -3,57 +3,67 @@ const height = 550;
 
 const tooltip = d3.select("#tooltip");
 
-const statusColors = d3.scaleOrdinal()
+
+// GDP status colors
+const statusColor = d3.scaleOrdinal()
     .domain(["Increase", "Unchanged", "Decrease"])
-    .range([
-        "#2ca02c",
-        "#7f7f7f",
-        "#d62728"
-    ]);
+    .range(["green", "gray", "red"]);
 
 
+// Get continent name
 function getContinent(d) {
-    let current = d;
+    let node = d;
 
-    while (current.depth > 1) {
-        current = current.parent;
+    while (node.depth > 1) {
+        node = node.parent;
     }
 
-    return current.data.name;
+    return node.data.name;
 }
 
 
+// Create one treemap
 function createTreemap(container, tileMethod) {
 
     d3.json("../data/lab6_assignment_gdp.json")
         .then(data => {
 
+            // Convert JSON to D3 hierarchy
             const root = d3.hierarchy(data)
                 .sum(d => d.gdp || 0)
                 .sort((a, b) => b.value - a.value);
 
-            const layout = d3.treemap()
+
+            // Treemap layout
+            const treemap = d3.treemap()
                 .size([width, height])
                 .paddingInner(3)
                 .paddingOuter(5)
                 .tile(tileMethod);
 
-            layout(root);
 
+            treemap(root);
+
+
+            // SVG
             const svg = d3.select(container)
                 .append("svg")
                 .attr("width", width)
                 .attr("height", height);
 
+
+            // Only country nodes
             const cells = svg.selectAll(".cell")
                 .data(root.leaves())
                 .join("g")
                 .attr("class", "cell")
                 .attr(
                     "transform",
-                    d => `translate(${d.x0},${d.y0})`
+                    d => `translate(${d.x0}, ${d.y0})`
                 );
 
+
+            // Rectangle
             cells.append("rect")
                 .attr(
                     "width",
@@ -65,22 +75,26 @@ function createTreemap(container, tileMethod) {
                 )
                 .attr(
                     "fill",
-                    d => statusColors(d.data.status)
+                    d => statusColor(d.data.status)
                 );
 
+
+            // Country label
             cells.append("text")
                 .attr("x", 5)
-                .attr("y", 16)
+                .attr("y", 18)
                 .text(d => d.data.name)
                 .style(
                     "display",
                     d =>
-                        (d.x1 - d.x0 > 70 &&
-                         d.y1 - d.y0 > 25)
+                        d.x1 - d.x0 > 70 &&
+                        d.y1 - d.y0 > 25
                             ? "block"
                             : "none"
                 );
 
+
+            // Tooltip
             cells
                 .on("mouseover", function(event, d) {
 
@@ -100,11 +114,11 @@ function createTreemap(container, tileMethod) {
                     tooltip
                         .style(
                             "left",
-                            `${event.pageX + 12}px`
+                            `${event.pageX + 10}px`
                         )
                         .style(
                             "top",
-                            `${event.pageY + 12}px`
+                            `${event.pageY + 10}px`
                         );
 
                 })
@@ -113,26 +127,43 @@ function createTreemap(container, tileMethod) {
                     tooltip.style("opacity", 0);
 
                 });
+
+        })
+
+        .catch(error => {
+            console.error(
+                "Could not load JSON:",
+                error
+            );
         });
 }
 
 
+// ------------------------------------
 // Treemap 1: Squarify
+// ------------------------------------
+
 createTreemap(
     "#treemap1",
     d3.treemapSquarify
 );
 
 
+// ------------------------------------
 // Treemap 2: Binary
+// ------------------------------------
+
 createTreemap(
     "#treemap2",
     d3.treemapBinary
 );
 
 
+// ------------------------------------
 // Legend
-const legendData = [
+// ------------------------------------
+
+const statuses = [
     "Increase",
     "Unchanged",
     "Decrease"
@@ -140,18 +171,21 @@ const legendData = [
 
 const legend = d3.select("#legend");
 
-legendData.forEach(status => {
+statuses.forEach(status => {
 
     const item = legend
-        .append("span")
-        .attr("class", "legend-item");
+        .append("div")
+        .style("display", "inline-block")
+        .style("margin-right", "20px");
+
 
     item.append("span")
-        .attr("class", "legend-box")
-        .style(
-            "background",
-            statusColors(status)
-        );
+        .style("display", "inline-block")
+        .style("width", "14px")
+        .style("height", "14px")
+        .style("margin-right", "5px")
+        .style("background", statusColor(status));
+
 
     item.append("span")
         .text(status);
