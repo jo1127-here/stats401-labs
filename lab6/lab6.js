@@ -25,7 +25,7 @@ function getContinent(d) {
 // Create one treemap
 function createTreemap(container, tileMethod) {
 
-    d3.json("../data/lab6_assignment_gdp.json")
+    d3.json("d3.csv("../data/lab6_assignment_gdp.csv")")
         .then(data => {
 
             // Convert JSON to D3 hierarchy
