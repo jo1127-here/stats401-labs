@@ -166,21 +166,19 @@
     <h2>Design Description</h2>
 
     <p>
-        The treemap uses GDP to determine the size of each
-        country rectangle. A square-root transformation is
-        applied to reduce the visual dominance of countries
-        with extremely large GDP values.
-    </p>
+        This visualization uses hierarchical treemaps to compare the GDP of countries across different continents and areas. 
+        The data is organized as World → Continent → Area → Country, allowing users to explore GDP at multiple levels of the hierarchy. 
+        Rectangle size represents GDP, while color represents GDP status. A square-root transformation is applied to GDP values to reduce the visual 
+        dominance of countries with extremely large economies and make smaller countries easier to compare.
 
-    <p>
-        Green represents an increase in GDP, gray represents
-        no change, and red represents a decrease.
-    </p>
+        Two treemaps are provided using different segmentation methods. 
+        The Squarify layout creates rectangles with more balanced aspect ratios, 
+        making individual countries easier to identify and compare. 
+        The Binary layout recursively divides the available space into two groups, 
+        creating a different spatial arrangement of the same data. Country names are displayed 
+        when there is sufficient space, and tooltips provide additional information including country, 
+        continent, area, GDP, and GDP status. A legend explains the three GDP status categories: Increase, Unchanged, and Decrease.
 
-    <p>
-        The Squarify layout creates rectangles with more
-        balanced aspect ratios, while the Binary layout
-        recursively divides the available space into two groups.
     </p>
 
 
