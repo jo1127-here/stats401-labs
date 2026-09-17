@@ -12,8 +12,10 @@
 
     <title>Lab 6 - Treemap</title>
 
-    <!-- D3 -->
-    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script
+        src="https://d3js.org/d3.v7.min.js">
+    </script>
+
 
     <style>
 
@@ -32,7 +34,7 @@
 
 
         h2 {
-            margin-top: 35px;
+            margin-top: 30px;
             margin-bottom: 10px;
         }
 
@@ -44,7 +46,7 @@
 
         .treemap-container {
             width: 100%;
-            max-width: 650px;
+            max-width: 800px;
             margin-bottom: 25px;
         }
 
@@ -57,13 +59,12 @@
 
 
         .cell text {
-            pointer-events: none;
             fill: black;
         }
 
 
         #legend {
-            margin-top: 15px;
+            margin-top: 10px;
             margin-bottom: 30px;
         }
 
@@ -107,39 +108,39 @@
 
 <body>
 
+
     <h1>Lab 6: Treemap Visualization</h1>
 
 
     <p class="description">
         This visualization compares two treemap layout methods
-        using country GDP data.
-        Rectangle area represents GDP, while color represents
-        GDP status.
+        using country GDP data. Rectangle size represents GDP,
+        while color represents GDP status.
     </p>
 
 
     <!-- ============================== -->
-    <!-- Treemap 1 -->
+    <!-- Squarify -->
     <!-- ============================== -->
 
     <h2>Squarify Treemap</h2>
 
     <div
         id="treemap1"
-        class="treemap-container"
-    ></div>
+        class="treemap-container">
+    </div>
 
 
     <!-- ============================== -->
-    <!-- Treemap 2 -->
+    <!-- Binary -->
     <!-- ============================== -->
 
     <h2>Binary Treemap</h2>
 
     <div
         id="treemap2"
-        class="treemap-container"
-    ></div>
+        class="treemap-container">
+    </div>
 
 
     <!-- ============================== -->
@@ -159,24 +160,27 @@
 
 
     <!-- ============================== -->
-    <!-- Description -->
+    <!-- Design Description -->
     <!-- ============================== -->
 
     <h2>Design Description</h2>
 
     <p>
-        The treemap uses rectangle size to represent GDP.
-        Larger GDP values receive larger areas.
-        Green represents an increase in GDP,
-        gray represents no change,
-        and red represents a decrease.
+        The treemap uses GDP to determine the size of each
+        country rectangle. A square-root transformation is
+        applied to reduce the visual dominance of countries
+        with extremely large GDP values.
     </p>
 
     <p>
-        The Squarify layout produces rectangles with
-        relatively balanced aspect ratios.
-        The Binary layout divides the space recursively
-        into two groups.
+        Green represents an increase in GDP, gray represents
+        no change, and red represents a decrease.
+    </p>
+
+    <p>
+        The Squarify layout creates rectangles with more
+        balanced aspect ratios, while the Binary layout
+        recursively divides the available space into two groups.
     </p>
 
 
@@ -193,7 +197,6 @@
     </div>
 
 
-    <!-- JavaScript -->
     <script src="lab6.js"></script>
 
 </body>
