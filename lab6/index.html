@@ -3,17 +3,112 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Lab 6</title>
+    <title>Lab 6 - GDP Treemaps</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            margin-top: 40px;
+        }
+
+        .treemap {
+            margin-top: 15px;
+        }
+
+        .cell rect {
+            stroke: white;
+            stroke-width: 1px;
+        }
+
+        .cell text {
+            pointer-events: none;
+            font-size: 11px;
+        }
+
+        .tooltip {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            background: white;
+            border: 1px solid #888;
+            padding: 8px 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        .legend {
+            margin-top: 15px;
+        }
+
+        .legend-item {
+            display: inline-block;
+            margin-right: 20px;
+        }
+
+        .legend-box {
+            width: 14px;
+            height: 14px;
+            display: inline-block;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+
+        .description {
+            max-width: 900px;
+            line-height: 1.6;
+        }
+    </style>
 </head>
 
 <body>
 
-    <h1>Lab 6</h1>
+    <h1>GDP Hierarchical Treemaps</h1>
 
-    <p>Lab 6 will be added here.</p>
+    <p>
+        This visualization shows GDP across continents, areas, and countries.
+    </p>
 
-    <a href="../index.html">Back to Home</a>
+    <h2>Treemap 1: Squarify</h2>
+    <div id="treemap1" class="treemap"></div>
+
+    <h2>Treemap 2: Binary</h2>
+    <div id="treemap2" class="treemap"></div>
+
+    <h2>GDP Status Legend</h2>
+    <div id="legend" class="legend"></div>
+
+    <div id="tooltip" class="tooltip"></div>
+
+    <h2>Design Description</h2>
+
+    <p class="description">
+        GDP amount is represented by rectangle area because larger areas
+        allow users to compare the relative economic size of countries.
+        GDP status is represented using color, allowing users to quickly
+        distinguish countries whose GDP increased, stayed unchanged, or
+        decreased. The first treemap uses the squarify algorithm, which
+        produces rectangles with relatively balanced aspect ratios and can
+        make individual countries easier to inspect. The second treemap
+        uses the binary tiling strategy, which recursively divides the
+        available space into two groups and therefore creates a different
+        spatial organization. Although the two treemaps contain the same
+        hierarchy and GDP values, their different segmentation strategies
+        change the shape and arrangement of the rectangles. This comparison
+        demonstrates how layout algorithms can affect the readability and
+        spatial perception of hierarchical data.
+    </p>
+
+    <script src="lab6.js"></script>
 
 </body>
-
 </html>
