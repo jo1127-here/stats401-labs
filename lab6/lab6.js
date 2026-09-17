@@ -1,58 +1,141 @@
+
 const width = 1000;
 const height = 550;
 
 const tooltip = d3.select("#tooltip");
 
-
+// ------------------------------------
 // GDP status colors
+// ------------------------------------
+
 const statusColor = d3.scaleOrdinal()
     .domain(["Increase", "Unchanged", "Decrease"])
     .range(["green", "gray", "red"]);
 
 
-// Get continent name
-function getContinent(d) {
-    let node = d;
+// ------------------------------------
+// Convert GDP CSV into hierarchy
+// ------------------------------------
 
-    while (node.depth > 1) {
-        node = node.parent;
-    }
+function buildHierarchy(data) {
 
-    return node.data.name;
+    const root = {
+        name: "World",
+        children: []
+    };
+
+    // Group by continent
+    const continentGroups = d3.group(
+        data,
+        d => d.continent
+    );
+
+    continentGroups.forEach((continentData, continentName) => {
+
+        const continent = {
+            name: continentName,
+            children: []
+        };
+
+        // Group by area
+        const areaGroups = d3.group(
+            continentData,
+            d => d.area
+        );
+
+        areaGroups.forEach((areaData, areaName) => {
+
+            const area = {
+                name: areaName,
+                children: []
+            };
+
+            // Each country becomes a leaf node
+            areaData.forEach(d => {
+
+                area.children.push({
+                    name: d.country,
+                    gdp: +d.gdp_billion_usd,
+                    status: d.gdp_status
+                });
+
+            });
+
+            continent.children.push(area);
+        });
+
+        root.children.push(continent);
+    });
+
+    return root;
 }
 
 
+// ------------------------------------
+// Get continent name
+// ------------------------------------
+
+function getContinent(d) {
+
+    let node = d;
+
+    while (node.parent && node.parent.depth > 0) {
+        node = node.parent;
+    }
+
+    return node.parent
+        ? node.parent.data.name
+        : node.data.name;
+}
+
+
+// ------------------------------------
 // Create one treemap
+// ------------------------------------
+
 function createTreemap(container, tileMethod) {
 
+    // IMPORTANT:
+    // Use your GDP CSV
     d3.csv("../data/lab6_assignment_gdp.csv")
         .then(data => {
 
-            // Convert JSON to D3 hierarchy
-            const root = d3.hierarchy(data)
+            // Convert flat CSV → hierarchy
+            const hierarchyData = buildHierarchy(data);
+
+            // Create D3 hierarchy
+            const root = d3.hierarchy(hierarchyData)
                 .sum(d => d.gdp || 0)
                 .sort((a, b) => b.value - a.value);
 
 
+            // ------------------------------------
             // Treemap layout
+            // ------------------------------------
+
             const treemap = d3.treemap()
                 .size([width, height])
                 .paddingInner(3)
                 .paddingOuter(5)
                 .tile(tileMethod);
 
-
             treemap(root);
 
 
+            // ------------------------------------
             // SVG
+            // ------------------------------------
+
             const svg = d3.select(container)
                 .append("svg")
                 .attr("width", width)
                 .attr("height", height);
 
 
-            // Only country nodes
+            // ------------------------------------
+            // Country cells
+            // ------------------------------------
+
             const cells = svg.selectAll(".cell")
                 .data(root.leaves())
                 .join("g")
@@ -63,7 +146,10 @@ function createTreemap(container, tileMethod) {
                 );
 
 
+            // ------------------------------------
             // Rectangle
+            // ------------------------------------
+
             cells.append("rect")
                 .attr(
                     "width",
@@ -79,7 +165,10 @@ function createTreemap(container, tileMethod) {
                 );
 
 
-            // Country label
+            // ------------------------------------
+            // Country labels
+            // ------------------------------------
+
             cells.append("text")
                 .attr("x", 5)
                 .attr("y", 18)
@@ -94,7 +183,10 @@ function createTreemap(container, tileMethod) {
                 );
 
 
+            // ------------------------------------
             // Tooltip
+            // ------------------------------------
+
             cells
                 .on("mouseover", function(event, d) {
 
@@ -131,10 +223,12 @@ function createTreemap(container, tileMethod) {
         })
 
         .catch(error => {
+
             console.error(
-                "Could not load JSON:",
+                "Could not load GDP CSV:",
                 error
             );
+
         });
 }
 
@@ -189,4 +283,5 @@ statuses.forEach(status => {
 
     item.append("span")
         .text(status);
+
 });
