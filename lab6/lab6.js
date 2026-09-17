@@ -1,5 +1,5 @@
-const width = 650;
-const height = 360;
+const width = 800;
+const height = 450;
 
 const tooltip = d3.select("#tooltip");
 
@@ -16,9 +16,9 @@ const statusColor = {
 // ==============================
 // Build hierarchy
 // World
-// ├── Continent
-// │   ├── Area
-// │   │   └── Country
+//   Continent
+//     Area
+//       Country
 // ==============================
 function buildHierarchy(data) {
 
@@ -93,14 +93,21 @@ function createTreemap(
     const hierarchyData = buildHierarchy(data);
 
     const root = d3.hierarchy(hierarchyData)
-        .sum(d => d.gdp || 0)
+
+        // Compress GDP differences
+        // so smaller countries remain visible
+        .sum(d => Math.sqrt(d.gdp || 0))
+
         .sort((a, b) => b.value - a.value);
 
 
+    // ==============================
+    // Treemap layout
+    // ==============================
     const treemap = d3.treemap()
         .size([width, height])
-        .paddingInner(3)
-        .paddingOuter(5)
+        .paddingInner(2)
+        .paddingOuter(4)
         .tile(tileMethod);
 
     treemap(root);
@@ -115,8 +122,14 @@ function createTreemap(
             "viewBox",
             `0 0 ${width} ${height}`
         )
-        .attr("width", "100%")
-        .attr("height", "auto");
+        .attr(
+            "width",
+            "100%"
+        )
+        .attr(
+            "height",
+            "auto"
+        );
 
 
     // ==============================
@@ -138,11 +151,11 @@ function createTreemap(
     cells.append("rect")
         .attr(
             "width",
-            d => d.x1 - d.x0
+            d => Math.max(0, d.x1 - d.x0)
         )
         .attr(
             "height",
-            d => d.y1 - d.y0
+            d => Math.max(0, d.y1 - d.y0)
         )
         .attr(
             "fill",
@@ -151,6 +164,10 @@ function createTreemap(
         .attr(
             "stroke",
             "white"
+        )
+        .attr(
+            "stroke-width",
+            1
         );
 
 
@@ -166,10 +183,14 @@ function createTreemap(
             "11px"
         )
         .style(
+            "pointer-events",
+            "none"
+        )
+        .style(
             "display",
             d =>
-                d.x1 - d.x0 > 55 &&
-                d.y1 - d.y0 > 22
+                d.x1 - d.x0 > 45 &&
+                d.y1 - d.y0 > 20
                     ? "block"
                     : "none"
         );
@@ -182,7 +203,10 @@ function createTreemap(
         .on("mouseover", function(event, d) {
 
             tooltip
-                .style("opacity", 1)
+                .style(
+                    "opacity",
+                    1
+                )
                 .html(`
                     <strong>${d.data.name}</strong><br>
                     Continent: ${getContinent(d)}<br>
@@ -231,7 +255,9 @@ d3.csv("../data/lab6_assignment_gdp.csv")
         );
 
 
-        // Squarify
+        // ==========================
+        // Treemap 1: Squarify
+        // ==========================
         createTreemap(
             "#treemap1",
             d3.treemapSquarify,
@@ -239,7 +265,9 @@ d3.csv("../data/lab6_assignment_gdp.csv")
         );
 
 
-        // Binary
+        // ==========================
+        // Treemap 2: Binary
+        // ==========================
         createTreemap(
             "#treemap2",
             d3.treemapBinary,
