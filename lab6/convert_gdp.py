@@ -2,7 +2,7 @@ import pandas as pd
 import json
 
 # Load GDP dataset
-df = pd.read_csv("../data/lab6_assignment_gdp.csv")
+df = pd.read_csv("data/lab6_assignment_gdp.csv")
 
 
 def build_hierarchy(dataframe, levels):
@@ -46,7 +46,7 @@ hierarchy = {
 
 # Save hierarchical JSON
 with open(
-    "../data/lab6_assignment_gdp.json",
+    "data/lab6_assignment_gdp.json",
     "w",
     encoding="utf-8"
 ) as f:
