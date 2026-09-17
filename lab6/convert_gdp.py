@@ -1,21 +1,24 @@
 import pandas as pd
 import json
 
+# Load GDP dataset
 df = pd.read_csv("../data/lab6_assignment_gdp.csv")
 
 
 def build_hierarchy(dataframe, levels):
+    current_level = levels[0]
+
+    # Last level = country
     if len(levels) == 1:
         return [
             {
-                "name": row[levels[0]],
+                "name": row["country"],
                 "gdp": row["gdp_billion_usd"],
                 "status": row["gdp_status"]
             }
             for _, row in dataframe.iterrows()
         ]
 
-    current_level = levels[0]
     children = []
 
     for value, group in dataframe.groupby(current_level):
@@ -30,6 +33,8 @@ def build_hierarchy(dataframe, levels):
     return children
 
 
+# Build hierarchy:
+# World → Continent → Area → Country
 hierarchy = {
     "name": "World",
     "children": build_hierarchy(
@@ -38,6 +43,8 @@ hierarchy = {
     )
 }
 
+
+# Save JSON
 with open(
     "../data/lab6_assignment_gdp.json",
     "w",
@@ -50,4 +57,4 @@ with open(
         ensure_ascii=False
     )
 
-print("Hierarchical JSON created successfully.")
+print("JSON created successfully!")
