@@ -14,70 +14,12 @@ const statusColor = {
 
 
 // ==============================
-// Build hierarchy
-// World
-//   Continent
-//     Area
-//       Country
-// ==============================
-function buildHierarchy(data) {
-
-    const root = {
-        name: "World",
-        children: []
-    };
-
-    const continents = d3.group(
-        data,
-        d => d.continent
-    );
-
-    continents.forEach((continentData, continentName) => {
-
-        const continent = {
-            name: continentName,
-            children: []
-        };
-
-        const areas = d3.group(
-            continentData,
-            d => d.area
-        );
-
-        areas.forEach((areaData, areaName) => {
-
-            const area = {
-                name: areaName,
-                children: []
-            };
-
-            areaData.forEach(d => {
-
-                area.children.push({
-                    name: d.country,
-                    gdp: +d.gdp_billion_usd,
-                    status: d.gdp_status.trim()
-                });
-
-            });
-
-            continent.children.push(area);
-        });
-
-        root.children.push(continent);
-    });
-
-    return root;
-}
-
-
-// ==============================
 // Get continent
+// Hierarchy:
+// World → Continent → Area → Country
 // ==============================
 function getContinent(d) {
-
     return d.parent.parent.data.name;
-
 }
 
 
@@ -90,12 +32,11 @@ function createTreemap(
     data
 ) {
 
-    const hierarchyData = buildHierarchy(data);
+    // Create D3 hierarchy from JSON
+    const root = d3.hierarchy(data)
 
-    const root = d3.hierarchy(hierarchyData)
-
-        // Compress GDP differences
-        // so smaller countries remain visible
+        // Use square-root transformation
+        // to make smaller countries more visible
         .sum(d => Math.sqrt(d.gdp || 0))
 
         .sort((a, b) => b.value - a.value);
@@ -128,7 +69,7 @@ function createTreemap(
         )
         .attr(
             "height",
-            "auto"
+            height
         );
 
 
@@ -138,7 +79,10 @@ function createTreemap(
     const cells = svg.selectAll(".cell")
         .data(root.leaves())
         .join("g")
-        .attr("class", "cell")
+        .attr(
+            "class",
+            "cell"
+        )
         .attr(
             "transform",
             d => `translate(${d.x0}, ${d.y0})`
@@ -151,11 +95,17 @@ function createTreemap(
     cells.append("rect")
         .attr(
             "width",
-            d => Math.max(0, d.x1 - d.x0)
+            d => Math.max(
+                0,
+                d.x1 - d.x0
+            )
         )
         .attr(
             "height",
-            d => Math.max(0, d.y1 - d.y0)
+            d => Math.max(
+                0,
+                d.y1 - d.y0
+            )
         )
         .attr(
             "fill",
@@ -175,9 +125,17 @@ function createTreemap(
     // Country labels
     // ==============================
     cells.append("text")
-        .attr("x", 4)
-        .attr("y", 15)
-        .text(d => d.data.name)
+        .attr(
+            "x",
+            4
+        )
+        .attr(
+            "y",
+            15
+        )
+        .text(
+            d => d.data.name
+        )
         .style(
             "font-size",
             "11px"
@@ -200,57 +158,67 @@ function createTreemap(
     // Tooltip
     // ==============================
     cells
-        .on("mouseover", function(event, d) {
+        .on(
+            "mouseover",
+            function(event, d) {
 
-            tooltip
-                .style(
+                tooltip
+                    .style(
+                        "opacity",
+                        1
+                    )
+                    .html(`
+                        <strong>${d.data.name}</strong><br>
+                        Continent: ${getContinent(d)}<br>
+                        Area: ${d.parent.data.name}<br>
+                        GDP: $${d.data.gdp} billion<br>
+                        Status: ${d.data.status}
+                    `);
+
+            }
+        )
+
+        .on(
+            "mousemove",
+            function(event) {
+
+                tooltip
+                    .style(
+                        "left",
+                        `${event.pageX + 10}px`
+                    )
+                    .style(
+                        "top",
+                        `${event.pageY + 10}px`
+                    );
+
+            }
+        )
+
+        .on(
+            "mouseout",
+            function() {
+
+                tooltip.style(
                     "opacity",
-                    1
-                )
-                .html(`
-                    <strong>${d.data.name}</strong><br>
-                    Continent: ${getContinent(d)}<br>
-                    Area: ${d.parent.data.name}<br>
-                    GDP: $${d.data.gdp} billion<br>
-                    Status: ${d.data.status}
-                `);
-
-        })
-
-        .on("mousemove", function(event) {
-
-            tooltip
-                .style(
-                    "left",
-                    `${event.pageX + 10}px`
-                )
-                .style(
-                    "top",
-                    `${event.pageY + 10}px`
+                    0
                 );
 
-        })
-
-        .on("mouseout", function() {
-
-            tooltip.style(
-                "opacity",
-                0
-            );
-
-        });
+            }
+        );
 
 }
 
 
 // ==============================
-// Load GDP CSV
+// Load hierarchical JSON
+// created by Python
 // ==============================
-d3.csv("../data/lab6_assignment_gdp.csv")
+d3.json("../data/lab6_assignment_gdp.json")
     .then(data => {
 
         console.log(
-            "GDP data loaded:",
+            "Hierarchical GDP JSON loaded:",
             data
         );
 
@@ -279,7 +247,7 @@ d3.csv("../data/lab6_assignment_gdp.csv")
     .catch(error => {
 
         console.error(
-            "Could not load GDP CSV:",
+            "Could not load hierarchical GDP JSON:",
             error
         );
 
