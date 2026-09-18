@@ -3,16 +3,415 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Lab 7</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Lab 7 - Temporal Commercial Network</title>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f6f8;
+            color: #222;
+        }
+
+        .container {
+            width: 1200px;
+            max-width: 95%;
+            margin: 30px auto;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        /* =========================
+           Controls
+        ========================= */
+
+        .controls {
+            background: white;
+            padding: 18px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .buttons {
+            margin-bottom: 15px;
+        }
+
+        button {
+            padding: 8px 18px;
+            margin-right: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #eeeeee;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #time-slider {
+            flex: 1;
+        }
+
+        #day-label {
+            font-weight: bold;
+            min-width: 160px;
+        }
+
+        /* =========================
+           Summary
+        ========================= */
+
+        .summary {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .summary-box {
+            flex: 1;
+            background: #f8f8f8;
+            padding: 12px;
+            border-radius: 7px;
+            text-align: center;
+        }
+
+        .summary-number {
+            display: block;
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+
+        /* =========================
+           Visualization
+        ========================= */
+
+        .visualization {
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+        }
+
+        .link {
+            stroke: #888;
+            stroke-opacity: 0.65;
+        }
+
+        .node {
+            stroke: white;
+            stroke-width: 2px;
+            cursor: pointer;
+        }
+
+        .node:hover {
+            stroke: #222;
+            stroke-width: 3px;
+        }
+
+        /* =========================
+           Tooltip
+        ========================= */
+
+        .tooltip {
+            position: absolute;
+            background: white;
+            border: 1px solid #bbb;
+            border-radius: 7px;
+            padding: 10px 12px;
+            pointer-events: none;
+            opacity: 0;
+            font-size: 13px;
+            line-height: 1.5;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+        }
+
+        /* =========================
+           Legend
+        ========================= */
+
+        .legend {
+            background: white;
+            margin-top: 15px;
+            padding: 18px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 25px;
+            margin-bottom: 8px;
+        }
+
+        .legend-circle {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .legend-description {
+            margin-top: 10px;
+            color: #555;
+            font-size: 14px;
+        }
+
+    </style>
+
 </head>
+
 
 <body>
 
-    <h1>Lab 7</h1>
+<div class="container">
 
-    <p>Lab 7 will be added here.</p>
+    <h1>Temporal Commercial Network</h1>
 
-    <a href="../index.html">Back to Home</a>
+    <div class="subtitle">
+        STATS 401 — Lab 7
+    </div>
+
+
+    <!-- =========================
+         Controls
+    ========================= -->
+
+    <div class="controls">
+
+        <div class="buttons">
+
+            <button id="play">
+                ▶ Play
+            </button>
+
+            <button id="pause">
+                ⏸ Pause
+            </button>
+
+            <button id="reset">
+                ↺ Reset
+            </button>
+
+        </div>
+
+
+        <div class="slider-row">
+
+            <span>Time:</span>
+
+            <input
+                type="range"
+                id="time-slider"
+                min="1"
+                max="60"
+                value="1"
+                step="1"
+            >
+
+            <span id="day-label">
+                Day 1
+            </span>
+
+        </div>
+
+
+        <!-- Summary -->
+
+        <div class="summary">
+
+            <div class="summary-box">
+
+                Active Companies
+
+                <span
+                    class="summary-number"
+                    id="active-companies">
+                    0
+                </span>
+
+            </div>
+
+
+            <div class="summary-box">
+
+                Active Links
+
+                <span
+                    class="summary-number"
+                    id="active-links">
+                    0
+                </span>
+
+            </div>
+
+
+            <div class="summary-box">
+
+                Total Transaction Value
+
+                <span
+                    class="summary-number"
+                    id="total-value">
+                    $0
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         Network
+    ========================= -->
+
+    <div class="visualization">
+
+        <svg
+            id="network"
+            viewBox="0 0 1100 650"
+            preserveAspectRatio="xMidYMid meet">
+        </svg>
+
+    </div>
+
+
+    <!-- =========================
+         Legend
+    ========================= -->
+
+    <div class="legend">
+
+        <div class="legend-title">
+            Encoding
+        </div>
+
+
+        <div class="legend-item">
+
+            <span
+                class="legend-circle"
+                style="background:#4e79a7;">
+            </span>
+
+            Manufacturing
+
+        </div>
+
+
+        <div class="legend-item">
+
+            <span
+                class="legend-circle"
+                style="background:#f28e2c;">
+            </span>
+
+            Logistics
+
+        </div>
+
+
+        <div class="legend-item">
+
+            <span
+                class="legend-circle"
+                style="background:#e15759;">
+            </span>
+
+            Retail
+
+        </div>
+
+
+        <div class="legend-item">
+
+            <span
+                class="legend-circle"
+                style="background:#76b7b2;">
+            </span>
+
+            Technology
+
+        </div>
+
+
+        <div class="legend-item">
+
+            <span
+                class="legend-circle"
+                style="background:#59a14f;">
+            </span>
+
+            Services
+
+        </div>
+
+
+        <div class="legend-description">
+
+            <strong>Node color:</strong>
+            company sector
+            &nbsp;&nbsp;&nbsp;
+
+            <strong>Node size:</strong>
+            current transaction volume
+            &nbsp;&nbsp;&nbsp;
+
+            <strong>Link width:</strong>
+            transaction amount
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div
+    id="tooltip"
+    class="tooltip">
+</div>
+
+
+<script src="script.js"></script>
 
 </body>
 
