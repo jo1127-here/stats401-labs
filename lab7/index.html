@@ -79,7 +79,7 @@
 
         #day-label {
             font-weight: bold;
-            min-width: 160px;
+            min-width: 170px;
         }
 
         /* =========================
@@ -116,9 +116,14 @@
             border-radius: 10px;
             padding: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+
+            /* Important */
+            width: 100%;
+            overflow: hidden;
         }
 
-        svg {
+        #network {
+            display: block;
             width: 100%;
             height: auto;
         }
@@ -144,7 +149,7 @@
         ========================= */
 
         .tooltip {
-            position: absolute;
+            position: fixed;
             background: white;
             border: 1px solid #bbb;
             border-radius: 7px;
@@ -154,6 +159,7 @@
             font-size: 13px;
             line-height: 1.5;
             box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
         }
 
         /* =========================
@@ -252,12 +258,9 @@
         </div>
 
 
-        <!-- Summary -->
-
         <div class="summary">
 
             <div class="summary-box">
-
                 Active Companies
 
                 <span
@@ -265,12 +268,10 @@
                     id="active-companies">
                     0
                 </span>
-
             </div>
 
 
             <div class="summary-box">
-
                 Active Links
 
                 <span
@@ -278,12 +279,10 @@
                     id="active-links">
                     0
                 </span>
-
             </div>
 
 
             <div class="summary-box">
-
                 Total Transaction Value
 
                 <span
@@ -291,7 +290,6 @@
                     id="total-value">
                     $0
                 </span>
-
             </div>
 
         </div>
@@ -308,6 +306,8 @@
         <svg
             id="network"
             viewBox="0 0 1100 650"
+            width="1100"
+            height="650"
             preserveAspectRatio="xMidYMid meet">
         </svg>
 
@@ -397,6 +397,10 @@
 
             <strong>Link width:</strong>
             transaction amount
+            &nbsp;&nbsp;&nbsp;
+
+            <strong>Link presence:</strong>
+            active relationship
 
         </div>
 
