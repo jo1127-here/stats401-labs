@@ -6,7 +6,6 @@ const width = 1100;
 const height = 650;
 
 const svg = d3.select("#network");
-
 const tooltip = d3.select("#tooltip");
 
 
@@ -47,21 +46,15 @@ const color = d3.scaleOrdinal()
 // =====================================================
 
 Promise.all([
-
     d3.csv("../data/lab7_assignment_companies.csv"),
-
     d3.csv("../data/lab7_assignment_transactions_60days.csv")
-
 ])
 .then(([companies, transactions]) => {
 
     console.log("Companies:", companies);
     console.log("Transactions:", transactions);
 
-    initialize(
-        companies,
-        transactions
-    );
+    initialize(companies, transactions);
 
 })
 .catch(error => {
@@ -77,7 +70,6 @@ Promise.all([
 
 function initialize(companies, transactions) {
 
-
     // =================================================
     // Convert transaction data
     // =================================================
@@ -88,8 +80,7 @@ function initialize(companies, transactions) {
 
         d.amount_usd = +d.amount_usd;
 
-        d.transaction_count =
-            +d.transaction_count;
+        d.transaction_count = +d.transaction_count;
 
     });
 
@@ -108,7 +99,7 @@ function initialize(companies, transactions) {
 
 
     // =================================================
-    // Scales
+    // Link width scale
     // =================================================
 
     const maxAmount = d3.max(
@@ -116,23 +107,10 @@ function initialize(companies, transactions) {
         d => d.amount_usd
     );
 
-
-    const maxDailyVolume = d3.max(
-        transactions,
-        d => d.amount_usd
-    );
-
-
-    // Node size
-    const nodeSize = d3.scaleSqrt()
-        .domain([0, maxDailyVolume])
-        .range([7, 26]);
-
-
-    // Link width
     const linkSize = d3.scaleLinear()
         .domain([0, maxAmount])
-        .range([1.5, 7]);
+        .range([1.5, 7])
+        .clamp(true);
 
 
     // =================================================
@@ -183,7 +161,7 @@ function initialize(companies, transactions) {
 
 
     // =================================================
-    // Create nodes ONCE
+    // Create nodes once
     // =================================================
 
     const node = nodeGroup
@@ -194,20 +172,14 @@ function initialize(companies, transactions) {
         )
         .join("circle")
 
-        .attr(
-            "class",
-            "node"
-        )
+        .attr("class", "node")
 
         .attr(
             "fill",
             d => sectorColors[d.sector] || "#999"
         )
 
-        .attr(
-            "r",
-            7
-        )
+        .attr("r", 7)
 
         .on(
             "mouseover",
@@ -233,6 +205,14 @@ function initialize(companies, transactions) {
 
 
     // =================================================
+    // Current day
+    // =================================================
+
+    let currentDay = 1;
+    let timer = null;
+
+
+    // =================================================
     // Simulation tick
     // =================================================
 
@@ -242,30 +222,24 @@ function initialize(companies, transactions) {
 
             const radius =
                 d.currentVolume > 0
-                    ? nodeSize(d.currentVolume)
+                    ? Math.min(
+                        26,
+                        Math.max(
+                            7,
+                            Math.sqrt(d.currentVolume) / 500
+                        )
+                    )
                     : 7;
 
-
-            // Safe boundaries
-
-            const left =
-                radius + 20;
-
-            const right =
-                width - radius - 20;
-
-            const top =
-                radius + 20;
-
-            const bottom =
-                height - radius - 20;
-
+            const left = radius + 20;
+            const right = width - radius - 20;
+            const top = radius + 20;
+            const bottom = height - radius - 20;
 
             d.x = Math.max(
                 left,
                 Math.min(right, d.x)
             );
-
 
             d.y = Math.max(
                 top,
@@ -274,8 +248,6 @@ function initialize(companies, transactions) {
 
         });
 
-
-        // Update links
 
         linkGroup
             .selectAll("line")
@@ -297,8 +269,6 @@ function initialize(companies, transactions) {
             );
 
 
-        // Update nodes
-
         node
             .attr(
                 "cx",
@@ -313,16 +283,7 @@ function initialize(companies, transactions) {
 
 
     // =================================================
-    // Current day
-    // =================================================
-
-    let currentDay = 1;
-
-    let timer = null;
-
-
-    // =================================================
-    // Show day
+    // Show selected day
     // =================================================
 
     function showDay(day) {
@@ -349,17 +310,12 @@ function initialize(companies, transactions) {
 
         dayTransactions.forEach(d => {
 
-            const source =
-                String(d.source);
+            const source = String(d.source);
+            const target = String(d.target);
 
-            const target =
-                String(d.target);
-
-
-            const key =
-                [source, target]
-                    .sort()
-                    .join("-");
+            const key = [source, target]
+                .sort()
+                .join("-");
 
 
             if (!linkMap.has(key)) {
@@ -379,13 +335,9 @@ function initialize(companies, transactions) {
             }
 
 
-            const link =
-                linkMap.get(key);
+            const link = linkMap.get(key);
 
-
-            link.amount_usd +=
-                d.amount_usd;
-
+            link.amount_usd += d.amount_usd;
 
             link.transaction_count +=
                 d.transaction_count;
@@ -400,7 +352,7 @@ function initialize(companies, transactions) {
 
 
         // =================================================
-        // Calculate company volume
+        // Calculate company transaction volume
         // =================================================
 
         const volumeMap = new Map();
@@ -420,14 +372,13 @@ function initialize(companies, transactions) {
 
             volumeMap.set(
                 d.source,
-                volumeMap.get(d.source)
+                (volumeMap.get(d.source) || 0)
                     + d.amount_usd
             );
 
-
             volumeMap.set(
                 d.target,
-                volumeMap.get(d.target)
+                (volumeMap.get(d.target) || 0)
                     + d.amount_usd
             );
 
@@ -443,6 +394,30 @@ function initialize(companies, transactions) {
 
 
         // =================================================
+        // Calculate current maximum company volume
+        // =================================================
+
+        const maxCompanyVolume =
+            d3.max(
+                companies,
+                d => d.currentVolume
+            ) || 1;
+
+
+        const nodeSize =
+            d3.scaleSqrt()
+                .domain([
+                    0,
+                    maxCompanyVolume
+                ])
+                .range([
+                    7,
+                    26
+                ])
+                .clamp(true);
+
+
+        // =================================================
         // Update node sizes
         // =================================================
 
@@ -451,19 +426,9 @@ function initialize(companies, transactions) {
             .duration(400)
             .attr(
                 "r",
-                d => {
-
-                    if (
-                        d.currentVolume === 0
-                    ) {
-                        return 7;
-                    }
-
-                    return nodeSize(
-                        d.currentVolume
-                    );
-
-                }
+                d => nodeSize(
+                    d.currentVolume
+                )
             );
 
 
@@ -476,18 +441,31 @@ function initialize(companies, transactions) {
                 .selectAll("line")
                 .data(
                     links,
-                    d =>
-                        [d.source, d.target]
+                    d => {
+
+                        const source =
+                            typeof d.source === "object"
+                                ? d.source.id
+                                : d.source;
+
+                        const target =
+                            typeof d.target === "object"
+                                ? d.target.id
+                                : d.target;
+
+                        return [source, target]
                             .sort()
-                            .join("-")
+                            .join("-");
+
+                    }
                 );
 
 
         linksSelection.join(
 
-            // -----------------------------------------
+            // =================================================
             // ENTER
-            // -----------------------------------------
+            // =================================================
 
             enter => {
 
@@ -529,7 +507,6 @@ function initialize(companies, transactions) {
                             enter
                                 .transition()
                                 .duration(400)
-
                                 .attr(
                                     "stroke-width",
                                     d =>
@@ -537,7 +514,6 @@ function initialize(companies, transactions) {
                                             d.amount_usd
                                         )
                                 )
-
                                 .attr(
                                     "opacity",
                                     0.7
@@ -547,9 +523,9 @@ function initialize(companies, transactions) {
             },
 
 
-            // -----------------------------------------
+            // =================================================
             // UPDATE
-            // -----------------------------------------
+            // =================================================
 
             update => {
 
@@ -573,9 +549,9 @@ function initialize(companies, transactions) {
             },
 
 
-            // -----------------------------------------
+            // =================================================
             // EXIT
-            // -----------------------------------------
+            // =================================================
 
             exit => {
 
@@ -605,7 +581,7 @@ function initialize(companies, transactions) {
 
 
         // =================================================
-        // Restart gently
+        // Restart simulation gently
         // =================================================
 
         simulation
@@ -614,7 +590,7 @@ function initialize(companies, transactions) {
 
 
         // =================================================
-        // Date
+        // Date label
         // =================================================
 
         const dateRecord =
@@ -640,7 +616,7 @@ function initialize(companies, transactions) {
 
 
         // =================================================
-        // Summary
+        // Summary statistics
         // =================================================
 
         const activeCompanies =
@@ -649,13 +625,18 @@ function initialize(companies, transactions) {
 
         links.forEach(d => {
 
-            activeCompanies.add(
-                d.source
-            );
+            const source =
+                typeof d.source === "object"
+                    ? d.source.id
+                    : d.source;
 
-            activeCompanies.add(
-                d.target
-            );
+            const target =
+                typeof d.target === "object"
+                    ? d.target.id
+                    : d.target;
+
+            activeCompanies.add(source);
+            activeCompanies.add(target);
 
         });
 
@@ -788,9 +769,7 @@ function initialize(companies, transactions) {
         if (
             typeof value === "object"
         ) {
-
             return value;
-
         }
 
 
@@ -850,7 +829,6 @@ function initialize(companies, transactions) {
 
         }
 
-
         d.fx = d.x;
         d.fy = d.y;
 
@@ -870,7 +848,6 @@ function initialize(companies, transactions) {
                 event.x
             )
         );
-
 
         d.fy = Math.max(
             25,
@@ -896,7 +873,6 @@ function initialize(companies, transactions) {
 
         }
 
-
         d.fx = null;
         d.fy = null;
 
@@ -918,25 +894,24 @@ function initialize(companies, transactions) {
 
             () => {
 
-                showDay(currentDay);
-
-
-                if (currentDay < 60) {
-
-                    currentDay++;
-
-                    d3.select("#time-slider")
-                        .property(
-                            "value",
-                            currentDay
-                        );
-
-                }
-                else {
+                if (currentDay >= 60) {
 
                     pause();
 
+                    return;
+
                 }
+
+
+                currentDay++;
+
+                d3.select("#time-slider")
+                    .property(
+                        "value",
+                        currentDay
+                    );
+
+                showDay(currentDay);
 
             },
 
@@ -974,13 +949,11 @@ function initialize(companies, transactions) {
 
         currentDay = 1;
 
-
         d3.select("#time-slider")
             .property(
                 "value",
                 1
             );
-
 
         showDay(1);
 
