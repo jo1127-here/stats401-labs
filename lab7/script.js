@@ -9,7 +9,7 @@
 // =====================================================
 
 const width = 1100;
-const height = 650;
+const height = 750;
 
 const svg = d3.select("#network");
 
@@ -131,7 +131,7 @@ function initialize(
 
     const nodeSize = d3.scaleSqrt()
         .domain([0, maxVolume])
-        .range([8, 35]);
+        .range([6, 35]);
 
 
     const linkSize = d3.scaleLinear()
@@ -146,6 +146,9 @@ function initialize(
     const simulation = d3.forceSimulation(
         companies
     )
+        
+        .force("x", d3.forceX(width / 2).strength(0.03))
+        .force("y", d3.forceY(height / 2).strength(0.03))
 
         .force(
             "link",
@@ -239,7 +242,33 @@ function initialize(
     simulation.on(
         "tick",
         () => {
-
+    
+            // Keep nodes inside the visualization
+            companies.forEach(d => {
+    
+                const radius = d.currentVolume > 0
+                    ? nodeSize(d.currentVolume)
+                    : 6;
+    
+                d.x = Math.max(
+                    radius + 10,
+                    Math.min(
+                        width - radius - 10,
+                        d.x
+                    )
+                );
+    
+                d.y = Math.max(
+                    radius + 10,
+                    Math.min(
+                        height - radius - 10,
+                        d.y
+                    )
+                );
+    
+            });
+    
+    
             linkGroup
                 .selectAll("line")
                 .attr(
@@ -258,8 +287,8 @@ function initialize(
                     "y2",
                     d => d.target.y
                 );
-
-
+    
+    
             node
                 .attr(
                     "cx",
@@ -269,7 +298,7 @@ function initialize(
                     "cy",
                     d => d.y
                 );
-
+    
         }
     );
 
@@ -420,7 +449,7 @@ function initialize(
                     if (
                         d.currentVolume === 0
                     ) {
-                        return 8;
+                        return 6;
                     }
 
                     return nodeSize(
