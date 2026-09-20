@@ -46,7 +46,7 @@
             padding: 18px;
             border-radius: 10px;
             margin-bottom: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
         .buttons {
@@ -115,9 +115,7 @@
             background: white;
             border-radius: 10px;
             padding: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-
-            /* Important */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             width: 100%;
             overflow: hidden;
         }
@@ -158,7 +156,7 @@
             opacity: 0;
             font-size: 13px;
             line-height: 1.5;
-            box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
             z-index: 1000;
         }
 
@@ -171,7 +169,7 @@
             margin-top: 15px;
             padding: 18px;
             border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
         .legend-title {
@@ -186,17 +184,19 @@
             margin-bottom: 8px;
         }
 
-        .legend-circle {
+        .legend-dot {
             width: 14px;
             height: 14px;
             border-radius: 50%;
             margin-right: 6px;
+            display: inline-block;
         }
 
         .legend-description {
             margin-top: 10px;
             color: #555;
             font-size: 14px;
+            line-height: 1.5;
         }
 
     </style>
@@ -261,6 +261,7 @@
         <div class="summary">
 
             <div class="summary-box">
+
                 Active Companies
 
                 <span
@@ -268,10 +269,12 @@
                     id="active-companies">
                     0
                 </span>
+
             </div>
 
 
             <div class="summary-box">
+
                 Active Links
 
                 <span
@@ -279,10 +282,12 @@
                     id="active-links">
                     0
                 </span>
+
             </div>
 
 
             <div class="summary-box">
+
                 Total Transaction Value
 
                 <span
@@ -290,6 +295,7 @@
                     id="total-value">
                     $0
                 </span>
+
             </div>
 
         </div>
@@ -298,7 +304,7 @@
 
 
     <!-- =========================
-         Network
+         Network Visualization
     ========================= -->
 
     <div class="visualization">
@@ -321,97 +327,94 @@
     <div class="legend">
 
         <div class="legend-title">
-            Encoding
+            Sector
         </div>
 
 
         <div class="legend-item">
-
             <span
-                class="legend-circle"
+                class="legend-dot"
                 style="background:#4e79a7;">
             </span>
-
             Manufacturing
-
         </div>
 
 
         <div class="legend-item">
-
             <span
-                class="legend-circle"
+                class="legend-dot"
                 style="background:#f28e2c;">
             </span>
-
             Logistics
-
         </div>
 
 
         <div class="legend-item">
-
             <span
-                class="legend-circle"
+                class="legend-dot"
                 style="background:#e15759;">
             </span>
-
             Retail
-
         </div>
 
 
         <div class="legend-item">
-
             <span
-                class="legend-circle"
-                style="background:#76b7b2;">
-            </span>
-
-            Technology
-
-        </div>
-
-
-        <div class="legend-item">
-
-            <span
-                class="legend-circle"
+                class="legend-dot"
                 style="background:#59a14f;">
             </span>
+            Food
+        </div>
 
-            Services
 
+        <div class="legend-item">
+            <span
+                class="legend-dot"
+                style="background:#76b7b2;">
+            </span>
+            Technology
+        </div>
+
+
+        <div class="legend-item">
+            <span
+                class="legend-dot"
+                style="background:#b07aa1;">
+            </span>
+            Wholesale
+        </div>
+
+
+        <div class="legend-item">
+            <span
+                class="legend-dot"
+                style="background:#9c755f;">
+            </span>
+            Materials
         </div>
 
 
         <div class="legend-description">
 
-            <strong>Node color:</strong>
-            company sector
-            &nbsp;&nbsp;&nbsp;
-
-            <strong>Node size:</strong>
-            current transaction volume
-            &nbsp;&nbsp;&nbsp;
-
-            <strong>Link width:</strong>
-            transaction amount
-            &nbsp;&nbsp;&nbsp;
-
-            <strong>Link presence:</strong>
-            active relationship
+            Node color represents sector.
+            Node size represents current transaction volume.
+            Link width represents transaction amount.
+            Links appear and disappear as relationships change over time.
 
         </div>
 
     </div>
 
-</div>
 
+    <!-- =========================
+         Tooltip
+    ========================= -->
 
-<div
-    id="tooltip"
-    class="tooltip">
+    <div
+        id="tooltip"
+        class="tooltip">
+    </div>
+
 </div>
 
 
