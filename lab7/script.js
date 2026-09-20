@@ -3,7 +3,7 @@
 // =====================================================
 
 const width = 1100;
-const height = 750;
+const height = 650;
 
 const svg = d3.select("#network");
 
@@ -35,7 +35,13 @@ const sectorColor = d3.scaleOrdinal()
         "Technology",
         "Services"
     ])
-    .range(d3.schemeTableau10);
+    .range([
+        "#4e79a7",
+        "#f28e2c",
+        "#e15759",
+        "#76b7b2",
+        "#59a14f"
+    ]);
 
 
 // =====================================================
@@ -44,13 +50,9 @@ const sectorColor = d3.scaleOrdinal()
 
 Promise.all([
 
-    d3.csv(
-        "../data/lab7_assignment_companies.csv"
-    ),
+    d3.csv("../data/lab7_assignment_companies.csv"),
 
-    d3.csv(
-        "../data/lab7_assignment_transactions_60days.csv"
-    )
+    d3.csv("../data/lab7_assignment_transactions_60days.csv")
 
 ])
 .then(([companies, transactions]) => {
@@ -66,10 +68,7 @@ Promise.all([
 })
 .catch(error => {
 
-    console.error(
-        "Error loading data:",
-        error
-    );
+    console.error("Error loading data:", error);
 
 });
 
@@ -78,10 +77,7 @@ Promise.all([
 // Main initialization
 // =====================================================
 
-function initialize(
-    companies,
-    transactions
-) {
+function initialize(companies, transactions) {
 
 
     // =================================================
@@ -117,32 +113,58 @@ function initialize(
     // Scales
     // =================================================
 
-    const maxVolume = d3.max(
+    const maxAmount = d3.max(
         transactions,
         d => d.amount_usd
     );
 
 
-    // Smaller nodes so the whole network fits better
+    const maxDailyVolume = d3.max(
+        transactions,
+        d => d.amount_usd
+    );
+
+
+    // Node size
     const nodeSize = d3.scaleSqrt()
-        .domain([0, maxVolume])
-        .range([6, 28]);
+        .domain([0, maxDailyVolume])
+        .range([7, 26]);
 
 
+    // Link width
     const linkSize = d3.scaleLinear()
-        .domain([0, maxVolume])
-        .range([1, 7]);
+        .domain([0, maxAmount])
+        .range([1.5, 7]);
 
 
     // =================================================
     // Force simulation
     // =================================================
 
-    const simulation = d3.forceSimulation(
-        companies
-    )
+    const simulation = d3.forceSimulation(companies)
 
-        // Keep the network centered
+        .force(
+            "link",
+            d3.forceLink()
+                .id(d => d.id)
+                .distance(115)
+                .strength(0.65)
+        )
+
+        .force(
+            "charge",
+            d3.forceManyBody()
+                .strength(-300)
+        )
+
+        .force(
+            "center",
+            d3.forceCenter(
+                width / 2,
+                height / 2
+            )
+        )
+
         .force(
             "x",
             d3.forceX(width / 2)
@@ -156,28 +178,6 @@ function initialize(
         )
 
         .force(
-            "link",
-            d3.forceLink()
-                .id(d => d.id)
-                .distance(120)
-                .strength(0.7)
-        )
-
-        .force(
-            "charge",
-            d3.forceManyBody()
-                .strength(-350)
-        )
-
-        .force(
-            "center",
-            d3.forceCenter(
-                width / 2,
-                height / 2
-            )
-        )
-
-        .force(
             "collision",
             d3.forceCollide()
                 .radius(32)
@@ -185,7 +185,7 @@ function initialize(
 
 
     // =================================================
-    // Create nodes ONLY ONCE
+    // Create nodes ONCE
     // =================================================
 
     const node = nodeGroup
@@ -208,7 +208,7 @@ function initialize(
 
         .attr(
             "r",
-            8
+            7
         )
 
         .on(
@@ -228,18 +228,9 @@ function initialize(
 
         .call(
             d3.drag()
-                .on(
-                    "start",
-                    dragStarted
-                )
-                .on(
-                    "drag",
-                    dragged
-                )
-                .on(
-                    "end",
-                    dragEnded
-                )
+                .on("start", dragStarted)
+                .on("drag", dragged)
+                .on("end", dragEnded)
         );
 
 
@@ -247,110 +238,103 @@ function initialize(
     // Simulation tick
     // =================================================
 
-    simulation.on(
-        "tick",
-        () => {
+    simulation.on("tick", () => {
 
-            // -----------------------------------------
-            // Keep nodes completely inside the frame
-            // -----------------------------------------
+        companies.forEach(d => {
 
-            companies.forEach(d => {
-
-                const radius =
-                    d.currentVolume > 0
-                        ? nodeSize(d.currentVolume)
-                        : 6;
+            const radius =
+                d.currentVolume > 0
+                    ? nodeSize(d.currentVolume)
+                    : 7;
 
 
-                // Horizontal boundary
+            // Safe boundaries
 
-                d.x = Math.max(
-                    radius + 15,
-                    Math.min(
-                        width - radius - 15,
-                        d.x
-                    )
-                );
+            const left =
+                radius + 20;
 
+            const right =
+                width - radius - 20;
 
-                // Vertical boundary
-                // Leave a little more space at bottom
+            const top =
+                radius + 20;
 
-                d.y = Math.max(
-                    radius + 15,
-                    Math.min(
-                        height - radius - 25,
-                        d.y
-                    )
-                );
-
-            });
+            const bottom =
+                height - radius - 20;
 
 
-            // -----------------------------------------
-            // Update links
-            // -----------------------------------------
-
-            linkGroup
-                .selectAll("line")
-                .attr(
-                    "x1",
-                    d => d.source.x
-                )
-                .attr(
-                    "y1",
-                    d => d.source.y
-                )
-                .attr(
-                    "x2",
-                    d => d.target.x
-                )
-                .attr(
-                    "y2",
-                    d => d.target.y
-                );
+            d.x = Math.max(
+                left,
+                Math.min(right, d.x)
+            );
 
 
-            // -----------------------------------------
-            // Update nodes
-            // -----------------------------------------
+            d.y = Math.max(
+                top,
+                Math.min(bottom, d.y)
+            );
 
-            node
-                .attr(
-                    "cx",
-                    d => d.x
-                )
-                .attr(
-                    "cy",
-                    d => d.y
-                );
-
-        }
-    );
+        });
 
 
-    // =====================================================
+        // Update links
+
+        linkGroup
+            .selectAll("line")
+            .attr(
+                "x1",
+                d => d.source.x
+            )
+            .attr(
+                "y1",
+                d => d.source.y
+            )
+            .attr(
+                "x2",
+                d => d.target.x
+            )
+            .attr(
+                "y2",
+                d => d.target.y
+            );
+
+
+        // Update nodes
+
+        node
+            .attr(
+                "cx",
+                d => d.x
+            )
+            .attr(
+                "cy",
+                d => d.y
+            );
+
+    });
+
+
+    // =================================================
     // Current day
-    // =====================================================
+    // =================================================
 
     let currentDay = 1;
 
     let timer = null;
 
 
-    // =====================================================
-    // Show a specific day
-    // =====================================================
+    // =================================================
+    // Show day
+    // =================================================
 
     function showDay(day) {
 
         currentDay = day;
 
 
-        // =============================================
-        // Get transactions for this day
-        // =============================================
+        // =================================================
+        // Transactions for current day
+        // =================================================
 
         const dayTransactions =
             transactions.filter(
@@ -358,9 +342,9 @@ function initialize(
             );
 
 
-        // =============================================
-        // Aggregate company pairs
-        // =============================================
+        // =================================================
+        // Aggregate links
+        // =================================================
 
         const linkMap = new Map();
 
@@ -373,8 +357,6 @@ function initialize(
             const target =
                 String(d.target);
 
-
-            // Undirected relationship
 
             const key =
                 [source, target]
@@ -419,9 +401,9 @@ function initialize(
             );
 
 
-        // =============================================
-        // Calculate current company volume
-        // =============================================
+        // =================================================
+        // Calculate company volume
+        // =================================================
 
         const volumeMap = new Map();
 
@@ -462,13 +444,13 @@ function initialize(
         });
 
 
-        // =============================================
-        // Update node size
-        // =============================================
+        // =================================================
+        // Update node sizes
+        // =================================================
 
         node
             .transition()
-            .duration(500)
+            .duration(400)
             .attr(
                 "r",
                 d => {
@@ -476,7 +458,7 @@ function initialize(
                     if (
                         d.currentVolume === 0
                     ) {
-                        return 6;
+                        return 7;
                     }
 
                     return nodeSize(
@@ -487,9 +469,9 @@ function initialize(
             );
 
 
-        // =============================================
+        // =================================================
         // Update links
-        // =============================================
+        // =================================================
 
         const linksSelection =
             linkGroup
@@ -503,164 +485,165 @@ function initialize(
                 );
 
 
-        // =============================================
-        // New links
-        // =============================================
+        linksSelection.join(
 
-        linksSelection
-            .join(
+            // -----------------------------------------
+            // ENTER
+            // -----------------------------------------
 
-                enter => {
+            enter => {
 
-                    return enter
-                        .append("line")
+                return enter
+                    .append("line")
 
-                        .attr(
-                            "class",
-                            "link"
-                        )
+                    .attr(
+                        "class",
+                        "link"
+                    )
 
-                        .attr(
-                            "stroke-width",
-                            0
-                        )
+                    .attr(
+                        "stroke-width",
+                        0
+                    )
 
-                        .attr(
-                            "opacity",
-                            0
-                        )
+                    .attr(
+                        "opacity",
+                        0
+                    )
 
-                        .on(
-                            "mouseover",
-                            linkMouseover
-                        )
+                    .on(
+                        "mouseover",
+                        linkMouseover
+                    )
 
-                        .on(
-                            "mousemove",
-                            moveTooltip
-                        )
+                    .on(
+                        "mousemove",
+                        moveTooltip
+                    )
 
-                        .on(
-                            "mouseout",
-                            hideTooltip
-                        )
+                    .on(
+                        "mouseout",
+                        hideTooltip
+                    )
 
-                        .call(
-                            enter =>
-                                enter
-                                    .transition()
-                                    .duration(500)
+                    .call(
+                        enter =>
+                            enter
+                                .transition()
+                                .duration(400)
 
-                                    .attr(
-                                        "stroke-width",
-                                        d =>
-                                            linkSize(
-                                                d.amount_usd
-                                            )
-                                    )
-
-                                    .attr(
-                                        "opacity",
-                                        0.7
-                                    )
-                        );
-
-                },
-
-
-                // =====================================
-                // Existing links
-                // =====================================
-
-                update => {
-
-                    return update
-                        .transition()
-                        .duration(500)
-
-                        .attr(
-                            "stroke-width",
-                            d =>
-                                linkSize(
-                                    d.amount_usd
+                                .attr(
+                                    "stroke-width",
+                                    d =>
+                                        linkSize(
+                                            d.amount_usd
+                                        )
                                 )
-                        )
 
-                        .attr(
-                            "opacity",
-                            0.7
-                        );
+                                .attr(
+                                    "opacity",
+                                    0.7
+                                )
+                    );
 
-                },
-
-
-                // =====================================
-                // Disappearing links
-                // =====================================
-
-                exit => {
-
-                    return exit
-                        .transition()
-                        .duration(500)
-
-                        .attr(
-                            "opacity",
-                            0
-                        )
-
-                        .remove();
-
-                }
-
-            );
+            },
 
 
-        // =============================================
-        // Update simulation links
-        // =============================================
+            // -----------------------------------------
+            // UPDATE
+            // -----------------------------------------
+
+            update => {
+
+                return update
+                    .transition()
+                    .duration(400)
+
+                    .attr(
+                        "stroke-width",
+                        d =>
+                            linkSize(
+                                d.amount_usd
+                            )
+                    )
+
+                    .attr(
+                        "opacity",
+                        0.7
+                    );
+
+            },
+
+
+            // -----------------------------------------
+            // EXIT
+            // -----------------------------------------
+
+            exit => {
+
+                return exit
+                    .transition()
+                    .duration(400)
+
+                    .attr(
+                        "opacity",
+                        0
+                    )
+
+                    .remove();
+
+            }
+
+        );
+
+
+        // =================================================
+        // Update force links
+        // =================================================
 
         simulation
             .force("link")
             .links(links);
 
 
-        // =============================================
-        // Gently restart simulation
-        // =============================================
+        // =================================================
+        // Restart gently
+        // =================================================
 
         simulation
-            .alpha(0.2)
+            .alpha(0.15)
             .restart();
 
 
-        // =============================================
-        // Find date
-        // =============================================
+        // =================================================
+        // Date
+        // =================================================
 
         const dateRecord =
             dayTransactions[0];
 
 
-        let dateText =
-            `Day ${day}`;
-
-
         if (dateRecord) {
 
-            dateText =
-                `Day ${day} | ${dateRecord.date}`;
+            d3.select("#day-label")
+                .text(
+                    `Day ${day} | ${dateRecord.date}`
+                );
+
+        }
+        else {
+
+            d3.select("#day-label")
+                .text(
+                    `Day ${day}`
+                );
 
         }
 
 
-        d3.select("#day-label")
-            .text(dateText);
-
-
-        // =============================================
+        // =================================================
         // Summary
-        // =============================================
+        // =================================================
 
         const activeCompanies =
             new Set();
@@ -686,25 +669,19 @@ function initialize(
             );
 
 
-        d3.select(
-            "#active-companies"
-        )
+        d3.select("#active-companies")
             .text(
                 activeCompanies.size
             );
 
 
-        d3.select(
-            "#active-links"
-        )
+        d3.select("#active-links")
             .text(
                 links.length
             );
 
 
-        d3.select(
-            "#total-value"
-        )
+        d3.select("#total-value")
             .text(
                 "$" +
                 d3.format(",.0f")(
@@ -715,20 +692,14 @@ function initialize(
     }
 
 
-    // =====================================================
+    // =================================================
     // Node tooltip
-    // =====================================================
+    // =================================================
 
-    function nodeMouseover(
-        event,
-        d
-    ) {
+    function nodeMouseover(event, d) {
 
         tooltip
-            .style(
-                "opacity",
-                1
-            )
+            .style("opacity", 1)
 
             .html(`
 
@@ -738,18 +709,15 @@ function initialize(
 
                 <br>
 
-                ID:
-                ${d.id}
+                ID: ${d.id}
 
                 <br>
 
-                Sector:
-                ${d.sector}
+                Sector: ${d.sector}
 
                 <br>
 
-                Region:
-                ${d.region}
+                Region: ${d.region}
 
                 <br>
 
@@ -763,32 +731,21 @@ function initialize(
     }
 
 
-    // =====================================================
+    // =================================================
     // Link tooltip
-    // =====================================================
+    // =================================================
 
-    function linkMouseover(
-        event,
-        d
-    ) {
+    function linkMouseover(event, d) {
 
         const source =
-            getCompany(
-                d.source
-            );
-
+            getCompany(d.source);
 
         const target =
-            getCompany(
-                d.target
-            );
+            getCompany(d.target);
 
 
         tooltip
-            .style(
-                "opacity",
-                1
-            )
+            .style("opacity", 1)
 
             .html(`
 
@@ -824,13 +781,11 @@ function initialize(
     }
 
 
-    // =====================================================
-    // Find company
-    // =====================================================
+    // =================================================
+    // Get company
+    // =================================================
 
-    function getCompany(
-        value
-    ) {
+    function getCompany(value) {
 
         if (
             typeof value === "object"
@@ -842,37 +797,35 @@ function initialize(
 
 
         return companies.find(
-            c => c.id === value
+            c => c.id === String(value)
         );
 
     }
 
 
-    // =====================================================
+    // =================================================
     // Tooltip movement
-    // =====================================================
+    // =================================================
 
-    function moveTooltip(
-        event
-    ) {
+    function moveTooltip(event) {
 
         tooltip
             .style(
                 "left",
-                `${event.pageX + 12}px`
+                `${event.clientX + 15}px`
             )
 
             .style(
                 "top",
-                `${event.pageY + 12}px`
+                `${event.clientY + 15}px`
             );
 
     }
 
 
-    // =====================================================
+    // =================================================
     // Hide tooltip
-    // =====================================================
+    // =================================================
 
     function hideTooltip() {
 
@@ -885,18 +838,13 @@ function initialize(
     }
 
 
-    // =====================================================
+    // =================================================
     // Drag start
-    // =====================================================
+    // =================================================
 
-    function dragStarted(
-        event,
-        d
-    ) {
+    function dragStarted(event, d) {
 
-        if (
-            !event.active
-        ) {
+        if (!event.active) {
 
             simulation
                 .alphaTarget(0.2)
@@ -911,27 +859,25 @@ function initialize(
     }
 
 
-    // =====================================================
-    // Dragging
-    // =====================================================
+    // =================================================
+    // Drag
+    // =================================================
 
-    function dragged(
-        event,
-        d
-    ) {
+    function dragged(event, d) {
 
         d.fx = Math.max(
-            20,
+            25,
             Math.min(
-                width - 20,
+                width - 25,
                 event.x
             )
         );
 
+
         d.fy = Math.max(
-            20,
+            25,
             Math.min(
-                height - 30,
+                height - 25,
                 event.y
             )
         );
@@ -939,18 +885,13 @@ function initialize(
     }
 
 
-    // =====================================================
+    // =================================================
     // Drag end
-    // =====================================================
+    // =================================================
 
-    function dragEnded(
-        event,
-        d
-    ) {
+    function dragEnded(event, d) {
 
-        if (
-            !event.active
-        ) {
+        if (!event.active) {
 
             simulation
                 .alphaTarget(0);
@@ -964,9 +905,9 @@ function initialize(
     }
 
 
-    // =====================================================
+    // =================================================
     // Play
-    // =====================================================
+    // =================================================
 
     function play() {
 
@@ -976,45 +917,41 @@ function initialize(
 
 
         timer = d3.interval(
+
             () => {
 
-                showDay(
-                    currentDay
-                );
+                showDay(currentDay);
 
 
-                currentDay++;
+                if (currentDay < 60) {
 
+                    currentDay++;
 
-                if (
-                    currentDay > 60
-                ) {
+                    d3.select("#time-slider")
+                        .property(
+                            "value",
+                            currentDay
+                        );
+
+                }
+                else {
 
                     pause();
 
-                    currentDay = 60;
-
                 }
 
-
-                d3.select(
-                    "#time-slider"
-                )
-                    .property(
-                        "value",
-                        currentDay
-                    );
-
             },
+
             1000
+
         );
 
     }
 
 
-    // =====================================================
+    // =================================================
     // Pause
-    // =====================================================
+    // =================================================
 
     function pause() {
 
@@ -1029,9 +966,9 @@ function initialize(
     }
 
 
-    // =====================================================
+    // =================================================
     // Reset
-    // =====================================================
+    // =================================================
 
     function reset() {
 
@@ -1040,9 +977,7 @@ function initialize(
         currentDay = 1;
 
 
-        d3.select(
-            "#time-slider"
-        )
+        d3.select("#time-slider")
             .property(
                 "value",
                 1
@@ -1054,34 +989,25 @@ function initialize(
     }
 
 
-    // =====================================================
-    // Button controls
-    // =====================================================
+    // =================================================
+    // Buttons
+    // =================================================
 
     d3.select("#play")
-        .on(
-            "click",
-            play
-        );
+        .on("click", play);
 
 
     d3.select("#pause")
-        .on(
-            "click",
-            pause
-        );
+        .on("click", pause);
 
 
     d3.select("#reset")
-        .on(
-            "click",
-            reset
-        );
+        .on("click", reset);
 
 
-    // =====================================================
+    // =================================================
     // Slider
-    // =====================================================
+    // =================================================
 
     d3.select("#time-slider")
         .on(
@@ -1093,17 +1019,15 @@ function initialize(
                 currentDay =
                     +this.value;
 
-                showDay(
-                    currentDay
-                );
+                showDay(currentDay);
 
             }
         );
 
 
-    // =====================================================
-    // Initial visualization
-    // =====================================================
+    // =================================================
+    // Initial display
+    // =================================================
 
     showDay(1);
 
