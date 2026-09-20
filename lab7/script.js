@@ -27,21 +27,19 @@ const nodeGroup = svg
 // Sector colors
 // =====================================================
 
-const sectorColor = d3.scaleOrdinal()
-    .domain([
-        "Manufacturing",
-        "Logistics",
-        "Retail",
-        "Technology",
-        "Services"
-    ])
-    .range([
-        "#4e79a7",
-        "#f28e2c",
-        "#e15759",
-        "#76b7b2",
-        "#59a14f"
-    ]);
+const sectorColors = {
+    Manufacturing: "#4e79a7",
+    Logistics: "#f28e2c",
+    Retail: "#e15759",
+    Food: "#59a14f",
+    Technology: "#76b7b2",
+    Wholesale: "#b07aa1",
+    Materials: "#9c755f"
+};
+
+const color = d3.scaleOrdinal()
+    .domain(Object.keys(sectorColors))
+    .range(Object.values(sectorColors));
 
 
 // =====================================================
@@ -203,7 +201,7 @@ function initialize(companies, transactions) {
 
         .attr(
             "fill",
-            d => sectorColor(d.sector)
+            d => sectorColors[d.sector] || "#999"
         )
 
         .attr(
