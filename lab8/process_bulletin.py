@@ -3,6 +3,7 @@ import re
 import fitz
 import pandas as pd
 import numpy as np
+import pymupdf
 
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import KMeans
