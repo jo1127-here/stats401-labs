@@ -27,7 +27,7 @@ let matrixHeight;
 // 2. LOAD CSV
 // ============================================================
 
-d3.csv("data/lab8_embedding_map.csv", d => {
+d3.csv("../data/lab8_embedding_map.csv", d => {
 
     return {
         ...d,
