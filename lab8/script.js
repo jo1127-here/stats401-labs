@@ -5,7 +5,6 @@
 let data = [];
 
 let selectedPoint = null;
-
 let selectedMatrixCell = null;
 
 let svg;
@@ -21,6 +20,9 @@ let height;
 
 let matrixWidth;
 let matrixHeight;
+
+// One shared color scale for ALL topics
+let topicColor;
 
 
 // ============================================================
@@ -47,6 +49,10 @@ d3.csv("../data/lab8_embedding_map.csv", d => {
 
     initialize();
 
+}).catch(error => {
+
+    console.error("Error loading CSV:", error);
+
 });
 
 
@@ -55,6 +61,8 @@ d3.csv("../data/lab8_embedding_map.csv", d => {
 // ============================================================
 
 function initialize() {
+
+    createTopicColorScale();
 
     createFilters();
 
@@ -68,7 +76,24 @@ function initialize() {
 
 
 // ============================================================
-// 4. FILTERS
+// 4. SHARED TOPIC COLOR SCALE
+// ============================================================
+
+function createTopicColorScale() {
+
+    const topics = Array.from(
+        new Set(data.map(d => d.cluster_name))
+    ).sort();
+
+    topicColor = d3.scaleOrdinal()
+        .domain(topics)
+        .range(d3.schemeTableau10);
+
+}
+
+
+// ============================================================
+// 5. FILTERS
 // ============================================================
 
 function createFilters() {
@@ -119,11 +144,12 @@ function createFilters() {
 
     d3.select("#reset")
         .on("click", resetVisualization);
+
 }
 
 
 // ============================================================
-// 5. SEMANTIC MAP
+// 6. SEMANTIC MAP
 // ============================================================
 
 function createSemanticMap() {
@@ -152,13 +178,6 @@ function createSemanticMap() {
         .range([height - 50, 50]);
 
 
-    const color = d3.scaleOrdinal()
-        .domain(
-            data.map(d => d.cluster_name)
-        )
-        .range(d3.schemeTableau10);
-
-
     points = svg
         .selectAll(".point")
         .data(data)
@@ -172,7 +191,7 @@ function createSemanticMap() {
                 Math.min(10, Math.sqrt(d.word_count) / 2)
             )
         )
-        .attr("fill", d => color(d.cluster_name))
+        .attr("fill", d => topicColor(d.cluster_name))
         .on("click", function(event, d) {
 
             selectPoint(d);
@@ -221,7 +240,7 @@ function createSemanticMap() {
 
 
 // ============================================================
-// 6. LEGEND
+// 7. LEGEND
 // ============================================================
 
 function createLegend() {
@@ -232,12 +251,7 @@ function createLegend() {
 
     const topics = Array.from(
         new Set(data.map(d => d.cluster_name))
-    );
-
-
-    const color = d3.scaleOrdinal()
-        .domain(topics)
-        .range(d3.schemeTableau10);
+    ).sort();
 
 
     topics.forEach(topic => {
@@ -250,7 +264,10 @@ function createLegend() {
 
         item.append("div")
             .attr("class", "legend-color")
-            .style("background", color(topic));
+            .style(
+                "background",
+                topicColor(topic)
+            );
 
 
         item.append("span")
@@ -262,7 +279,7 @@ function createLegend() {
 
 
 // ============================================================
-// 7. UPDATE MAP
+// 8. UPDATE MAP
 // ============================================================
 
 function updateVisualization() {
@@ -318,7 +335,7 @@ function updateVisualization() {
 
 
 // ============================================================
-// 8. SELECT POINT
+// 9. SELECT POINT
 // ============================================================
 
 function selectPoint(d) {
@@ -351,7 +368,7 @@ function selectPoint(d) {
     });
 
 
-    showDetails(d, neighbors);
+    showMapDetails(d, neighbors);
 
     highlightMatrixCell(d);
 
@@ -359,7 +376,7 @@ function selectPoint(d) {
 
 
 // ============================================================
-// 9. FIND NEAREST NEIGHBORS
+// 10. FIND NEAREST NEIGHBORS
 // ============================================================
 
 function findNearestNeighbors(d, k) {
@@ -391,13 +408,13 @@ function findNearestNeighbors(d, k) {
 
 
 // ============================================================
-// 10. DETAILS PANEL
+// 11. SEMANTIC MAP DETAIL PANEL
 // ============================================================
 
-function showDetails(d, neighbors) {
+function showMapDetails(d, neighbors) {
 
     const panel =
-        d3.select("#detail-panel");
+        d3.select("#map-detail-panel");
 
 
     panel.html(`
@@ -426,7 +443,12 @@ function showDetails(d, neighbors) {
 
         <div class="stat">
             <strong>Semantic Topic</strong>
-            ${escapeHTML(d.cluster_name || "N/A")}
+            <span style="
+                color: ${topicColor(d.cluster_name)};
+                font-weight: bold;
+            ">
+                ${escapeHTML(d.cluster_name || "N/A")}
+            </span>
         </div>
 
         <div class="stat">
@@ -446,13 +468,13 @@ function showDetails(d, neighbors) {
 
         <h3>Nearest Semantic Passages</h3>
 
-        <div id="neighbors"></div>
+        <div id="map-neighbors"></div>
 
     `);
 
 
     const neighborContainer =
-        d3.select("#neighbors");
+        d3.select("#map-neighbors");
 
 
     neighbors.forEach((n, i) => {
@@ -462,7 +484,9 @@ function showDetails(d, neighbors) {
             .attr("class", "neighbor-item")
             .html(`
 
-                <strong>${i + 1}. ${escapeHTML(n.section)}</strong>
+                <strong>
+                    ${i + 1}. ${escapeHTML(n.section)}
+                </strong>
 
                 <br>
 
@@ -482,7 +506,7 @@ function showDetails(d, neighbors) {
 
 
 // ============================================================
-// 11. MATRIX
+// 12. MATRIX
 // ============================================================
 
 function createMatrix() {
@@ -494,7 +518,7 @@ function createMatrix() {
         document.querySelector("#matrix")
         .getBoundingClientRect().width;
 
-    matrixHeight = 500;
+    matrixHeight = 560;
 
 
     matrixSvg
@@ -528,9 +552,26 @@ function createMatrix() {
     });
 
 
+    // --------------------------------------------------------
+    // Total number of passages for each topic
+    // Used in the topic label
+    // --------------------------------------------------------
+
+    const topicTotals = {};
+
+    topics.forEach(topic => {
+
+        topicTotals[topic] =
+            data.filter(
+                d => d.cluster_name === topic
+            ).length;
+
+    });
+
+
     const margin = {
-        top: 120,
-        right: 20,
+        top: 145,
+        right: 30,
         bottom: 50,
         left: 180
     };
@@ -551,20 +592,24 @@ function createMatrix() {
     const x = d3.scaleBand()
         .domain(topics)
         .range([0, innerWidth])
-        .padding(0.05);
+        .padding(0.08);
 
 
     const y = d3.scaleBand()
         .domain(sections)
         .range([0, innerHeight])
-        .padding(0.05);
+        .padding(0.08);
 
 
     const maxCount =
         d3.max(Object.values(counts));
 
 
-    const color =
+    // --------------------------------------------------------
+    // Cell color = count
+    // --------------------------------------------------------
+
+    const cellColor =
         d3.scaleSequential(
             d3.interpolateBlues
         )
@@ -604,6 +649,10 @@ function createMatrix() {
     });
 
 
+    // --------------------------------------------------------
+    // MATRIX CELLS
+    // --------------------------------------------------------
+
     g.selectAll(".matrix-cell")
         .data(cells)
         .join("rect")
@@ -612,7 +661,7 @@ function createMatrix() {
         .attr("y", d => y(d.section))
         .attr("width", x.bandwidth())
         .attr("height", y.bandwidth())
-        .attr("fill", d => color(d.count))
+        .attr("fill", d => cellColor(d.count))
         .on("click", function(event, d) {
 
             selectMatrixCell(d);
@@ -624,24 +673,71 @@ function createMatrix() {
         );
 
 
-    // X labels
+    // --------------------------------------------------------
+    // X LABELS
+    // Topic name + total count
+    // Topic color matches Semantic Map
+    // --------------------------------------------------------
 
-    g.selectAll(".x-label")
-        .data(topics)
-        .join("text")
-        .attr("class", "x-label")
-        .attr("transform", d =>
-            `translate(
-                ${x(d.topic) + x.bandwidth() / 2},
-                -10
-            ) rotate(-45)`
-        )
-        .attr("text-anchor", "start")
-        .style("font-size", "11px")
+    const xLabels =
+        g.selectAll(".x-label")
+            .data(topics)
+            .join("text")
+            .attr("class", "x-label")
+            .attr(
+                "x",
+                d => x(d) + x.bandwidth() / 2
+            )
+            .attr("y", -45)
+            .attr("text-anchor", "middle")
+            .style("font-size", "12px")
+            .style("font-weight", "bold")
+            .style(
+                "fill",
+                d => topicColor(d)
+            );
+
+
+    xLabels.append("tspan")
+        .attr("x", d => x(d) + x.bandwidth() / 2)
+        .attr("dy", 0)
         .text(d => d);
 
 
-    // Y labels
+    xLabels.append("tspan")
+        .attr("x", d => x(d) + x.bandwidth() / 2)
+        .attr("dy", 18)
+        .style("fill", "#555")
+        .style("font-size", "11px")
+        .style("font-weight", "normal")
+        .text(d => `n = ${topicTotals[d]}`);
+
+
+    // --------------------------------------------------------
+    // Small color markers above each topic
+    // --------------------------------------------------------
+
+    g.selectAll(".topic-marker")
+        .data(topics)
+        .join("rect")
+        .attr("class", "topic-marker")
+        .attr(
+            "x",
+            d => x(d) + x.bandwidth() / 2 - 5
+        )
+        .attr("y", -78)
+        .attr("width", 10)
+        .attr("height", 10)
+        .attr("rx", 2)
+        .attr(
+            "fill",
+            d => topicColor(d)
+        );
+
+
+    // --------------------------------------------------------
+    // Y LABELS
+    // --------------------------------------------------------
 
     g.selectAll(".y-label")
         .data(sections)
@@ -658,9 +754,13 @@ function createMatrix() {
         .text(d => d);
 
 
+    // --------------------------------------------------------
+    // Axis titles
+    // --------------------------------------------------------
+
     g.append("text")
         .attr("x", innerWidth / 2)
-        .attr("y", -90)
+        .attr("y", -105)
         .attr("text-anchor", "middle")
         .style("font-weight", "bold")
         .text("Semantic Topic");
@@ -681,7 +781,7 @@ function createMatrix() {
 
 
 // ============================================================
-// 12. MATRIX → MAP
+// 13. MATRIX → MAP
 // ============================================================
 
 function selectMatrixCell(d) {
@@ -700,7 +800,9 @@ function selectMatrixCell(d) {
         });
 
 
-    d3.select("#detail-panel")
+    // IMPORTANT:
+    // Matrix has its own detail panel now
+    d3.select("#matrix-detail-panel")
         .html(`
 
             <h3>Matrix Selection</h3>
@@ -712,7 +814,13 @@ function selectMatrixCell(d) {
 
             <p>
                 <strong>Topic:</strong>
-                ${escapeHTML(d.topic)}
+
+                <span style="
+                    color: ${topicColor(d.topic)};
+                    font-weight: bold;
+                ">
+                    ${escapeHTML(d.topic)}
+                </span>
             </p>
 
             <p>
@@ -732,7 +840,7 @@ function selectMatrixCell(d) {
 
 
 // ============================================================
-// 13. POINT → MATRIX
+// 14. POINT → MATRIX
 // ============================================================
 
 function highlightMatrixCell(d) {
@@ -756,7 +864,7 @@ function highlightMatrixCell(d) {
 
 
 // ============================================================
-// 14. UPDATE MATRIX HIGHLIGHT
+// 15. UPDATE MATRIX HIGHLIGHT
 // ============================================================
 
 function updateMatrixHighlight() {
@@ -785,7 +893,7 @@ function updateMatrixHighlight() {
 
 
 // ============================================================
-// 15. RESET
+// 16. RESET
 // ============================================================
 
 function resetVisualization() {
@@ -819,7 +927,9 @@ function resetVisualization() {
         .attr("stroke-width", null);
 
 
-    d3.select("#detail-panel")
+    // Reset BOTH detail panels
+
+    d3.select("#map-detail-panel")
         .html(`
             <p>
                 Click a point on the semantic map
@@ -827,11 +937,20 @@ function resetVisualization() {
             </p>
         `);
 
+
+    d3.select("#matrix-detail-panel")
+        .html(`
+            <p>
+                Click a matrix cell to inspect
+                the section-topic combination.
+            </p>
+        `);
+
 }
 
 
 // ============================================================
-// 16. HTML ESCAPE
+// 17. HTML ESCAPE
 // ============================================================
 
 function escapeHTML(str) {
@@ -840,10 +959,12 @@ function escapeHTML(str) {
         return "";
     }
 
+
     return String(str)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+
 }
