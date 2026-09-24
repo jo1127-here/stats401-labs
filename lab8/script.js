@@ -134,7 +134,7 @@ function createSemanticMap() {
         document.querySelector("#map")
         .getBoundingClientRect().width;
 
-    height = 650;
+    height = 570;
 
 
     svg
