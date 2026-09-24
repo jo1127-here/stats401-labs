@@ -1,19 +1,242 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <title>Lab 8</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>DKU Bulletin Semantic Visualization</title>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f7f7f7;
+            color: #222;
+        }
+
+        header {
+            background: #222;
+            color: white;
+            padding: 20px 30px;
+        }
+
+        header h1 {
+            margin: 0 0 6px 0;
+        }
+
+        header p {
+            margin: 0;
+            color: #ccc;
+        }
+
+        .controls {
+            padding: 15px 30px;
+            background: white;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #ddd;
+        }
+
+        input,
+        select,
+        button {
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: white;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+            padding: 20px 30px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+        }
+
+        .card h2 {
+            margin-top: 0;
+        }
+
+        #map {
+            width: 100%;
+            height: 650px;
+        }
+
+        #matrix {
+            width: 100%;
+            height: 500px;
+        }
+
+        .point {
+            cursor: pointer;
+            opacity: 0.75;
+        }
+
+        .point:hover {
+            stroke: black;
+            stroke-width: 2px;
+            opacity: 1;
+        }
+
+        .selected {
+            stroke: black;
+            stroke-width: 3px;
+            opacity: 1;
+        }
+
+        .neighbor {
+            stroke: #111;
+            stroke-width: 2px;
+            opacity: 1;
+        }
+
+        .dimmed {
+            opacity: 0.08;
+        }
+
+        .matrix-cell {
+            cursor: pointer;
+        }
+
+        .matrix-cell:hover {
+            stroke: black;
+            stroke-width: 2px;
+        }
+
+        #detail-panel {
+            height: 650px;
+            overflow-y: auto;
+        }
+
+        #detail-panel h3 {
+            margin-top: 0;
+        }
+
+        .stat {
+            margin-bottom: 10px;
+        }
+
+        .stat strong {
+            display: block;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .neighbor-item {
+            border-top: 1px solid #ddd;
+            padding: 8px 0;
+            font-size: 13px;
+        }
+    </style>
 </head>
 
 <body>
 
-    <h1>Lab 8</h1>
+<header>
+    <h1>DKU Bulletin: Semantic Exploration</h1>
+    <p>Interactive visualization of semantic structure and formal bulletin sections</p>
+</header>
 
-    <p>Lab 8 will be added here.</p>
 
-    <a href="../index.html">Back to Home</a>
+<div class="controls">
+
+    <input
+        type="text"
+        id="search"
+        placeholder="Search bulletin..."
+    >
+
+    <select id="section-filter">
+        <option value="all">All Sections</option>
+    </select>
+
+    <select id="topic-filter">
+        <option value="all">All Topics</option>
+    </select>
+
+    <button id="reset">
+        Reset
+    </button>
+
+</div>
+
+
+<div class="container">
+
+    <div>
+
+        <div class="card">
+            <h2>Semantic Embedding Map</h2>
+
+            <div id="legend" class="legend"></div>
+
+            <svg id="map"></svg>
+        </div>
+
+
+        <div class="card" style="margin-top:20px;">
+
+            <h2>Topic × Bulletin Section</h2>
+
+            <svg id="matrix"></svg>
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2>Passage Details</h2>
+
+        <div id="detail-panel">
+
+            <p>
+                Click a point on the semantic map
+                to inspect a passage.
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script src="script.js"></script>
 
 </body>
-
 </html>
