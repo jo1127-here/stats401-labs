@@ -33,16 +33,21 @@ d3.csv("../data/lab8_embedding_map.csv", d => {
 
     return {
         ...d,
+
         x: +d.x,
         y: +d.y,
+
         word_count: +d.word_count,
         cluster: +d.cluster,
+
         page: +d.page,
         credits: +d.credits
+
     };
 
 }).then(loadedData => {
 
+    // Exclude rows without valid section/subsection/subject
     data = loadedData.filter(d =>
         d.subsection &&
         d.subsection.trim().toLowerCase() !== "unknown" &&
@@ -50,17 +55,62 @@ d3.csv("../data/lab8_embedding_map.csv", d => {
         d.subject.trim().toLowerCase() !== "unknown"
     );
 
-    console.log("Loaded passages after excluding Unknown:", data.length);
-    console.log("First passage:", data[0]);
-    console.log("First page:", data[0].page);
+    console.log(
+        "Loaded passages after excluding Unknown:",
+        data.length
+    );
+
+    console.log(
+        "First passage:",
+        data[0]
+    );
+
+    console.log(
+        "Chapter:",
+        data[0]?.chapter
+    );
+
+    console.log(
+        "Section:",
+        data[0]?.section
+    );
+
+    console.log(
+        "Subsection:",
+        data[0]?.subsection
+    );
+
+    console.log(
+        "Course Code:",
+        data[0]?.course_code
+    );
+
+    console.log(
+        "Course Title:",
+        data[0]?.course_title
+    );
+
+    console.log(
+        "Credits:",
+        data[0]?.credits
+    );
+
+    console.log(
+        "Page:",
+        data[0]?.page
+    );
 
     initialize();
 
 }).catch(error => {
 
-    console.error("Error loading CSV:", error);
+    console.error(
+        "Error loading CSV:",
+        error
+    );
 
 });
+
 
 // ============================================================
 // 3. INITIALIZE
@@ -88,7 +138,9 @@ function initialize() {
 function createTopicColorScale() {
 
     const topics = Array.from(
-        new Set(data.map(d => d.cluster_name))
+        new Set(
+            data.map(d => d.cluster_name)
+        )
     ).sort();
 
     topicColor = d3.scaleOrdinal()
@@ -105,22 +157,30 @@ function createTopicColorScale() {
 function createFilters() {
 
     const sections = Array.from(
-        new Set(data.map(d => d.section))
+        new Set(
+            data.map(d => d.section)
+        )
     ).sort();
 
     const topics = Array.from(
-        new Set(data.map(d => d.cluster_name))
+        new Set(
+            data.map(d => d.cluster_name)
+        )
     ).sort();
 
 
     const sectionSelect =
         d3.select("#section-filter");
 
+
     sections.forEach(section => {
 
         sectionSelect
             .append("option")
-            .attr("value", section)
+            .attr(
+                "value",
+                section
+            )
             .text(section);
 
     });
@@ -129,11 +189,15 @@ function createFilters() {
     const topicSelect =
         d3.select("#topic-filter");
 
+
     topics.forEach(topic => {
 
         topicSelect
             .append("option")
-            .attr("value", topic)
+            .attr(
+                "value",
+                topic
+            )
             .text(topic);
 
     });
@@ -144,6 +208,7 @@ function createFilters() {
         updateVisualization
     );
 
+
     topicSelect.on(
         "change",
         updateVisualization
@@ -151,11 +216,17 @@ function createFilters() {
 
 
     d3.select("#search")
-        .on("input", updateVisualization);
+        .on(
+            "input",
+            updateVisualization
+        );
 
 
     d3.select("#reset")
-        .on("click", resetVisualization);
+        .on(
+            "click",
+            resetVisualization
+        );
 
 }
 
@@ -168,18 +239,26 @@ function createSemanticMap() {
 
     svg = d3.select("#map");
 
+
     width =
         document
             .querySelector("#map")
             .getBoundingClientRect()
             .width;
 
+
     height = 570;
 
 
     svg
-        .attr("width", width)
-        .attr("height", height);
+        .attr(
+            "width",
+            width
+        )
+        .attr(
+            "height",
+            height
+        );
 
 
     xScale = d3.scaleLinear()
@@ -212,7 +291,10 @@ function createSemanticMap() {
         .selectAll(".point")
         .data(data)
         .join("circle")
-        .attr("class", "point")
+        .attr(
+            "class",
+            "point"
+        )
         .attr(
             "cx",
             d => xScale(d.x)
@@ -391,36 +473,35 @@ function updateVisualization() {
             .property("value");
 
 
-    points
-        .classed(
-            "dimmed",
-            d => {
+    points.classed(
+        "dimmed",
+        d => {
 
-                const searchMatch =
-                    search === "" ||
-                    (d.text || "")
-                        .toLowerCase()
-                        .includes(search);
-
-
-                const sectionMatch =
-                    selectedSection === "all" ||
-                    d.section === selectedSection;
+            const searchMatch =
+                search === "" ||
+                (d.text || "")
+                    .toLowerCase()
+                    .includes(search);
 
 
-                const topicMatch =
-                    selectedTopic === "all" ||
-                    d.cluster_name === selectedTopic;
+            const sectionMatch =
+                selectedSection === "all" ||
+                d.section === selectedSection;
 
 
-                return !(
-                    searchMatch &&
-                    sectionMatch &&
-                    topicMatch
-                );
+            const topicMatch =
+                selectedTopic === "all" ||
+                d.cluster_name === selectedTopic;
 
-            }
-        );
+
+            return !(
+                searchMatch &&
+                sectionMatch &&
+                topicMatch
+            );
+
+        }
+    );
 
 }
 
@@ -434,23 +515,19 @@ function selectPoint(d) {
     selectedPoint = d;
 
 
-    // Remove all previous selection
+    // Remove previous selections
     points
         .classed(
             "selected",
             false
-        );
-
-
-    // Remove all neighbor highlighting
-    points
+        )
         .classed(
             "neighbor",
             false
         );
 
 
-    // Highlight ONLY the clicked point
+    // Highlight clicked point
     points
         .filter(
             p =>
@@ -485,7 +562,6 @@ function showMapDetails(d) {
         );
 
 
-    // Safety check
     if (panel.empty()) {
 
         console.error(
@@ -493,6 +569,7 @@ function showMapDetails(d) {
         );
 
         return;
+
     }
 
 
@@ -539,21 +616,51 @@ function showMapDetails(d) {
 
 
         <div class="stat">
-            <strong>Course Code</strong>
-            ${escapeHTML(d.course_code || "N/A")}
-        </div>
-        
-        <div class="stat">
-            <strong>Course Title</strong>
-            ${escapeHTML(d.course_title || "N/A")}
-        </div>
-        
-        <div class="stat">
-            <strong>Credits</strong>
-            ${escapeHTML(d.credits || "N/A")}
+
+            <strong>Page</strong>
+
+            ${escapeHTML(
+                d.page
+            )}
+
         </div>
 
-        
+
+        <div class="stat">
+
+            <strong>Course Code</strong>
+
+            ${escapeHTML(
+                d.course_code || "N/A"
+            )}
+
+        </div>
+
+
+        <div class="stat">
+
+            <strong>Course Title</strong>
+
+            ${escapeHTML(
+                d.course_title || "N/A"
+            )}
+
+        </div>
+
+
+        <div class="stat">
+
+            <strong>Credits</strong>
+
+            ${
+                Number.isFinite(d.credits)
+                    ? d.credits
+                    : "N/A"
+            }
+
+        </div>
+
+
         <div class="stat">
 
             <strong>Semantic Topic</strong>
@@ -622,6 +729,7 @@ function createMatrix() {
             .querySelector("#matrix")
             .getBoundingClientRect()
             .width;
+
 
     matrixHeight = 560;
 
@@ -1077,18 +1185,14 @@ function selectMatrixCell(d) {
 
 
     // Highlight matching points
-    points
-        .classed(
-            "dimmed",
-            p => {
-
-                return !(
-                    p.section === d.section &&
-                    p.cluster_name === d.topic
-                );
-
-            }
-        );
+    points.classed(
+        "dimmed",
+        p =>
+            !(
+                p.section === d.section &&
+                p.cluster_name === d.topic
+            )
+    );
 
 
     // Highlight selected matrix cell
@@ -1112,10 +1216,8 @@ function selectMatrixCell(d) {
         )
         .filter(
             cell =>
-                cell.section ===
-                    d.section &&
-                cell.topic ===
-                    d.topic
+                cell.section === d.section &&
+                cell.topic === d.topic
         )
         .attr(
             "stroke",
@@ -1127,7 +1229,7 @@ function selectMatrixCell(d) {
         );
 
 
-    // Matrix has its OWN detail panel
+    // Matrix detail panel
     const panel =
         d3.select(
             "#matrix-detail-panel"
@@ -1141,6 +1243,7 @@ function selectMatrixCell(d) {
         );
 
         return;
+
     }
 
 
@@ -1238,10 +1341,8 @@ function highlightMatrixCell(d) {
         )
         .filter(
             cell =>
-                cell.section ===
-                    d.section &&
-                cell.topic ===
-                    d.cluster_name
+                cell.section === d.section &&
+                cell.topic === d.cluster_name
         )
         .attr(
             "stroke",
@@ -1262,7 +1363,9 @@ function highlightMatrixCell(d) {
 function updateMatrixHighlight() {
 
     if (!selectedMatrixCell) {
+
         return;
+
     }
 
 
