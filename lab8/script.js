@@ -33,7 +33,6 @@ d3.csv("../data/lab8_embedding_map.csv", d => {
 
     return {
         ...d,
-
         x: +d.x,
         y: +d.y,
         word_count: +d.word_count,
@@ -51,6 +50,8 @@ d3.csv("../data/lab8_embedding_map.csv", d => {
     );
 
     console.log("Loaded passages after excluding Unknown:", data.length);
+    console.log("First passage:", data[0]);
+    console.log("First page:", data[0].page);
 
     initialize();
 
