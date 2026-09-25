@@ -342,12 +342,46 @@ def parse_course_header(text: str):
         return None
 
     subject = match.group(1).strip()
-
     course_code = match.group(2).strip()
 
     remaining = text[match.end():].strip()
 
-    # Find credits.
+    # --------------------------------------------------------
+    # Special case:
+    # DKU 101 is formatted in the bulletin as
+    #
+    # DKU 101 (0 Credits)
+    #
+    # DKU 101 extends DKU's standard first-year orientation...
+    #
+    # The second "DKU 101" is part of the description,
+    # NOT the course title.
+    # --------------------------------------------------------
+    if course_code == "101" and subject == "DKU":
+
+        # Remove the "(0 Credits)" header.
+        remaining = re.sub(
+            r"^\(?\s*0\s+credits?\s*\)?\s*",
+            "",
+            remaining,
+            flags=re.IGNORECASE,
+        ).strip()
+
+        # The title is not present in the bulletin.
+        # Use the course code as the title rather than
+        # incorrectly treating the description as a title.
+        return {
+            "subject": subject,
+            "course_code": course_code,
+            "course_title": "DKU 101",
+            "credits": 0.0,
+            "after_title": remaining,
+        }
+
+    # --------------------------------------------------------
+    # Normal course format
+    # --------------------------------------------------------
+
     credit_match = re.search(
         r"\(?\s*(\d+(?:\.\d+)?)\s+credits?\s*\)?",
         remaining,

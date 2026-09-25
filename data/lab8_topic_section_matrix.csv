@@ -1,9 +1,9 @@
 section,cluster_name,count
-Unknown,Chinese / China / Students,72
-Unknown,Duke / University / Students,56
-Unknown,Health / Biol / Glhlth,72
-Unknown,Hist / Course / World,91
-Unknown,Math / Course / Courses,127
-Unknown,Mediart / Media / Course,62
-Unknown,Polsci / Course / Political,79
-Unknown,Students / Student / Courses,102
+Unknown,Biol / Science / Course,73
+Unknown,Course / Hist / China,105
+Unknown,Major / Year / Requirements,54
+Unknown,Math / Course / Biol,68
+Unknown,Mediart / Course / Chinese,105
+Unknown,Polsci / Course / Pubpol,98
+Unknown,Students / Student / University,61
+Unknown,University / Duke / Students,98
