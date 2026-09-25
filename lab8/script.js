@@ -128,6 +128,8 @@ function initialize() {
 
 function updateCorpusStats() {
 
+    console.log("Updating corpus stats:", data.length);
+
     const subjects = new Set(
         data.map(d => d.subject)
     );
@@ -140,13 +142,18 @@ function updateCorpusStats() {
         data.map(d => d.section)
     );
 
-    d3.select("#stat-passages").text(data.length);
-    d3.select("#stat-subjects").text(subjects.size);
-    d3.select("#stat-topics").text(topics.size);
-    d3.select("#stat-sections").text(sections.size);
+    d3.select("#stat-passages")
+        .text(data.length);
+
+    d3.select("#stat-subjects")
+        .text(subjects.size);
+
+    d3.select("#stat-topics")
+        .text(topics.size);
+
+    d3.select("#stat-sections")
+        .text(sections.size);
 }
-
-
 // ============================================================
 // 4. SHARED TOPIC COLOR SCALE
 // ============================================================
