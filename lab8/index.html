@@ -19,7 +19,7 @@
         header {
             background: #222;
             color: white;
-            padding: 20px 30px;
+            padding: 24px 40px;
         }
 
         header h1 {
@@ -31,14 +31,87 @@
             color: #ccc;
         }
 
+        .page {
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+
+        .section {
+            padding: 25px 35px;
+        }
+
+        .section-title {
+            margin-bottom: 15px;
+        }
+
+        .section-title h2 {
+            margin: 0 0 5px 0;
+        }
+
+        .section-title p {
+            margin: 0;
+            color: #666;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 20px;
+        }
+
+        /* =========================
+           1. Corpus Description
+           ========================= */
+
+        .description {
+            line-height: 1.6;
+            color: #444;
+        }
+
+        /* =========================
+           2. Corpus Overview
+           ========================= */
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 18px;
+        }
+
+        .stat-card .number {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* =========================
+           3. Semantic Map
+           ========================= */
+
         .controls {
-            padding: 15px 30px;
+            padding: 15px;
             background: white;
             display: flex;
             gap: 12px;
             align-items: center;
             flex-wrap: wrap;
-            border-bottom: 1px solid #ddd;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-bottom: 15px;
         }
 
         input,
@@ -54,26 +127,10 @@
             cursor: pointer;
         }
 
-        .container {
+        .map-layout {
             display: grid;
-            grid-template-columns: 1fr 360px;
+            grid-template-columns: minmax(0, 1fr) 360px;
             gap: 20px;
-            padding: 20px 30px;
-        }
-
-        .visualizations {
-            min-width: 0;
-        }
-
-        .card {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 15px;
-        }
-
-        .card h2 {
-            margin-top: 0;
         }
 
         #map {
@@ -81,9 +138,13 @@
             height: 650px;
         }
 
-        #matrix {
-            width: 100%;
-            height: 500px;
+        #map-detail-panel {
+            height: 650px;
+            overflow-y: auto;
+        }
+
+        #map-detail-panel h3 {
+            margin-top: 0;
         }
 
         .point {
@@ -107,40 +168,6 @@
             opacity: 0.08;
         }
 
-        .matrix-cell {
-            cursor: pointer;
-        }
-
-        .matrix-cell:hover {
-            stroke: black;
-            stroke-width: 2px;
-        }
-
-        /* Separate detail panels */
-
-        #map-detail-panel {
-            height: 650px;
-            overflow-y: auto;
-        }
-
-        #matrix-detail-panel {
-            height: 500px;
-            overflow-y: auto;
-        }
-
-        #map-detail-panel h3,
-        #matrix-detail-panel h3 {
-            margin-top: 0;
-        }
-
-        .stat {
-            margin-bottom: 10px;
-        }
-
-        .stat strong {
-            display: block;
-        }
-
         .legend {
             display: flex;
             flex-wrap: wrap;
@@ -161,7 +188,38 @@
             border-radius: 50%;
         }
 
-        /* Make matrix topic labels easier to read */
+        /* =========================
+           4. Matrix
+           ========================= */
+
+        #matrix {
+            width: 100%;
+            height: 500px;
+        }
+
+        .matrix-cell {
+            cursor: pointer;
+        }
+
+        .matrix-cell:hover {
+            stroke: black;
+            stroke-width: 2px;
+        }
+
+        .matrix-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 360px;
+            gap: 20px;
+        }
+
+        #matrix-detail-panel {
+            height: 500px;
+            overflow-y: auto;
+        }
+
+        #matrix-detail-panel h3 {
+            margin-top: 0;
+        }
 
         .matrix-topic-label {
             font-size: 12px;
@@ -173,10 +231,51 @@
             fill: #555;
         }
 
-        /* Responsive layout */
+        /* =========================
+           5. Findings
+           ========================= */
+
+        .findings {
+            line-height: 1.6;
+        }
+
+        .findings ul {
+            padding-left: 22px;
+        }
+
+        .findings li {
+            margin-bottom: 10px;
+        }
+
+        /* =========================
+           6. Design Description
+           ========================= */
+
+        .design-description {
+            line-height: 1.65;
+            color: #444;
+        }
+
+        /* =========================
+           Back Home
+           ========================= */
+
+        .back-home {
+            padding: 10px 35px 30px 35px;
+        }
+
+        /* =========================
+           Responsive
+           ========================= */
 
         @media (max-width: 1000px) {
-            .container {
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .map-layout,
+            .matrix-layout {
                 grid-template-columns: 1fr;
             }
 
@@ -184,6 +283,21 @@
             #matrix-detail-panel {
                 height: auto;
                 min-height: 250px;
+            }
+        }
+
+        @media (max-width: 600px) {
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            header {
+                padding: 20px;
             }
         }
     </style>
@@ -199,112 +313,297 @@
 </header>
 
 
-<div class="controls">
+<div class="page">
 
-    <input
-        type="text"
-        id="search"
-        placeholder="Search bulletin..."
-    >
+    <!-- =========================================
+         1. Bulletin / Corpus Description
+         ========================================= -->
 
-    <select id="section-filter">
-        <option value="all">All Sections</option>
-    </select>
+    <section class="section">
 
-    <select id="topic-filter">
-        <option value="all">All Topics</option>
-    </select>
+        <div class="section-title">
+            <h2>1. Bulletin / Corpus Description</h2>
+        </div>
 
-    <button id="reset">
-        Reset
-    </button>
+        <div class="card description">
 
-</div>
+            <p>
+                This project analyzes course descriptions from the Duke Kunshan
+                University Bulletin. The corpus contains course-level text covering
+                multiple academic subjects and departments.
+            </p>
+
+            <p>
+                Each course description is treated as an individual text passage.
+                The corpus was cleaned and processed to support semantic embedding,
+                topic modeling, and interactive exploration of relationships among
+                courses and bulletin sections.
+            </p>
+
+        </div>
+
+    </section>
 
 
-<div class="container">
+    <!-- =========================================
+         2. Corpus Overview
+         ========================================= -->
 
-    <div class="visualizations">
+    <section class="section">
 
-        <!-- ========================= -->
-        <!-- Semantic Embedding Map -->
-        <!-- ========================= -->
+        <div class="section-title">
+            <h2>2. Corpus Overview</h2>
+            <p>Summary statistics of the extracted bulletin corpus.</p>
+        </div>
+
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <div class="number" id="stat-passages">—</div>
+                <div class="label">Course Passages</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="number" id="stat-subjects">—</div>
+                <div class="label">Academic Subjects</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="number" id="stat-topics">8</div>
+                <div class="label">Semantic Topics</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="number" id="stat-sections">1</div>
+                <div class="label">Bulletin Section</div>
+            </div>
+
+        </div>
 
         <div class="card">
+            <p>
+                The corpus overview summarizes the scale of the dataset before
+                moving to the semantic analysis. The visualization below focuses
+                on the Course Descriptions section of the Bulletin.
+            </p>
+        </div>
 
-            <h2>Semantic Embedding Map</h2>
+    </section>
 
-            <div id="legend" class="legend"></div>
 
-            <svg id="map"></svg>
+    <!-- =========================================
+         3. Semantic Embedding Map
+         ========================================= -->
+
+    <section class="section">
+
+        <div class="section-title">
+            <h2>3. Semantic Embedding Map</h2>
+            <p>
+                Explore semantic relationships among individual course descriptions.
+            </p>
+        </div>
+
+
+        <!-- Search and filters -->
+
+        <div class="controls">
+
+            <input
+                type="text"
+                id="search"
+                placeholder="Search bulletin..."
+            >
+
+            <select id="section-filter">
+                <option value="all">All Sections</option>
+            </select>
+
+            <select id="topic-filter">
+                <option value="all">All Topics</option>
+            </select>
+
+            <button id="reset">
+                Reset
+            </button>
 
         </div>
 
 
-        <!-- ========================= -->
-        <!-- Topic × Bulletin Section -->
-        <!-- ========================= -->
+        <!-- Map + Detail Panel -->
 
-        <div class="card" style="margin-top:20px;">
+        <div class="map-layout">
 
-            <h2>Topic × Bulletin Section</h2>
+            <div class="card">
 
-            <svg id="matrix"></svg>
+                <h3>Semantic Embedding Map</h3>
 
-        </div>
+                <div id="legend" class="legend"></div>
 
-    </div>
+                <svg id="map"></svg>
+
+            </div>
 
 
-    <!-- ========================= -->
-    <!-- Right-side detail panels -->
-    <!-- ========================= -->
+            <div class="card">
 
-    <div>
+                <h3>Passage Detail</h3>
 
-        <!-- Map detail -->
+                <div id="map-detail-panel">
 
-        <div class="card">
+                    <p>
+                        Click a point on the semantic map
+                        to inspect a passage.
+                    </p>
 
-            <h2>Passage Detail</h2>
-
-            <div id="map-detail-panel">
-
-                <p>
-                    Click a point on the semantic map
-                    to inspect a passage.
-                </p>
+                </div>
 
             </div>
 
         </div>
 
+    </section>
 
-        <!-- Matrix detail -->
 
-        <div class="card" style="margin-top:20px;">
+    <!-- =========================================
+         4. Topic × Bulletin Section Matrix
+         ========================================= -->
 
-            <h2>Matrix Detail</h2>
+    <section class="section">
 
-            <div id="matrix-detail-panel">
+        <div class="section-title">
+            <h2>4. Topic × Bulletin Section Matrix</h2>
+            <p>
+                Compare the distribution of semantic topics across Bulletin sections.
+            </p>
+        </div>
 
-                <p>
-                    Click a matrix cell
-                    to inspect the section-topic combination.
-                </p>
+
+        <div class="matrix-layout">
+
+            <div class="card">
+
+                <svg id="matrix"></svg>
+
+            </div>
+
+
+            <div class="card">
+
+                <h3>Matrix Detail</h3>
+
+                <div id="matrix-detail-panel">
+
+                    <p>
+                        Click a matrix cell to inspect the
+                        section-topic combination.
+                    </p>
+
+                </div>
 
             </div>
 
         </div>
 
-    </div>
+    </section>
+
+
+    <!-- =========================================
+         5. Semantic Findings
+         ========================================= -->
+
+    <section class="section">
+
+        <div class="section-title">
+            <h2>5. Semantic Findings</h2>
+        </div>
+
+        <div class="card findings">
+
+            <p>
+                The embedding map shows several groups of semantically related
+                course descriptions. Courses assigned to the same topic tend to
+                form visible clusters, while some topics overlap where courses
+                share similar terminology or interdisciplinary content.
+            </p>
+
+            <ul>
+                <li>
+                    Different semantic topics occupy different regions of the
+                    embedding space, suggesting meaningful variation in course
+                    descriptions.
+                </li>
+
+                <li>
+                    Some clusters contain courses from related academic areas,
+                    while other regions show more mixed or interdisciplinary
+                    content.
+                </li>
+
+                <li>
+                    The topic-section matrix provides another view of these
+                    patterns by showing how frequently each topic occurs within
+                    the Bulletin section.
+                </li>
+            </ul>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================================
+         6. Design Description
+         ========================================= -->
+
+    <section class="section">
+
+        <div class="section-title">
+            <h2>6. Design Description</h2>
+        </div>
+
+        <div class="card design-description">
+
+            <p>
+                Each course description was converted into a high-dimensional
+                semantic embedding. UMAP was then used to reduce these embeddings
+                to two dimensions while preserving local semantic relationships.
+                Each point in the embedding map therefore represents one course
+                description.
+            </p>
+
+            <p>
+                The embeddings were grouped into eight semantic topics using
+                clustering. The topics are represented by consistent colors across
+                the embedding map and the topic-section matrix. The matrix uses
+                cell intensity to represent the number of passages associated with
+                each topic and Bulletin section.
+            </p>
+
+            <p>
+                Coordinated interaction supports exploration from multiple levels.
+                Users can search for courses and filter the embedding map by section
+                or topic. Clicking a point reveals detailed passage information,
+                while clicking a matrix cell reveals the corresponding
+                topic-section relationship. This allows users to move between
+                individual course descriptions, semantic clusters, and aggregate
+                corpus patterns.
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================================
+         Back Home
+         ========================================= -->
+
+    <p class="back-home">
+        <a href="../index.html">Back Home</a>
+    </p>
 
 </div>
-
-
- <p class="back-home">
-    <a href="../index.html"> Back Home</a>
-</p>
 
 
 <script src="script.js?v=2"></script>
