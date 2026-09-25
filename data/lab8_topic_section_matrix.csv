@@ -1,114 +1,168 @@
-section,cluster_name,count
-Pages 1-20,Topic 0,3
-Pages 1-20,Topic 2,9
-Pages 1-20,Topic 3,17
-Pages 1-20,Topic 4,1
-Pages 1-20,Topic 5,6
-Pages 1-20,Topic 6,2
-Pages 1-20,Topic 7,4
-Pages 101-120,Topic 0,8
-Pages 101-120,Topic 1,4
-Pages 101-120,Topic 2,8
-Pages 101-120,Topic 4,9
-Pages 101-120,Topic 5,3
-Pages 101-120,Topic 6,14
-Pages 121-140,Topic 0,1
-Pages 121-140,Topic 1,4
-Pages 121-140,Topic 2,4
-Pages 121-140,Topic 4,6
-Pages 121-140,Topic 5,8
-Pages 121-140,Topic 6,11
-Pages 141-160,Topic 1,3
-Pages 141-160,Topic 2,3
-Pages 141-160,Topic 4,7
-Pages 141-160,Topic 5,12
-Pages 141-160,Topic 6,13
-Pages 161-180,Topic 1,4
-Pages 161-180,Topic 2,9
-Pages 161-180,Topic 4,8
-Pages 161-180,Topic 5,15
-Pages 161-180,Topic 6,5
-Pages 181-200,Topic 0,5
-Pages 181-200,Topic 1,3
-Pages 181-200,Topic 2,13
-Pages 181-200,Topic 4,9
-Pages 181-200,Topic 5,12
-Pages 201-220,Topic 1,6
-Pages 201-220,Topic 4,11
-Pages 201-220,Topic 5,18
-Pages 201-220,Topic 6,5
-Pages 201-220,Topic 7,2
-Pages 21-40,Topic 2,7
-Pages 21-40,Topic 3,16
-Pages 21-40,Topic 7,18
-Pages 221-240,Topic 1,4
-Pages 221-240,Topic 4,3
-Pages 221-240,Topic 6,25
-Pages 241-260,Topic 0,2
-Pages 241-260,Topic 1,6
-Pages 241-260,Topic 2,3
-Pages 241-260,Topic 4,7
-Pages 241-260,Topic 5,19
-Pages 241-260,Topic 6,2
-Pages 261-280,Topic 0,6
-Pages 261-280,Topic 1,2
-Pages 261-280,Topic 2,1
-Pages 261-280,Topic 4,3
-Pages 261-280,Topic 5,13
-Pages 261-280,Topic 6,7
-Pages 281-300,Topic 0,1
-Pages 281-300,Topic 2,12
-Pages 281-300,Topic 6,7
-Pages 281-300,Topic 7,1
-Pages 301-320,Topic 0,3
-Pages 301-320,Topic 2,3
-Pages 301-320,Topic 5,6
-Pages 301-320,Topic 6,8
-Pages 321-340,Topic 2,4
-Pages 321-340,Topic 5,9
-Pages 321-340,Topic 6,8
-Pages 341-360,Topic 0,5
-Pages 341-360,Topic 2,5
-Pages 341-360,Topic 5,9
-Pages 341-360,Topic 6,2
-Pages 361-380,Topic 0,5
-Pages 361-380,Topic 2,3
-Pages 361-380,Topic 5,10
-Pages 361-380,Topic 6,2
-Pages 381-400,Topic 0,11
-Pages 381-400,Topic 2,5
-Pages 381-400,Topic 5,1
-Pages 381-400,Topic 6,3
-Pages 401-420,Topic 0,13
-Pages 401-420,Topic 6,11
-Pages 41-60,Topic 2,1
-Pages 41-60,Topic 3,14
-Pages 41-60,Topic 6,1
-Pages 41-60,Topic 7,22
-Pages 421-440,Topic 0,6
-Pages 421-440,Topic 2,2
-Pages 421-440,Topic 3,1
-Pages 421-440,Topic 5,7
-Pages 421-440,Topic 6,3
-Pages 421-440,Topic 7,1
-Pages 441-460,Topic 2,2
-Pages 441-460,Topic 5,10
-Pages 441-460,Topic 6,9
-Pages 461-480,Topic 2,4
-Pages 461-480,Topic 5,16
-Pages 481-500,Topic 0,3
-Pages 481-500,Topic 2,3
-Pages 481-500,Topic 5,9
-Pages 481-500,Topic 6,5
-Pages 501-520,Topic 0,2
-Pages 501-520,Topic 2,3
-Pages 501-520,Topic 3,1
-Pages 501-520,Topic 7,4
-Pages 61-80,Topic 3,10
-Pages 61-80,Topic 7,14
-Pages 81-100,Topic 0,9
-Pages 81-100,Topic 1,1
-Pages 81-100,Topic 2,7
-Pages 81-100,Topic 3,12
-Pages 81-100,Topic 4,3
-Pages 81-100,Topic 7,3
+subject,cluster_name,count
+ARHU,Topic 2,2
+ARHU,Topic 5,1
+ARTS,Topic 2,2
+ARTS,Topic 4,4
+ASA,Topic 1,1
+BEHAVSCI,Topic 3,3
+BEHAVSCI,Topic 6,4
+BEHAVSCI,Topic 7,1
+BIOL,Topic 0,1
+BIOL,Topic 1,1
+BIOL,Topic 6,1
+BIOL,Topic 7,27
+CHEM,Topic 0,6
+CHEM,Topic 6,1
+CHEM,Topic 7,3
+CHINESE,Topic 1,16
+CHINESE,Topic 4,8
+CHSC,Topic 4,3
+CHSC,Topic 6,1
+CO,Topic 7,1
+COMPDSGN,Topic 0,1
+COMPSCI,Topic 0,24
+COMPSCI,Topic 2,2
+COMPSCI,Topic 6,1
+CULANTH,Topic 2,3
+CULANTH,Topic 3,1
+CULANTH,Topic 4,2
+CULANTH,Topic 5,11
+CULMOVE,Topic 3,1
+CULMOVE,Topic 4,2
+CULMOVE,Topic 5,5
+CULMOVE,Topic 6,2
+DKU,Topic 1,1
+EAP,Topic 1,11
+EAP,Topic 2,2
+EAP,Topic 3,1
+EAP,Topic 4,1
+EAP,Topic 6,1
+EAP,Topic 7,1
+ECON,Topic 0,3
+ECON,Topic 4,1
+ECON,Topic 5,1
+ECON,Topic 6,25
+ECON,Topic 7,1
+ENGLISH,Topic 1,1
+ENVIR,Topic 0,1
+ENVIR,Topic 4,1
+ENVIR,Topic 6,6
+ENVIR,Topic 7,5
+ETHLDR,Topic 3,4
+ETHLDR,Topic 5,6
+ETHLDR,Topic 6,1
+FRENCH,Topic 1,2
+GCHINA,Topic 4,3
+GCHINA,Topic 5,1
+GCULS,Topic 2,3
+GCULS,Topic 3,2
+GCULS,Topic 4,2
+GCULS,Topic 5,4
+GERMAN,Topic 1,2
+GLHLTH,Topic 2,1
+GLHLTH,Topic 3,2
+GLHLTH,Topic 5,2
+GLHLTH,Topic 6,7
+GLHLTH,Topic 7,4
+GLOCHALL,Topic 3,1
+GLOCHALL,Topic 6,1
+HIST,Topic 2,1
+HIST,Topic 4,11
+HIST,Topic 5,17
+HTML,Topic 2,1
+INFOSCI,Topic 0,3
+INFOSCI,Topic 2,8
+INFOSCI,Topic 3,2
+INSTGOV,Topic 3,1
+INTGSCI,Topic 0,4
+INTGSCI,Topic 3,1
+INTGSCI,Topic 5,2
+INTGSCI,Topic 6,1
+INTGSCI,Topic 7,11
+ITALIAN,Topic 1,1
+JAPANESE,Topic 1,5
+LIT,Topic 1,1
+LIT,Topic 2,10
+LIT,Topic 3,2
+LIT,Topic 4,7
+LIT,Topic 5,16
+MATH,Topic 0,39
+MATH,Topic 1,2
+MATH,Topic 2,1
+MATH,Topic 3,1
+MATH,Topic 5,1
+MATH,Topic 6,3
+MATH,Topic 7,4
+MATSCI,Topic 0,4
+MATSCI,Topic 1,1
+MATSCI,Topic 7,1
+MEDIA,Topic 2,2
+MEDIA,Topic 4,1
+MEDIART,Topic 0,1
+MEDIART,Topic 1,2
+MEDIART,Topic 2,39
+MEDIART,Topic 3,5
+MEDIART,Topic 4,1
+MILITSCI,Topic 1,1
+MUSIC,Topic 1,1
+MUSIC,Topic 2,1
+NEUROSCI,Topic 0,1
+NEUROSCI,Topic 3,4
+NEUROSCI,Topic 7,2
+PHIL,Topic 0,2
+PHIL,Topic 3,11
+PHIL,Topic 4,3
+PHIL,Topic 5,5
+PHIL,Topic 6,1
+PHYS,Topic 0,12
+PHYS,Topic 1,2
+PHYS,Topic 7,4
+PHYSEDU,Topic 1,24
+PHYSEDU,Topic 3,3
+POLECON,Topic 0,1
+POLECON,Topic 4,1
+POLECON,Topic 5,1
+POLECON,Topic 6,3
+POLECON,Topic 7,1
+POLSCI,Topic 4,4
+POLSCI,Topic 5,21
+POLSCI,Topic 6,6
+PSYCH,Topic 3,9
+PSYCH,Topic 5,1
+PSYCH,Topic 6,1
+PSYCH,Topic 7,1
+PUBPOL,Topic 3,2
+PUBPOL,Topic 4,1
+PUBPOL,Topic 5,9
+PUBPOL,Topic 6,14
+RELIG,Topic 2,1
+RELIG,Topic 3,2
+RELIG,Topic 4,2
+RELIG,Topic 5,10
+SOCIOL,Topic 3,1
+SOCIOL,Topic 4,2
+SOCIOL,Topic 5,5
+SOCIOL,Topic 6,1
+SOSC,Topic 3,4
+SOSC,Topic 5,4
+SOSC,Topic 6,4
+SPANISH,Topic 1,4
+STATS,Topic 0,12
+STATS,Topic 2,1
+STATS,Topic 3,1
+STATS,Topic 5,2
+STATS,Topic 6,2
+UNKNOWN,Topic 0,4
+UNKNOWN,Topic 1,14
+UNKNOWN,Topic 2,10
+UNKNOWN,Topic 3,5
+UNKNOWN,Topic 4,32
+UNKNOWN,Topic 5,30
+UNKNOWN,Topic 6,11
+UNKNOWN,Topic 7,5
+USTUD,Topic 3,2
+USTUD,Topic 5,1
+WOC,Topic 1,4
+WOC,Topic 2,2
+WOC,Topic 3,6
+WOC,Topic 4,2
