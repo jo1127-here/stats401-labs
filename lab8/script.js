@@ -45,7 +45,7 @@ d3.csv("../data/lab8_embedding_map.csv", d => {
 
     data = loadedData.filter(d =>
         d.cluster_name &&
-        d.cluster_name.trim().toLowerCase() !== "unknown"
+        d.cluster_name.trim().toLowerCase() !== "UNKNOWN"
     );
 
     console.log("Loaded passages after excluding Unknown:", data.length);
