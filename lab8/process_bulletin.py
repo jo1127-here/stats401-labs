@@ -1,1650 +1,1213 @@
-import os
+from __future__ import annotations
+
 import re
+from pathlib import Path
 
 import fitz
 import numpy as np
 import pandas as pd
+import umap
 
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import KMeans
-import umap.umap_ as umap
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 # ============================================================
-# 1. PATHS
+# PATHS
 # ============================================================
 
-BASE_DIR = os.path.dirname(
-    os.path.dirname(
-        os.path.abspath(__file__)
-    )
-)
+ROOT = Path(__file__).resolve().parent.parent
 
-PDF_PATH = os.path.join(
-    BASE_DIR,
-    "data",
-    "ug_bulletin 2023-24.pdf"
-)
+PDF_PATH = ROOT / "data" / "ug_bulletin 2023-24.pdf"
 
-DATA_DIR = os.path.join(
-    BASE_DIR,
-    "data"
-)
-
-PASSAGE_OUTPUT = os.path.join(
-    DATA_DIR,
-    "bulletin_course_descriptions.csv"
-)
-
-EMBEDDING_OUTPUT = os.path.join(
-    DATA_DIR,
-    "lab8_embedding_map.csv"
-)
-
-MATRIX_OUTPUT = os.path.join(
-    DATA_DIR,
-    "lab8_topic_section_matrix.csv"
-)
+PASSAGE_OUTPUT = ROOT / "data" / "bulletin_passages.csv"
+EMBEDDING_OUTPUT = ROOT / "data" / "lab8_embedding_map.csv"
+MATRIX_OUTPUT = ROOT / "data" / "lab8_topic_section_matrix.csv"
 
 
 # ============================================================
-# 2. GENERAL TEXT CLEANING
+# SETTINGS
 # ============================================================
 
-def clean_text(text):
-    """
-    General text cleaning.
+EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
-    Keeps normal numbers because numbers can be legitimate
-    parts of course descriptions.
-    """
+N_CLUSTERS = 8
 
-    if not isinstance(text, str):
-        return ""
+RANDOM_STATE = 401
 
-    # Remove PDF page artifacts
-    text = re.sub(
-        r"\bPAGE_\d+\s+\d{1,4}\b",
-        " ",
-        text,
-        flags=re.IGNORECASE
-    )
 
-    text = re.sub(
-        r"\b\d{1,4}\s+PAGE_\d+\b",
-        " ",
-        text,
-        flags=re.IGNORECASE
-    )
+# ============================================================
+# BASIC TEXT CLEANING
+# ============================================================
 
-    text = re.sub(
-        r"\bPAGE_\d+\b",
-        " ",
-        text,
-        flags=re.IGNORECASE
-    )
+def normalize_unicode(text: str) -> str:
+    """Normalize common PDF characters."""
 
-    # Normalize whitespace
-    text = re.sub(
-        r"\s+",
-        " ",
-        text
-    )
+    replacements = {
+        "\xa0": " ",
+        "\u200b": "",
+        "\u200c": "",
+        "\u200d": "",
+        "\ufeff": "",
+        "\u2018": "'",
+        "\u2019": "'",
+        "\u201c": '"',
+        "\u201d": '"',
+        "\u2013": "-",
+        "\u2014": "-",
+    }
 
-    # Remove spaces before punctuation
-    text = re.sub(
-        r"\s+([,.;:!?])",
-        r"\1",
-        text
-    )
+    for old, new in replacements.items():
+        text = text.replace(old, new)
 
-    # Normalize slash spacing
-    text = re.sub(
-        r"\s*/\s*",
-        "/",
-        text
-    )
+    return text
+
+
+def clean_spaces(text: str) -> str:
+
+    text = normalize_unicode(text)
+
+    text = text.replace("\r", "\n")
+
+    # Collapse spaces/tabs.
+    text = re.sub(r"[ \t]+", " ", text)
+
+    # Collapse excessive blank lines.
+    text = re.sub(r"\n{3,}", "\n\n", text)
 
     return text.strip()
 
 
 # ============================================================
-# 3. PAGE CLEANING
+# PDF ARTIFACT DETECTION
 # ============================================================
 
-def clean_page_text(text):
+def is_page_number(line: str) -> bool:
+
+    line = line.strip()
+
+    if not line:
+        return False
+
+    # Examples:
+    # 267
+    # Page 267
+    # PAGE 267
+
+    return bool(
+        re.fullmatch(
+            r"(?:page\s+)?\d+",
+            line,
+            flags=re.IGNORECASE,
+        )
+    )
+
+
+def remove_inline_page_numbers(text: str) -> str:
     """
-    Clean a page while preserving line breaks.
+    Remove page numbers accidentally embedded in extracted text.
 
-    Line breaks are important because course headings are
-    detected from the beginning of lines.
+    Examples:
+
+        "culture to date. 267 deeper appreciation"
+
+    becomes:
+
+        "culture to date. deeper appreciation"
+
+    Also handles:
+
+        "globalization of culture 268 cultural products"
+
     """
 
-    if not isinstance(text, str):
-        return ""
+    # Page numbers appearing immediately after punctuation
+    # and before another word.
 
-    # Normalize line endings
-    text = text.replace("\r\n", "\n")
-    text = text.replace("\r", "\n")
-
-    # Remove PAGE artifacts
     text = re.sub(
-        r"\bPAGE_\d+\s+\d{1,4}\b",
+        r"(?<=[.!?])\s+\d{1,4}\s+(?=[A-Za-z])",
         " ",
         text,
-        flags=re.IGNORECASE
     )
 
+    # Page number between words.
+    # We only target 2-3 digit numbers to avoid deleting
+    # legitimate numbers such as course years.
     text = re.sub(
-        r"\b\d{1,4}\s+PAGE_\d+\b",
+        r"(?<=[a-zA-Z])\s+\d{2,3}\s+(?=[a-zA-Z])",
         " ",
         text,
-        flags=re.IGNORECASE
-    )
-
-    text = re.sub(
-        r"\bPAGE_\d+\b",
-        " ",
-        text,
-        flags=re.IGNORECASE
-    )
-
-    # Normalize tabs/spaces, preserve newline
-    text = re.sub(
-        r"[ \t]+",
-        " ",
-        text
-    )
-
-    # Remove spaces before punctuation
-    text = re.sub(
-        r"[ \t]+([,.;:!?])",
-        r"\1",
-        text
     )
 
     return text
 
 
+def is_header_footer(line: str) -> bool:
+
+    s = line.strip().lower()
+
+    if not s:
+        return True
+
+    if is_page_number(s):
+        return True
+
+    exact_headers = {
+        "duke kunshan university",
+        "undergraduate instruction bulletin",
+        "undergraduate bulletin",
+    }
+
+    if s in exact_headers:
+        return True
+
+    return False
+
+
 # ============================================================
-# 4. COURSE CODE
+# FIX PDF WORD JOINING
 # ============================================================
 
-COURSE_CODE_PATTERN = re.compile(
-    r"""
-    ^
-    \s*
-    (?P<code>
-        [A-Z]{2,8}
-        \s*
-        \d{3}
-        (?:
-            \s*/\s*
-            [A-Z]{2,8}
-            \s*
-            \d{3}
-        )*
+def fix_common_pdf_joins(text: str) -> str:
+    """
+    Fix words that became joined during PDF extraction.
+
+    This is deliberately conservative.
+
+    Examples:
+
+        toacoustics
+        becomemeaningful
+        historicalbackground
+        artand
+        withthe
+        ofAmerican
+
+    """
+
+    # --------------------------------------------------------
+    # General English word-boundary repairs.
+    #
+    # We only repair a selected set of highly common joins.
+    # --------------------------------------------------------
+
+    replacements = [
+        (r"\btoacoustics\b", "to acoustics"),
+        (r"\btoart\b", "to art"),
+        (r"\btoan\b", "to an"),
+        (r"\btoapply\b", "to apply"),
+        (r"\btoapproach\b", "to approach"),
+        (r"\btoexplore\b", "to explore"),
+        (r"\btointerpret\b", "to interpret"),
+        (r"\btoidentify\b", "to identify"),
+        (r"\btounderstand\b", "to understand"),
+        (r"\touse\b", "to use"),
+
+        (r"\bbecomemeaningful\b", "become meaningful"),
+        (r"\bbecomesignificant\b", "become significant"),
+        (r"\bbecomeaware\b", "become aware"),
+        (r"\bbecomeordinary\b", "become ordinary"),
+
+        (r"\bhistoricalbackground\b", "historical background"),
+        (r"\bhistoricalcontext\b", "historical context"),
+        (r"\bhistoricaltrajectory\b", "historical trajectory"),
+
+        (r"\bwiththe\b", "with the"),
+        (r"\bwitha\b", "with a"),
+        (r"\bwithan\b", "with an"),
+        (r"\bwiththis\b", "with this"),
+        (r"\bwiththeir\b", "with their"),
+
+        (r"\binthe\b", "in the"),
+        (r"\bintheir\b", "in their"),
+        (r"\bintroductionto\b", "introduction to"),
+
+        (r"\bfromthe\b", "from the"),
+        (r"\bfroma\b", "from a"),
+        (r"\bfroman\b", "from an"),
+
+        (r"\bofthe\b", "of the"),
+        (r"\bofthis\b", "of this"),
+        (r"\bofAmerican\b", "of American"),
+        (r"\bofChinese\b", "of Chinese"),
+        (r"\bofEast\b", "of East"),
+
+        (r"\bandthe\b", "and the"),
+        (r"\bandis\b", "and is"),
+        (r"\bandstudents\b", "and students"),
+        (r"\bandfocuses\b", "and focuses"),
+
+        (r"\binthe\b", "in the"),
+        (r"\bonlyif\b", "only if"),
+        (r"\bforstudents\b", "for students"),
+        (r"\bforcourse\b", "for course"),
+
+        (r"\bmorethan\b", "more than"),
+        (r"\bsuchas\b", "such as"),
+        (r"\bparticularattention\b", "particular attention"),
+        (r"\bspecialattention\b", "special attention"),
+        (r"\bpartofthe\b", "part of the"),
+    ]
+
+    for pattern, replacement in replacements:
+
+        text = re.sub(
+            pattern,
+            replacement,
+            text,
+            flags=re.IGNORECASE,
+        )
+
+    return text
+
+
+# ============================================================
+# LINE RECONSTRUCTION
+# ============================================================
+
+def join_lines(lines: list[str]) -> str:
+    """
+    Join physical PDF lines into normal prose.
+
+    Hyphenated line breaks are repaired.
+    """
+
+    result = ""
+
+    for raw in lines:
+
+        line = raw.strip()
+
+        if not line:
+            continue
+
+        if not result:
+            result = line
+            continue
+
+        # Word broken at line boundary:
+        #
+        # comprehen-
+        # sive
+        #
+        # → comprehensive
+
+        if result.endswith("-") and line:
+
+            # Only remove hyphen when the next word looks
+            # like a continuation.
+            if line[0].islower():
+
+                result = (
+                    result[:-1]
+                    + line
+                )
+
+                continue
+
+        result += " " + line
+
+    result = clean_spaces(result)
+
+    result = remove_inline_page_numbers(result)
+
+    result = fix_common_pdf_joins(result)
+
+    result = re.sub(
+        r"\s+([,.;:!?])",
+        r"\1",
+        result,
     )
-    (?:
-        \s+
-        (?P<rest>.*)
-    )?
-    $
-    """,
-    flags=re.IGNORECASE | re.VERBOSE
+
+    return result.strip()
+
+
+# ============================================================
+# COURSE HEADER
+# ============================================================
+
+COURSE_CODE_RE = re.compile(
+    r"\b([A-Z]{2,8})\s*([0-9]{3,4}[A-Z]?)\b"
 )
 
 
-def normalize_course_code(code):
-    """
-    Normalize:
+def parse_course_header(text: str):
 
-        ARTS 201
-        ARTS 201 / HIST 201
-        HIST 207/ARTS 207
+    text = clean_spaces(text)
 
-    into:
-
-        ARTS 201
-        ARTS 201/HIST 201
-        HIST 207/ARTS 207
-    """
-
-    if not isinstance(code, str):
-        return ""
-
-    code = code.upper()
-
-    code = re.sub(
-        r"\s*/\s*",
-        "/",
-        code
-    )
-
-    code = re.sub(
-        r"\s+",
-        " ",
-        code
-    )
-
-    return code.strip()
-
-
-def get_subject(course_code):
-    """
-    First subject in the course code.
-
-    ARTS 203/GCHINA 203
-        -> ARTS
-    """
-
-    if not isinstance(course_code, str):
-        return "UNKNOWN"
-
-    match = re.match(
-        r"^([A-Z]{2,8})\s*\d{3}",
-        course_code.upper()
-    )
-
-    if match:
-        return match.group(1)
-
-    return "UNKNOWN"
-
-
-# ============================================================
-# 5. COURSE HEADING DETECTION
-# ============================================================
-
-def detect_course_heading(line):
-    """
-    Detect a course heading from ONE line.
-
-    Examples accepted:
-
-        ARTS 201 Introduction to Film Studies
-        BIOL 201 Cell Biology
-        ARTS 203/GCHINA 203 Visual China
-        DKU 101
-
-    Important:
-        The course number MUST contain exactly 3 digits.
-
-    Therefore:
-
-        August 1896
-        before 1900
-        the 20
-
-    are NOT courses.
-    """
-
-    if not isinstance(line, str):
-        return None
-
-    line = line.strip()
-
-    if not line:
-        return None
-
-    # Remove PAGE artifacts before detection
-    line = re.sub(
-        r"\bPAGE_\d+\b",
-        " ",
-        line,
-        flags=re.IGNORECASE
-    ).strip()
-
-    match = COURSE_CODE_PATTERN.match(line)
+    match = COURSE_CODE_RE.search(text)
 
     if not match:
         return None
 
-    code = normalize_course_code(
-        match.group("code")
+    subject = match.group(1).strip()
+
+    course_code = match.group(2).strip()
+
+    remaining = text[match.end():].strip()
+
+    # Find credits.
+    credit_match = re.search(
+        r"\(?\s*(\d+(?:\.\d+)?)\s+credits?\s*\)?",
+        remaining,
+        flags=re.IGNORECASE,
     )
 
-    rest = match.group("rest") or ""
-    rest = rest.strip()
+    if credit_match:
 
-    subject = get_subject(code)
+        credits = float(
+            credit_match.group(1)
+        )
 
-    if subject == "UNKNOWN":
-        return None
+        title = remaining[
+            :credit_match.start()
+        ].strip(" ,.;:-")
 
-    # Reject obvious non-course headings
-    bad_codes = {
-        "PAGE",
-        "COURSE",
-        "SECTION",
-        "CHAPTER",
-    }
+        after_title = remaining[
+            credit_match.end():
+        ].strip()
 
-    if subject in bad_codes:
-        return None
-
-    # Reject if the entire remaining text is just numbers.
-    # Example:
-    #
-    # DKU 101 0.0 26
-    #
-    # This is potentially a metadata line, so title will
-    # be obtained from the following line.
-    if rest and re.fullmatch(
-        r"[\d.,\s]+",
-        rest
-    ):
-        title = ""
     else:
-        title = rest
+
+        credits = np.nan
+
+        title = remaining.strip(
+            " ,.;:-"
+        )
+
+        after_title = ""
+
+    # Reject obviously incorrect matches.
+    if not title:
+        return None
+
+    if len(title) > 180:
+        return None
+
+    # A title should not look like a paragraph.
+    if len(title.split()) > 30:
+        return None
 
     return {
-        "code": code,
         "subject": subject,
-        "title": title,
+        "course_code": course_code,
+        "course_title": title,
+        "credits": credits,
+        "after_title": after_title,
     }
 
 
 # ============================================================
-# 6. CREDIT EXTRACTION
+# HEADING DETECTION
 # ============================================================
 
-def extract_credits_from_header(text):
-    """
-    Try to extract credits from course-header metadata.
+def looks_like_heading(text: str) -> bool:
 
-    Examples:
+    s = text.strip()
 
-        4
-        4.0
-        3.0 268
+    if not s:
+        return False
 
-    Returns:
-        float or NaN
-    """
+    if len(s) > 120:
+        return False
 
-    if not isinstance(text, str):
-        return np.nan
+    lower = s.lower()
 
-    text = text.strip()
+    if lower.startswith("chapter "):
+        return True
 
-    # Explicit wording
-    match = re.search(
-        r"\b(\d+(?:\.\d+)?)\s*credits?\b",
-        text,
-        flags=re.IGNORECASE
-    )
+    if lower.startswith("section "):
+        return True
 
-    if match:
-        return float(match.group(1))
+    if lower.startswith("part "):
+        return True
 
-    # A small numeric value at the beginning.
-    #
-    # This handles layouts such as:
-    #
-    # 0.0 26
-    #
-    # where 0.0 is the credit value and 26 is
-    # the printed page number.
-    match = re.match(
-        r"^\s*(\d+(?:\.\d+)?)\b",
-        text
-    )
-
-    if match:
-        value = float(match.group(1))
-
-        if 0 <= value <= 20:
-            return value
-
-    return np.nan
-
-
-def extract_credits(text):
-    """
-    Extract credits from the full course text.
-    """
-
-    if not isinstance(text, str):
-        return np.nan
-
-    # Explicit credits
-    match = re.search(
-        r"\b(\d+(?:\.\d+)?)\s*credits?\b",
-        text,
-        flags=re.IGNORECASE
-    )
-
-    if match:
-        return float(match.group(1))
-
-    # Non-credit
-    if re.search(
-        r"\bnon[- ]credit\b",
-        text,
-        flags=re.IGNORECASE
+    if re.match(
+        r"^\d+(?:\.\d+)*\.?\s+[A-Z]",
+        s,
     ):
-        return 0.0
+        return True
 
-    return np.nan
+    return False
 
 
 # ============================================================
-# 7. REMOVE COURSE HEADER ARTIFACTS
+# PAGE EXTRACTION
 # ============================================================
 
-def clean_course_description(text):
-    """
-    Clean extracted course description.
-    """
+def extract_page_blocks(
+    page_text: str,
+) -> list[str]:
 
-    if not isinstance(text, str):
-        return ""
+    page_text = clean_spaces(page_text)
 
-    # Remove PDF artifacts
-    text = re.sub(
-        r"\bPAGE_\d+\s+\d{1,4}\b",
-        " ",
-        text,
-        flags=re.IGNORECASE
+    raw_blocks = re.split(
+        r"\n\s*\n",
+        page_text,
     )
 
-    text = re.sub(
-        r"\b\d{1,4}\s+PAGE_\d+\b",
-        " ",
-        text,
-        flags=re.IGNORECASE
+    blocks = []
+
+    for block in raw_blocks:
+
+        raw_lines = block.split("\n")
+
+        lines = []
+
+        for line in raw_lines:
+
+            line = line.strip()
+
+            if not line:
+                continue
+
+            if is_header_footer(line):
+                continue
+
+            lines.append(line)
+
+        if not lines:
+            continue
+
+        text = join_lines(lines)
+
+        if not text:
+            continue
+
+        if is_page_number(text):
+            continue
+
+        blocks.append(text)
+
+    return blocks
+
+
+# ============================================================
+# COURSE PASSAGE EXTRACTION
+# ============================================================
+
+def build_course_passage(
+    blocks: list[str],
+    start_index: int,
+):
+
+    first_block = blocks[start_index]
+
+    course = parse_course_header(
+        first_block
     )
 
-    text = re.sub(
-        r"\bPAGE_\d+\b",
-        " ",
-        text,
-        flags=re.IGNORECASE
+    if course is None:
+        return None, start_index + 1
+
+    description_parts = []
+
+    # --------------------------------------------------------
+    # Text remaining after course title/credits
+    # --------------------------------------------------------
+
+    remainder = course.get(
+        "after_title",
+        "",
+    ).strip()
+
+    if remainder:
+        description_parts.append(
+            remainder
+        )
+
+    j = start_index + 1
+
+    while j < len(blocks):
+
+        block = blocks[j].strip()
+
+        if not block:
+            j += 1
+            continue
+
+        # Next course begins.
+        if parse_course_header(block):
+            break
+
+        # New structural heading.
+        if looks_like_heading(block):
+            break
+
+        # Some PDF pages contain standalone page numbers.
+        if is_page_number(block):
+            j += 1
+            continue
+
+        words = block.split()
+
+        # Ignore tiny artifacts.
+        if len(words) < 5:
+            j += 1
+            continue
+
+        description_parts.append(block)
+
+        j += 1
+
+        # Avoid accidentally absorbing a whole section.
+        current_words = len(
+            " ".join(
+                description_parts
+            ).split()
+        )
+
+        if current_words > 300:
+            break
+
+    description = " ".join(
+        description_parts
     )
 
-    # Remove repeated section title
-    text = re.sub(
-        r"\bCourse Descriptions\b",
-        " ",
-        text,
-        flags=re.IGNORECASE
+    description = clean_spaces(
+        description
     )
 
-    # Normalize whitespace
-    text = re.sub(
-        r"\s+",
-        " ",
-        text
+    description = remove_inline_page_numbers(
+        description
     )
 
-    # Remove spaces before punctuation
-    text = re.sub(
+    description = fix_common_pdf_joins(
+        description
+    )
+
+    # Clean spaces around punctuation.
+    description = re.sub(
         r"\s+([,.;:!?])",
         r"\1",
-        text
+        description,
     )
 
-    # Normalize slash
-    text = re.sub(
-        r"\s*/\s*",
-        "/",
-        text
+    return (
+        {
+            "course": course,
+            "description": description,
+        },
+        j,
     )
-
-    return text.strip()
 
 
 # ============================================================
-# 8. FIND COURSE DESCRIPTIONS
+# MAIN PDF → DATAFRAME
 # ============================================================
 
-def extract_course_descriptions(pdf_path):
+def extract_passages(
+    pdf_path: Path,
+) -> pd.DataFrame:
 
-    print()
-    print("=" * 70)
-    print("EXTRACTING COURSE DESCRIPTIONS")
-    print("=" * 70)
+    pdf = fitz.open(pdf_path)
 
-    doc = fitz.open(pdf_path)
+    records = []
 
-    print(
-        f"PDF pages: {len(doc)}"
-    )
+    course_counter = 1
 
-    # --------------------------------------------------------
-    # Find Course Descriptions
-    # --------------------------------------------------------
-    start_page = None
+    current_chapter = "Unknown"
+    current_section = "Unknown"
+    current_subsection = "Unknown"
 
-    for i, page in enumerate(doc):
-        text = page.get_text("text")
-
-        # The table of contents mentions "Course Descriptions"
-        # on page 8, but the actual section starts on PDF page 267.
-        # We therefore require the page to contain actual course
-        # headings such as "ARTS 201" or "COMPSCI 101".
-
-        has_course_heading = re.search(
-            r"^\s*[A-Z]{2,8}\s*\d{3}\b",
-            text,
-            flags=re.MULTILINE
-        )
-
-        if (
-            re.search(
-                r"\bCourse Descriptions\b",
-                text,
-                flags=re.IGNORECASE
-            )
-            and has_course_heading
-        ):
-            start_page = i
-            break
-
-    if start_page is None:
-        raise ValueError(
-            "Could not find the actual Course Descriptions section."
-        )
-
-    print(
-        f"Course Descriptions starts around "
-        f"PDF page {start_page + 1}"
-    )
-    # --------------------------------------------------------
-    # Read all pages after Course Descriptions
-    # --------------------------------------------------------
-
-    page_lines = []
-
-    stop_markers = {
-        "Academic Policies",
-        "Academic Regulations",
-        "Student Affairs",
-        "Appendix",
-    }
-
-    for page_index in range(
-        start_page,
-        len(doc)
+    # IMPORTANT:
+    # start=1 means actual PDF page number.
+    for page_index, page in enumerate(
+        pdf,
+        start=1,
     ):
 
-        pdf_page = page_index + 1
-
-        raw_text = doc[
-            page_index
-        ].get_text("text")
-
-        cleaned = clean_page_text(
-            raw_text
+        page_text = page.get_text(
+            "text"
         )
 
-        lines = cleaned.split("\n")
-
-        stop_page = False
-
-        for line in lines:
-
-            stripped = line.strip()
-
-            # Stop only if a line itself is a major section.
-            # We do NOT use "if marker in raw_text" because
-            # that can accidentally stop inside a course
-            # description.
-            if stripped in stop_markers:
-
-                stop_page = True
-                break
-
-            page_lines.append(
-                {
-                    "page": pdf_page,
-                    "text": stripped,
-                }
-            )
-
-        if stop_page:
-            print(
-                f"Stopping at PDF page {pdf_page}"
-            )
-            break
-
-    doc.close()
-
-    # --------------------------------------------------------
-    # Detect headings
-    # --------------------------------------------------------
-
-    headings = []
-
-    for index, item in enumerate(page_lines):
-
-        result = detect_course_heading(
-            item["text"]
-        )
-
-        if result is None:
+        if not page_text.strip():
             continue
 
-        headings.append(
-            {
-                "line_index": index,
-                "page": item["page"],
-                "code": result["code"],
-                "subject": result["subject"],
-                "title": result["title"],
-            }
+        blocks = extract_page_blocks(
+            page_text
         )
 
-    print()
-    print(
-        f"Potential course headings: {len(headings)}"
-    )
-
-    # --------------------------------------------------------
-    # Show first detected headings
-    # --------------------------------------------------------
-
-    print()
-    print("First detected course headings:")
-
-    for heading in headings[:20]:
-
-        print(
-            f"  page {heading['page']} | "
-            f"{heading['code']} | "
-            f"{heading['title']}"
-        )
-
-    # --------------------------------------------------------
-    # Remove duplicate headings
-    # --------------------------------------------------------
-
-    unique_headings = []
-
-    seen = set()
-
-    for heading in headings:
-
-        key = (
-            heading["line_index"],
-            heading["page"],
-            heading["code"],
-        )
-
-        if key in seen:
+        if not blocks:
             continue
 
-        seen.add(key)
+        i = 0
 
-        unique_headings.append(
-            heading
-        )
+        while i < len(blocks):
 
-    headings = unique_headings
+            block = blocks[i].strip()
 
-    print()
-    print(
-        f"Unique course headings: {len(headings)}"
-    )
-
-    if len(headings) < 5:
-
-        print()
-        print("=" * 70)
-        print("COURSE EXTRACTION FAILED")
-        print("=" * 70)
-
-        print(
-            "Fewer than 5 courses were detected."
-        )
-
-        print()
-        print(
-            "The first 80 non-empty lines near "
-            "Course Descriptions are:"
-        )
-
-        shown = 0
-
-        for item in page_lines:
-
-            if not item["text"]:
+            if not block:
+                i += 1
                 continue
 
-            print(
-                f"{item['page']:>4} | "
-                f"{item['text']}"
+            # ------------------------------------------------
+            # Update hierarchy
+            # ------------------------------------------------
+
+            lower = block.lower()
+
+            if lower.startswith(
+                "chapter "
+            ):
+                current_chapter = block
+                current_section = "Unknown"
+                current_subsection = "Unknown"
+
+                i += 1
+                continue
+
+            if lower.startswith(
+                "section "
+            ):
+                current_section = block
+                current_subsection = "Unknown"
+
+                i += 1
+                continue
+
+            if looks_like_heading(block):
+                current_subsection = block
+
+                i += 1
+                continue
+
+            # ------------------------------------------------
+            # Course
+            # ------------------------------------------------
+
+            course_result, next_i = (
+                build_course_passage(
+                    blocks,
+                    i,
+                )
             )
 
-            shown += 1
+            if course_result is not None:
 
-            if shown >= 80:
-                break
+                course = course_result[
+                    "course"
+                ]
 
-        raise ValueError(
-            f"Only {len(headings)} courses were detected. "
-            "Course extraction must be fixed before embeddings/UMAP."
-        )
-
-    # ========================================================
-    # BUILD COURSE RECORDS
-    # ========================================================
-
-    rows = []
-
-    for i, heading in enumerate(headings):
-
-        start_line = heading["line_index"]
-
-        if i + 1 < len(headings):
-
-            end_line = headings[
-                i + 1
-            ]["line_index"]
-
-        else:
-
-            end_line = len(
-                page_lines
-            )
-
-        # ----------------------------------------------------
-        # Lines belonging to this course
-        # ----------------------------------------------------
-
-        course_lines = page_lines[
-            start_line:end_line
-        ]
-
-        # ----------------------------------------------------
-        # Course title
-        # ----------------------------------------------------
-
-        title = heading["title"].strip()
-
-        # If the heading line has no title, use the next
-        # meaningful line as title.
-        #
-        # Example:
-        #
-        # DKU 101 0.0 26
-        # Introduction to Duke Kunshan University
-        #
-        if not title:
-
-            for candidate in course_lines[1:]:
-
-                candidate_text = (
-                    candidate["text"].strip()
+                description = (
+                    course_result[
+                        "description"
+                    ]
                 )
 
-                if not candidate_text:
-                    continue
+                # A valid course description should have
+                # enough content to be meaningful.
+                if len(
+                    description.split()
+                ) >= 8:
 
-                # Skip metadata-only lines
-                if re.fullmatch(
-                    r"[\d.,\s]+",
-                    candidate_text
-                ):
-                    continue
+                    records.append(
+                        {
+                            "passage_id":
+                                f"course_{course_counter:04d}",
 
-                title = candidate_text
-                break
+                            "chapter":
+                                current_chapter,
 
-        # ----------------------------------------------------
-        # Build description
-        # ----------------------------------------------------
+                            "section":
+                                current_section,
 
-        description_lines = []
+                            "subsection":
+                                current_subsection,
 
-        # Everything after the heading line
-        for line_item in course_lines[1:]:
+                            "subject":
+                                course["subject"],
 
-            text = line_item["text"].strip()
+                            "course_code":
+                                (
+                                    course["subject"]
+                                    + " "
+                                    + course["course_code"]
+                                ),
 
-            if not text:
+                            "course_title":
+                                course["course_title"],
+
+                            "credits":
+                                course["credits"],
+
+                            "page":
+                                page_index,
+
+                            "text":
+                                description,
+                        }
+                    )
+
+                    course_counter += 1
+
+                i = next_i
+
                 continue
 
-            description_lines.append(
+            # ------------------------------------------------
+            # Ordinary paragraph / policy block
+            # ------------------------------------------------
+
+            text = block
+
+            text = remove_inline_page_numbers(
                 text
             )
 
-        raw_description = "\n".join(
-            description_lines
-        )
-
-        # ----------------------------------------------------
-        # If title came from next line, remove it from
-        # description.
-        # ----------------------------------------------------
-
-        if title:
-
-            description_lines_without_title = []
-
-            title_removed = False
-
-            for text in description_lines:
-
-                if (
-                    not title_removed
-                    and text.strip() == title.strip()
-                ):
-                    title_removed = True
-                    continue
-
-                description_lines_without_title.append(
-                    text
-                )
-
-            raw_description = "\n".join(
-                description_lines_without_title
+            text = fix_common_pdf_joins(
+                text
             )
 
-        # ----------------------------------------------------
-        # Credits
-        # ----------------------------------------------------
-
-        header_text = heading["title"]
-
-        credits = extract_credits_from_header(
-            header_text
-        )
-
-        # Check the line after heading for metadata.
-        if pd.isna(credits):
-
-            header_index = start_line + 1
-
-            if header_index < len(page_lines):
-
-                next_line = page_lines[
-                    header_index
-                ]["text"]
-
-                possible_credits = (
-                    extract_credits_from_header(
-                        next_line
-                    )
-                )
-
-                if not pd.isna(
-                    possible_credits
-                ):
-
-                    credits = possible_credits
-
-        # Search description for explicit credits
-        if pd.isna(credits):
-
-            credits = extract_credits(
-                raw_description
+            text = clean_spaces(
+                text
             )
 
-        # ----------------------------------------------------
-        # Clean description
-        # ----------------------------------------------------
+            if len(
+                text.split()
+            ) < 8:
 
-        passage_text = clean_course_description(
-            raw_description
-        )
+                i += 1
+                continue
 
-        # ----------------------------------------------------
-        # If description accidentally begins with a
-        # credit value, remove it.
-        #
-        # Example:
-        #
-        # 4.0 268
-        # Actual description...
-        # ----------------------------------------------------
-
-        passage_text = re.sub(
-            r"^\s*\d+(?:\.\d+)?\s+\d{1,4}\s+",
-            "",
-            passage_text
-        )
-
-        # ----------------------------------------------------
-        # Non-credit
-        # ----------------------------------------------------
-
-        if pd.isna(credits):
-
+            # Skip table-of-contents artifacts.
             if re.search(
-                r"\bnon[- ]credit\b",
-                passage_text,
-                flags=re.IGNORECASE
+                r"\.{3,}\s*\d+$",
+                text,
             ):
-                credits = 0.0
+                i += 1
+                continue
 
-        # ----------------------------------------------------
-        # Final checks
-        # ----------------------------------------------------
+            records.append(
+                {
+                    "passage_id":
+                        f"passage_{len(records)+1:04d}",
 
-        code = heading["code"]
-        subject = heading["subject"]
-        page = heading["page"]
+                    "chapter":
+                        current_chapter,
 
-        if not code:
-            continue
+                    "section":
+                        current_section,
 
-        if not title:
-            continue
+                    "subsection":
+                        current_subsection,
 
-        if subject == "UNKNOWN":
-            continue
+                    "subject":
+                        "Unknown",
 
-        if not passage_text:
-            continue
+                    "course_code":
+                        "Unknown",
 
-        # Avoid pure numeric garbage
-        if re.fullmatch(
-            r"[\d\s.,]+",
-            passage_text
-        ):
-            continue
+                    "course_title":
+                        "Unknown",
 
-        # Avoid tiny accidental records
-        if len(
-            passage_text.split()
-        ) < 5:
-            continue
+                    "credits":
+                        np.nan,
 
-        rows.append(
-            {
-                "passage_id": (
-                    f"course_{len(rows) + 1:04d}"
-                ),
-                "chapter": "Course Catalog",
-                "section": "Course Descriptions",
-                "subsection": title,
-                "subject": subject,
-                "course_code": code,
-                "course_title": title,
-                "credits": credits,
-                "page": page,
-                "text": passage_text,
-            }
-        )
+                    "page":
+                        page_index,
 
-    # ========================================================
-    # DATAFRAME
-    # ========================================================
+                    "text":
+                        text,
+                }
+            )
 
-    df = pd.DataFrame(rows)
+            i += 1
 
-    if df.empty:
+    pdf.close()
 
-        raise ValueError(
-            "No valid courses were extracted."
-        )
-
-    # --------------------------------------------------------
-    # Remove UNKNOWN
-    # --------------------------------------------------------
-
-    unknown_mask = (
-        df["subject"]
-        .astype(str)
-        .str.upper()
-        .eq("UNKNOWN")
+    return pd.DataFrame(
+        records
     )
-
-    unknown_mask |= (
-        df["course_code"]
-        .astype(str)
-        .str.upper()
-        .str.contains(
-            "UNKNOWN",
-            na=False
-        )
-    )
-
-    unknown_mask |= (
-        df["course_title"]
-        .astype(str)
-        .str.upper()
-        .str.contains(
-            "UNKNOWN",
-            na=False
-        )
-    )
-
-    removed_unknown = int(
-        unknown_mask.sum()
-    )
-
-    df = df[
-        ~unknown_mask
-    ].copy()
-
-    print()
-    print(
-        f"UNKNOWN rows removed: "
-        f"{removed_unknown}"
-    )
-
-    # --------------------------------------------------------
-    # Deduplicate
-    # --------------------------------------------------------
-
-    before = len(df)
-
-    df = df.drop_duplicates(
-        subset=[
-            "course_code",
-            "course_title",
-            "text",
-        ]
-    ).copy()
-
-    print(
-        f"Duplicate rows removed: "
-        f"{before - len(df)}"
-    )
-
-    # --------------------------------------------------------
-    # Normalize
-    # --------------------------------------------------------
-
-    df["text"] = (
-        df["text"]
-        .astype(str)
-        .apply(clean_text)
-    )
-
-    df["course_code"] = (
-        df["course_code"]
-        .astype(str)
-        .apply(normalize_course_code)
-    )
-
-    df["subject"] = (
-        df["subject"]
-        .astype(str)
-        .str.upper()
-    )
-
-    # --------------------------------------------------------
-    # Counts
-    # --------------------------------------------------------
-
-    df["word_count"] = (
-        df["text"]
-        .str.split()
-        .str.len()
-    )
-
-    df["char_count"] = (
-        df["text"]
-        .str.len()
-    )
-
-    # --------------------------------------------------------
-    # Sort
-    # --------------------------------------------------------
-
-    df = df.sort_values(
-        by=[
-            "page",
-            "subject",
-            "course_code",
-        ],
-        na_position="last"
-    ).reset_index(
-        drop=True
-    )
-
-    # --------------------------------------------------------
-    # Re-number IDs
-    # --------------------------------------------------------
-
-    df["passage_id"] = [
-        f"course_{i + 1:04d}"
-        for i in range(len(df))
-    ]
-
-    # --------------------------------------------------------
-    # Save
-    # --------------------------------------------------------
-
-    df.to_csv(
-        PASSAGE_OUTPUT,
-        index=False
-    )
-
-    print()
-    print("=" * 70)
-    print("EXTRACTION COMPLETE")
-    print("=" * 70)
-
-    print(
-        f"Number of courses: {len(df)}"
-    )
-
-    print(
-        f"Number of subjects: "
-        f"{df['subject'].nunique()}"
-    )
-
-    print()
-    print(
-        "Subjects:"
-    )
-
-    print(
-        df["subject"]
-        .value_counts()
-        .head(30)
-        .to_string()
-    )
-
-    print()
-    print(
-        "First 15 courses:"
-    )
-
-    print(
-        df[
-            [
-                "course_code",
-                "course_title",
-                "subject",
-                "credits",
-                "page",
-            ]
-        ]
-        .head(15)
-        .to_string(index=False)
-    )
-
-    print()
-    print(
-        f"Saved corpus:\n{PASSAGE_OUTPUT}"
-    )
-
-    return df
 
 
 # ============================================================
-# 9. CLEAN DATAFRAME
+# FINAL CORPUS CLEANING
 # ============================================================
 
-def clean_dataframe(df):
-
-    print()
-    print("=" * 70)
-    print("CLEANING DATAFRAME")
-    print("=" * 70)
+def clean_corpus(
+    df: pd.DataFrame,
+) -> pd.DataFrame:
 
     df = df.copy()
 
-    # Clean text
     df["text"] = (
         df["text"]
+        .fillna("")
         .astype(str)
-        .apply(clean_text)
+        .map(clean_spaces)
     )
 
-    # Remove empty
-    df = df[
-        df["text"].str.strip().ne("")
-    ].copy()
-
-    # Remove very short passages
-    df = df[
-        df["word_count"] >= 5
-    ].copy()
-
-    # Remove UNKNOWN
-    unknown_mask = (
-        df["subject"]
-        .astype(str)
-        .str.upper()
-        .eq("UNKNOWN")
+    df["text"] = (
+        df["text"]
+        .map(remove_inline_page_numbers)
+        .map(fix_common_pdf_joins)
+        .map(clean_spaces)
     )
 
-    unknown_mask |= (
-        df["course_code"]
-        .astype(str)
-        .str.upper()
-        .str.contains(
-            "UNKNOWN",
-            na=False
-        )
-    )
-
-    unknown_mask |= (
-        df["course_title"]
-        .astype(str)
-        .str.upper()
-        .str.contains(
-            "UNKNOWN",
-            na=False
-        )
-    )
-
-    removed = int(
-        unknown_mask.sum()
-    )
-
-    df = df[
-        ~unknown_mask
-    ].copy()
-
-    print(
-        f"UNKNOWN rows removed: {removed}"
-    )
-
-    # Deduplicate
-    before = len(df)
-
+    # Remove duplicate passages.
     df = df.drop_duplicates(
-        subset=[
-            "course_code",
-            "course_title",
-            "text",
-        ]
-    ).copy()
-
-    print(
-        f"Duplicate rows removed: "
-        f"{before - len(df)}"
+        subset=["text"],
+        keep="first",
     )
 
-    # Recalculate counts
-    df["word_count"] = (
+    # Remove very short passages.
+    df = df[
         df["text"]
         .str.split()
         .str.len()
+        >= 8
+    ].copy()
+
+    # Page must be numeric.
+    df["page"] = pd.to_numeric(
+        df["page"],
+        errors="coerce",
     )
 
-    df["char_count"] = (
-        df["text"]
-        .str.len()
+    df = df[
+        df["page"].notna()
+    ].copy()
+
+    df["page"] = (
+        df["page"]
+        .astype(int)
     )
+
+    # Never allow page 0.
+    df = df[
+        df["page"] > 0
+    ].copy()
 
     df = df.reset_index(
         drop=True
     )
 
-    df["passage_id"] = [
-        f"course_{i + 1:04d}"
-        for i in range(len(df))
-    ]
+    # Reassign clean IDs.
+    new_ids = []
 
-    if len(df) < 5:
+    for i, row in df.iterrows():
 
-        raise ValueError(
-            f"Only {len(df)} courses remain after cleaning. "
-            "Course extraction must be fixed before UMAP."
-        )
+        if row["course_code"] != "Unknown":
+            new_ids.append(
+                f"course_{i+1:04d}"
+            )
+        else:
+            new_ids.append(
+                f"passage_{i+1:04d}"
+            )
+
+    df["passage_id"] = new_ids
+
+    # Word count.
+    df["word_count"] = (
+        df["text"]
+        .str.split()
+        .str.len()
+    )
+
+    # Character count.
+    df["char_count"] = (
+        df["text"]
+        .str.len()
+    )
 
     return df
 
 
 # ============================================================
-# 10. EMBEDDINGS
+# TOPIC LABELS
 # ============================================================
 
-def generate_embeddings(df):
+def generate_cluster_labels(
+    df: pd.DataFrame,
+) -> dict[int, str]:
 
-    print()
-    print("=" * 70)
-    print("GENERATING EMBEDDINGS")
-    print("=" * 70)
-
-    model_name = "all-MiniLM-L6-v2"
-
-    print(
-        f"Model: {model_name}"
+    vectorizer = TfidfVectorizer(
+        stop_words="english",
+        max_features=5000,
+        ngram_range=(1, 2),
+        min_df=2,
     )
 
-    model = SentenceTransformer(
-        model_name
+    matrix = vectorizer.fit_transform(
+        df["text"].tolist()
     )
 
-    texts = (
-        df["text"]
-        .astype(str)
-        .tolist()
+    terms = np.array(
+        vectorizer.get_feature_names_out()
     )
 
-    embeddings = model.encode(
-        texts,
-        show_progress_bar=True,
-        convert_to_numpy=True
-    )
+    labels = {}
 
-    print(
-        f"Embedding shape: "
-        f"{embeddings.shape}"
-    )
-
-    return embeddings
-
-
-# ============================================================
-# 11. UMAP
-# ============================================================
-
-def run_umap(embeddings):
-
-    print()
-    print("=" * 70)
-    print("RUNNING UMAP")
-    print("=" * 70)
-
-    n_samples = len(
-        embeddings
-    )
-
-    if n_samples < 5:
-
-        raise ValueError(
-            f"Only {n_samples} courses were extracted. "
-            "At least 5 courses are needed for UMAP."
-        )
-
-    n_neighbors = min(
-        15,
-        n_samples - 1
-    )
-
-    reducer = umap.UMAP(
-        n_components=2,
-        n_neighbors=n_neighbors,
-        min_dist=0.15,
-        metric="cosine",
-        random_state=401,
-    )
-
-    embedding_2d = reducer.fit_transform(
-        embeddings
-    )
-
-    print(
-        f"UMAP shape: "
-        f"{embedding_2d.shape}"
-    )
-
-    return embedding_2d
-
-
-# ============================================================
-# 12. KMEANS
-# ============================================================
-
-def run_clustering(
-    embeddings,
-    n_clusters=8
-):
-
-    print()
-    print("=" * 70)
-    print("RUNNING K-MEANS")
-    print("=" * 70)
-
-    n_samples = len(
-        embeddings
-    )
-
-    n_clusters = min(
-        n_clusters,
-        n_samples
-    )
-
-    if n_clusters < 2:
-
-        raise ValueError(
-            "Not enough courses for clustering."
-        )
-
-    kmeans = KMeans(
-        n_clusters=n_clusters,
-        random_state=401,
-        n_init=10,
-    )
-
-    labels = kmeans.fit_predict(
-        embeddings
-    )
-
-    unique, counts = np.unique(
-        labels,
-        return_counts=True
-    )
-
-    print(
-        "Cluster counts:"
-    )
-
-    for cluster_id, count in zip(
-        unique,
-        counts
+    for cluster in sorted(
+        df["cluster"].unique()
     ):
 
-        print(
-            f"  Cluster {cluster_id}: "
-            f"{count}"
+        indices = np.where(
+            df["cluster"].values
+            == cluster
+        )[0]
+
+        scores = np.asarray(
+            matrix[indices].mean(
+                axis=0
+            )
+        ).ravel()
+
+        top_indices = (
+            scores.argsort()[-3:][::-1]
         )
+
+        top_terms = [
+            terms[i]
+            for i in top_indices
+            if scores[i] > 0
+        ]
+
+        if top_terms:
+
+            labels[cluster] = (
+                " / ".join(
+                    term.title()
+                    for term in top_terms
+                )
+            )
+
+        else:
+
+            labels[cluster] = (
+                f"Topic {cluster}"
+            )
 
     return labels
 
 
 # ============================================================
-# 13. TOPIC NAMES
+# MAIN
 # ============================================================
 
-def assign_topic_names(df):
+def main():
 
-    topic_names = {
-        0: "Topic 0",
-        1: "Topic 1",
-        2: "Topic 2",
-        3: "Topic 3",
-        4: "Topic 4",
-        5: "Topic 5",
-        6: "Topic 6",
-        7: "Topic 7",
-    }
-
-    df["cluster_name"] = (
-        df["cluster"]
-        .map(topic_names)
-        .fillna("Other")
-    )
-
-    return df
-
-
-# ============================================================
-# 14. CORPUS SUMMARY
-# ============================================================
-
-def print_corpus_summary(df):
-
-    print()
     print("=" * 70)
-    print("CORPUS SUMMARY")
-    print("=" * 70)
-
-    print(
-        f"Number of courses: {len(df)}"
-    )
-
-    print(
-        f"Number of subjects: "
-        f"{df['subject'].nunique()}"
-    )
-
-    if "cluster_name" in df.columns:
-
-        print(
-            f"Number of topics: "
-            f"{df['cluster_name'].nunique()}"
-        )
-
-    print()
-
-    print(
-        f"Average words per course: "
-        f"{df['word_count'].mean():.1f}"
-    )
-
-    print(
-        f"Median words per course: "
-        f"{df['word_count'].median():.1f}"
-    )
-
-    print(
-        f"Minimum words: "
-        f"{df['word_count'].min()}"
-    )
-
-    print(
-        f"Maximum words: "
-        f"{df['word_count'].max()}"
-    )
-
-    pages = pd.to_numeric(
-        df["page"],
-        errors="coerce"
-    ).dropna()
-
-    if len(pages) > 0:
-
-        print(
-            f"Page range: "
-            f"{int(pages.min())} - "
-            f"{int(pages.max())}"
-        )
-
-    print()
-    print(
-        "Credit distribution:"
-    )
-
-    print(
-        df["credits"]
-        .value_counts(
-            dropna=False
-        )
-        .sort_index(
-            na_position="last"
-        )
-        .to_string()
-    )
-
-    print()
-    print(
-        "Top subjects:"
-    )
-
-    print(
-        df["subject"]
-        .value_counts()
-        .head(15)
-        .to_string()
-    )
-
-    if "cluster_name" in df.columns:
-
-        print()
-        print(
-            "Topic counts:"
-        )
-
-        print(
-            df["cluster_name"]
-            .value_counts()
-            .sort_index()
-            .to_string()
-        )
-
-
-# ============================================================
-# 15. METADATA CHECK
-# ============================================================
-
-def check_metadata(df):
-
-    print()
-    print("=" * 70)
-    print("METADATA CHECK")
+    print("LAB 8 - DKU BULLETIN PROCESSING")
     print("=" * 70)
 
     print()
-    print("Columns:")
-    print(
-        list(df.columns)
-    )
+    print("PDF:")
+    print(PDF_PATH)
+
+    if not PDF_PATH.exists():
+
+        raise FileNotFoundError(
+            f"PDF not found: {PDF_PATH}"
+        )
+
+    # ========================================================
+    # 1. PDF EXTRACTION
+    # ========================================================
 
     print()
-    print("Chapter:")
-    print(
-        df["chapter"]
-        .value_counts()
-        .to_string()
+    print("1. Extracting PDF passages...")
+
+    df = extract_passages(
+        PDF_PATH
     )
 
-    print()
-    print("Section:")
     print(
-        df["section"]
-        .value_counts()
-        .to_string()
+        "Raw passages:",
+        len(df),
     )
 
-    print()
-    print("Subjects:")
-    print(
-        df["subject"]
-        .value_counts()
-        .head(20)
-        .to_string()
-    )
+    # ========================================================
+    # 2. CLEANING
+    # ========================================================
 
     print()
-    print("Sample courses:")
+    print("2. Cleaning passages...")
+
+    df = clean_corpus(df)
+
+    print(
+        "Clean passages:",
+        len(df),
+    )
+
+    # ========================================================
+    # 3. VALIDATION
+    # ========================================================
+
+    print()
+    print("3. Validating page numbers...")
+
+    print(
+        "Page min:",
+        df["page"].min(),
+    )
+
+    print(
+        "Page max:",
+        df["page"].max(),
+    )
+
+    print(
+        "Page 0 count:",
+        (
+            df["page"] == 0
+        ).sum(),
+    )
+
+    # ========================================================
+    # 4. SAVE CORPUS
+    # ========================================================
+
+    print()
+    print(
+        "4. Saving bulletin_passages.csv..."
+    )
+
+    df.to_csv(
+        PASSAGE_OUTPUT,
+        index=False,
+    )
+
+    # ========================================================
+    # 5. SHOW SAMPLE
+    # ========================================================
+
+    print()
+    print("Sample passages:")
+    print()
 
     print(
         df[
             [
+                "passage_id",
+                "page",
+                "subject",
                 "course_code",
                 "course_title",
-                "subject",
-                "credits",
-                "page",
+                "text",
             ]
         ]
-        .head(15)
-        .to_string(index=False)
+        .head(10)
+        .to_string(
+            index=False
+        )
     )
 
-
-# ============================================================
-# 16. SAVE EMBEDDING DATA
-# ============================================================
-
-def save_embedding_data(
-    df,
-    embedding_2d
-):
+    # ========================================================
+    # 6. EMBEDDINGS
+    # ========================================================
 
     print()
-    print("=" * 70)
-    print("SAVING EMBEDDING DATA")
-    print("=" * 70)
+    print(
+        "6. Generating semantic embeddings..."
+    )
 
-    df = df.copy()
+    model = SentenceTransformer(
+        EMBEDDING_MODEL
+    )
 
-    df["x"] = embedding_2d[:, 0]
-    df["y"] = embedding_2d[:, 1]
+    embeddings = model.encode(
+        df["text"].tolist(),
+        normalize_embeddings=True,
+        show_progress_bar=True,
+    )
 
-    columns = [
+    print(
+        "Embedding shape:",
+        embeddings.shape,
+    )
+
+    # ========================================================
+    # 7. UMAP
+    # ========================================================
+
+    print()
+    print("7. Running UMAP...")
+
+    reducer = umap.UMAP(
+        n_components=2,
+        n_neighbors=15,
+        min_dist=0.15,
+        metric="cosine",
+        random_state=RANDOM_STATE,
+    )
+
+    coords = reducer.fit_transform(
+        embeddings
+    )
+
+    df["x"] = coords[:, 0]
+
+    df["y"] = coords[:, 1]
+
+    # ========================================================
+    # 8. KMEANS
+    # ========================================================
+
+    print()
+    print("8. Running KMeans...")
+
+    kmeans = KMeans(
+        n_clusters=N_CLUSTERS,
+        random_state=RANDOM_STATE,
+        n_init="auto",
+    )
+
+    df["cluster"] = (
+        kmeans.fit_predict(
+            embeddings
+        )
+    )
+
+    print()
+    print("Cluster counts:")
+
+    print(
+        df["cluster"]
+        .value_counts()
+        .sort_index()
+    )
+
+    # ========================================================
+    # 9. TOPIC LABELS
+    # ========================================================
+
+    print()
+    print(
+        "9. Generating topic labels..."
+    )
+
+    labels = generate_cluster_labels(
+        df
+    )
+
+    df["cluster_name"] = (
+        df["cluster"]
+        .map(labels)
+    )
+
+    print()
+
+    for cluster, label in labels.items():
+
+        print(
+            f"Cluster {cluster}: {label}"
+        )
+
+    # ========================================================
+    # 10. SAVE EMBEDDING MAP
+    # ========================================================
+
+    print()
+    print(
+        "10. Saving lab8_embedding_map.csv..."
+    )
+
+    output_columns = [
         "passage_id",
         "chapter",
         "section",
@@ -1663,263 +1226,100 @@ def save_embedding_data(
         "y",
     ]
 
-    df[columns].to_csv(
+    df[
+        output_columns
+    ].to_csv(
         EMBEDDING_OUTPUT,
-        index=False
+        index=False,
     )
 
-    print(
-        f"Saved:\n{EMBEDDING_OUTPUT}"
-    )
-
-    return df
-
-
-# ============================================================
-# 17. TOPIC × SUBJECT MATRIX
-# ============================================================
-
-def create_matrix(df):
+    # ========================================================
+    # 11. TOPIC × SECTION MATRIX
+    # ========================================================
 
     print()
-    print("=" * 70)
-    print("CREATING TOPIC × SUBJECT MATRIX")
-    print("=" * 70)
+    print(
+        "11. Saving topic-section matrix..."
+    )
 
     matrix = (
         df.groupby(
             [
-                "subject",
+                "section",
                 "cluster_name",
-            ]
+            ],
+            dropna=False,
         )
         .size()
-        .unstack(
-            fill_value=0
+        .reset_index(
+            name="count"
         )
     )
 
     matrix.to_csv(
+        MATRIX_OUTPUT,
+        index=False,
+    )
+
+    # ========================================================
+    # 12. FINAL CHECK
+    # ========================================================
+
+    print()
+    print("=" * 70)
+    print("FINAL CHECK")
+    print("=" * 70)
+
+    print(
+        "Rows:",
+        len(df),
+    )
+
+    print(
+        "Page min:",
+        df["page"].min(),
+    )
+
+    print(
+        "Page max:",
+        df["page"].max(),
+    )
+
+    print(
+        "Page 0:",
+        (
+            df["page"] == 0
+        ).sum(),
+    )
+
+    print(
+        "Empty text:",
+        (
+            df["text"]
+            .str.strip()
+            .eq("")
+            .sum()
+        ),
+    )
+
+    print()
+    print("Files generated:")
+
+    print(
+        PASSAGE_OUTPUT
+    )
+
+    print(
+        EMBEDDING_OUTPUT
+    )
+
+    print(
         MATRIX_OUTPUT
     )
 
-    print(
-        f"Saved:\n{MATRIX_OUTPUT}"
-    )
-
     print()
-    print(matrix)
+    print("DONE.")
 
-    return matrix
-
-
-# ============================================================
-# 18. REPRESENTATIVE COURSES
-# ============================================================
-
-def inspect_clusters(df):
-
-    print()
-    print("=" * 70)
-    print("REPRESENTATIVE COURSES")
-    print("=" * 70)
-
-    for topic, group in (
-        df.groupby(
-            "cluster_name"
-        )
-    ):
-
-        print()
-        print(
-            f"--- {topic} "
-            f"({len(group)} courses) ---"
-        )
-
-        for _, row in (
-            group.head(5).iterrows()
-        ):
-
-            print(
-                f"{row['course_code']} | "
-                f"{row['course_title']} | "
-                f"{row['subject']} | "
-                f"{row['credits']} credits | "
-                f"page {row['page']}"
-            )
-
-
-# ============================================================
-# 19. MAIN
-# ============================================================
-
-def main():
-
-    print()
-    print("=" * 70)
-    print("LAB 8 - COURSE CATALOG CORPUS PIPELINE")
-    print("=" * 70)
-
-    # --------------------------------------------------------
-    # Check PDF
-    # --------------------------------------------------------
-
-    if not os.path.exists(
-        PDF_PATH
-    ):
-
-        raise FileNotFoundError(
-            f"PDF not found:\n{PDF_PATH}"
-        )
-
-    os.makedirs(
-        DATA_DIR,
-        exist_ok=True
-    )
-
-    # --------------------------------------------------------
-    # Step 1: Extract
-    # --------------------------------------------------------
-
-    df = extract_course_descriptions(
-        PDF_PATH
-    )
-
-    # --------------------------------------------------------
-    # Step 2: Clean
-    # --------------------------------------------------------
-
-    df = clean_dataframe(
-        df
-    )
-
-    # --------------------------------------------------------
-    # Step 3: Metadata
-    # --------------------------------------------------------
-
-    check_metadata(
-        df
-    )
-
-    # --------------------------------------------------------
-    # Step 4: Summary
-    # --------------------------------------------------------
-
-    print_corpus_summary(
-        df
-    )
-
-    # --------------------------------------------------------
-    # Step 5: Embeddings
-    # --------------------------------------------------------
-
-    embeddings = generate_embeddings(
-        df
-    )
-
-    # --------------------------------------------------------
-    # Step 6: UMAP
-    # --------------------------------------------------------
-
-    embedding_2d = run_umap(
-        embeddings
-    )
-
-    # --------------------------------------------------------
-    # Step 7: KMeans
-    # --------------------------------------------------------
-
-    n_clusters = min(
-        8,
-        len(df)
-    )
-
-    labels = run_clustering(
-        embeddings,
-        n_clusters=n_clusters
-    )
-
-    df["cluster"] = labels
-
-    # --------------------------------------------------------
-    # Step 8: Topic names
-    # --------------------------------------------------------
-
-    df = assign_topic_names(
-        df
-    )
-
-    # --------------------------------------------------------
-    # Step 9: Final summary
-    # --------------------------------------------------------
-
-    print_corpus_summary(
-        df
-    )
-
-    # --------------------------------------------------------
-    # Step 10: Save embedding map
-    # --------------------------------------------------------
-
-    df = save_embedding_data(
-        df,
-        embedding_2d
-    )
-
-    # --------------------------------------------------------
-    # Step 11: Topic × Subject matrix
-    # --------------------------------------------------------
-
-    create_matrix(
-        df
-    )
-
-    # --------------------------------------------------------
-    # Step 12: Representative courses
-    # --------------------------------------------------------
-
-    inspect_clusters(
-        df
-    )
-
-    # --------------------------------------------------------
-    # Done
-    # --------------------------------------------------------
-
-    print()
-    print("=" * 70)
-    print("PIPELINE COMPLETE")
-    print("=" * 70)
-
-    print()
-    print(
-        f"Courses: {len(df)}"
-    )
-
-    print(
-        f"Subjects: "
-        f"{df['subject'].nunique()}"
-    )
-
-    print()
-    print("Output files:")
-
-    print(
-        f"  {PASSAGE_OUTPUT}"
-    )
-
-    print(
-        f"  {EMBEDDING_OUTPUT}"
-    )
-
-    print(
-        f"  {MATRIX_OUTPUT}"
-    )
-
-
-# ============================================================
-# RUN
-# ============================================================
 
 if __name__ == "__main__":
     main()

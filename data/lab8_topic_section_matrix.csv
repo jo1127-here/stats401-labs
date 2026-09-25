@@ -1,54 +1,9 @@
-subject,Topic 0,Topic 1,Topic 2,Topic 3,Topic 4,Topic 5,Topic 6,Topic 7
-ARHU,0,0,0,0,0,2,0,0
-ARTS,0,4,0,0,0,5,0,1
-BEHAVSCI,1,0,1,0,0,0,9,0
-BIOL,1,0,1,32,0,0,0,0
-CAPSTONE,0,0,1,0,0,0,0,1
-CHEM,0,0,10,5,0,0,0,1
-CHINESE,0,5,0,0,0,1,0,8
-CHSC,0,6,0,0,0,0,0,1
-COMPDSGN,0,0,1,0,0,0,0,0
-COMPSCI,0,0,26,0,0,0,1,0
-CULANTH,3,3,0,0,8,6,1,0
-CULMOVE,3,2,0,0,3,0,2,0
-EAP,0,0,0,0,0,1,0,6
-ECON,1,0,3,0,1,0,24,0
-ENVIR,0,2,2,9,0,1,10,0
-ETHLDR,6,0,0,1,2,0,3,0
-FRENCH,0,0,0,0,0,0,0,2
-GCHINA,0,9,0,0,0,0,0,1
-GCULS,7,3,0,0,4,4,0,0
-GERMAN,0,0,0,0,0,0,0,2
-GLHLTH,2,0,0,9,1,2,4,0
-GLOCHALL,1,0,0,0,0,0,0,0
-HIST,3,23,0,1,23,7,2,0
-INFOSCI,0,0,7,0,0,12,0,0
-INSTGOV,0,0,0,1,0,0,0,0
-INTGSCI,0,0,2,0,0,0,0,0
-ITALIAN,0,0,0,0,0,0,0,2
-JAPANESE,0,0,0,0,0,0,0,4
-KOREAN,0,0,0,0,0,0,0,2
-LEAST,0,0,0,0,0,0,0,1
-LIT,1,7,0,0,19,12,0,2
-MATH,0,0,32,0,0,0,0,0
-MATSCI,0,0,10,0,0,0,0,0
-MEDIA,0,2,0,0,0,4,0,0
-MEDIART,1,2,1,0,0,45,0,6
-MILITSCI,0,1,0,0,0,0,0,1
-MUSIC,0,0,0,0,0,0,0,3
-NEUROSCI,0,0,1,0,0,0,5,0
-PHIL,17,3,3,0,2,1,1,1
-PHYS,0,0,19,0,0,0,0,1
-PHYSEDU,0,2,0,0,0,0,0,30
-POLECON,0,3,0,0,1,0,4,0
-POLSCI,3,4,0,0,23,0,8,0
-PSYCH,2,0,1,0,1,0,5,0
-PUBPOL,2,1,0,0,11,1,23,0
-RELIG,15,2,0,0,0,1,0,0
-RINDSTU,1,0,0,0,0,0,0,0
-SOCIOL,3,2,0,0,7,0,2,0
-SOSC,1,0,0,0,4,1,9,0
-SPANISH,0,0,0,0,0,0,0,3
-STATS,0,0,12,0,0,0,3,0
-USTUD,1,0,0,0,1,1,0,1
-WOC,1,4,0,0,0,6,1,12
+section,cluster_name,count
+Unknown,Chinese / China / Students,72
+Unknown,Duke / University / Students,56
+Unknown,Health / Biol / Glhlth,72
+Unknown,Hist / Course / World,91
+Unknown,Math / Course / Courses,127
+Unknown,Mediart / Media / Course,62
+Unknown,Polsci / Course / Political,79
+Unknown,Students / Student / Courses,102
