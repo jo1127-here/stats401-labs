@@ -56,12 +56,256 @@
 
         .container {
             display: grid;
-            grid-template-columns: 1fr 320px;
+            grid-template-columns: 1fr 360px;
             gap: 20px;
             padding: 20px 30px;
         }
 
+        .visualizations {
+            min-width: 0;
+        }
+
         .card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+        }
+
+        .card h2 {
+            margin-top: 0;
+        }
+
+        #map {
+            width: 100%;
+            height: 650px;
+        }
+
+        #matrix {
+            width: 100%;
+            height: 500px;
+        }
+
+        .point {
+            cursor: pointer;
+            opacity: 0.75;
+        }
+
+        .point:hover {
+            stroke: black;
+            stroke-width: 2px;
+            opacity: 1;
+        }
+
+        .selected {
+            stroke: black;
+            stroke-width: 3px;
+            opacity: 1;
+        }
+
+        .dimmed {
+            opacity: 0.08;
+        }
+
+        .matrix-cell {
+            cursor: pointer;
+        }
+
+        .matrix-cell:hover {
+            stroke: black;
+            stroke-width: 2px;
+        }
+
+        /* Separate detail panels */
+
+        #map-detail-panel {
+            height: 650px;
+            overflow-y: auto;
+        }
+
+        #matrix-detail-panel {
+            height: 500px;
+            overflow-y: auto;
+        }
+
+        #map-detail-panel h3,
+        #matrix-detail-panel h3 {
+            margin-top: 0;
+        }
+
+        .stat {
+            margin-bottom: 10px;
+        }
+
+        .stat strong {
+            display: block;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        /* Make matrix topic labels easier to read */
+
+        .matrix-topic-label {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .matrix-topic-count {
+            font-size: 11px;
+            fill: #555;
+        }
+
+        /* Responsive layout */
+
+        @media (max-width: 1000px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            #map-detail-panel,
+            #matrix-detail-panel {
+                height: auto;
+                min-height: 250px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>DKU Bulletin: Semantic Exploration</h1>
+    <p>
+        Interactive visualization of semantic structure and formal bulletin sections
+    </p>
+</header>
+
+
+<div class="controls">
+
+    <input
+        type="text"
+        id="search"
+        placeholder="Search bulletin..."
+    >
+
+    <select id="section-filter">
+        <option value="all">All Sections</option>
+    </select>
+
+    <select id="topic-filter">
+        <option value="all">All Topics</option>
+    </select>
+
+    <button id="reset">
+        Reset
+    </button>
+
+</div>
+
+
+<div class="container">
+
+    <div class="visualizations">
+
+        <!-- ========================= -->
+        <!-- Semantic Embedding Map -->
+        <!-- ========================= -->
+
+        <div class="card">
+
+            <h2>Semantic Embedding Map</h2>
+
+            <div id="legend" class="legend"></div>
+
+            <svg id="map"></svg>
+
+        </div>
+
+
+        <!-- ========================= -->
+        <!-- Topic × Bulletin Section -->
+        <!-- ========================= -->
+
+        <div class="card" style="margin-top:20px;">
+
+            <h2>Topic × Bulletin Section</h2>
+
+            <svg id="matrix"></svg>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================= -->
+    <!-- Right-side detail panels -->
+    <!-- ========================= -->
+
+    <div>
+
+        <!-- Map detail -->
+
+        <div class="card">
+
+            <h2>Passage Detail</h2>
+
+            <div id="map-detail-panel">
+
+                <p>
+                    Click a point on the semantic map
+                    to inspect a passage.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- Matrix detail -->
+
+        <div class="card" style="margin-top:20px;">
+
+            <h2>Matrix Detail</h2>
+
+            <div id="matrix-detail-panel">
+
+                <p>
+                    Click a matrix cell
+                    to inspect the section-topic combination.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>        .card {
             background: white;
             border: 1px solid #ddd;
             border-radius: 6px;
