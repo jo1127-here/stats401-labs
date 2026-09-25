@@ -49,8 +49,6 @@ d3.csv("../data/lab8_embedding_map.csv", d => {
 
     // Exclude rows without valid section/subsection/subject
     data = loadedData.filter(d =>
-        d.subsection &&
-        d.subsection.trim().toLowerCase() !== "unknown" &&
         d.subject &&
         d.subject.trim().toLowerCase() !== "unknown"
     );
@@ -119,15 +117,33 @@ d3.csv("../data/lab8_embedding_map.csv", d => {
 function initialize() {
 
     createTopicColorScale();
-
     createFilters();
-
     createSemanticMap();
-
     createMatrix();
-
     createLegend();
+    updateCorpusStats();
 
+}
+
+
+function updateCorpusStats() {
+
+    const subjects = new Set(
+        data.map(d => d.subject)
+    );
+
+    const topics = new Set(
+        data.map(d => d.cluster_name)
+    );
+
+    const sections = new Set(
+        data.map(d => d.section)
+    );
+
+    d3.select("#stat-passages").text(data.length);
+    d3.select("#stat-subjects").text(subjects.size);
+    d3.select("#stat-topics").text(topics.size);
+    d3.select("#stat-sections").text(sections.size);
 }
 
 
