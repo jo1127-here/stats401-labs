@@ -37,7 +37,8 @@ d3.csv("../data/lab8_embedding_map.csv", d => {
         y: +d.y,
         word_count: +d.word_count,
         cluster: +d.cluster,
-        page: +d.page
+        page: +d.page,
+        credits: +d.credits
     };
 
 }).then(loadedData => {
@@ -538,16 +539,21 @@ function showMapDetails(d) {
 
 
         <div class="stat">
-
-            <strong>Page</strong>
-
-            ${escapeHTML(
-                d.page
-            )}
-
+            <strong>Course Code</strong>
+            ${escapeHTML(d.course_code || "N/A")}
+        </div>
+        
+        <div class="stat">
+            <strong>Course Title</strong>
+            ${escapeHTML(d.course_title || "N/A")}
+        </div>
+        
+        <div class="stat">
+            <strong>Credits</strong>
+            ${escapeHTML(d.credits || "N/A")}
         </div>
 
-
+        
         <div class="stat">
 
             <strong>Semantic Topic</strong>
