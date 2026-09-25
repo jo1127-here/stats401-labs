@@ -21,7 +21,7 @@ let height;
 let matrixWidth;
 let matrixHeight;
 
-// One shared color scale for ALL topics
+// Shared topic color scale
 let topicColor;
 
 
@@ -133,9 +133,15 @@ function createFilters() {
     });
 
 
-    sectionSelect.on("change", updateVisualization);
+    sectionSelect.on(
+        "change",
+        updateVisualization
+    );
 
-    topicSelect.on("change", updateVisualization);
+    topicSelect.on(
+        "change",
+        updateVisualization
+    );
 
 
     d3.select("#search")
@@ -157,8 +163,10 @@ function createSemanticMap() {
     svg = d3.select("#map");
 
     width =
-        document.querySelector("#map")
-        .getBoundingClientRect().width;
+        document
+            .querySelector("#map")
+            .getBoundingClientRect()
+            .width;
 
     height = 570;
 
@@ -169,13 +177,29 @@ function createSemanticMap() {
 
 
     xScale = d3.scaleLinear()
-        .domain(d3.extent(data, d => d.x))
-        .range([50, width - 50]);
+        .domain(
+            d3.extent(
+                data,
+                d => d.x
+            )
+        )
+        .range([
+            50,
+            width - 50
+        ]);
 
 
     yScale = d3.scaleLinear()
-        .domain(d3.extent(data, d => d.y))
-        .range([height - 50, 50]);
+        .domain(
+            d3.extent(
+                data,
+                d => d.y
+            )
+        )
+        .range([
+            height - 50,
+            50
+        ]);
 
 
     points = svg
@@ -183,20 +207,39 @@ function createSemanticMap() {
         .data(data)
         .join("circle")
         .attr("class", "point")
-        .attr("cx", d => xScale(d.x))
-        .attr("cy", d => yScale(d.y))
-        .attr("r", d =>
-            Math.max(
-                3,
-                Math.min(10, Math.sqrt(d.word_count) / 2)
-            )
+        .attr(
+            "cx",
+            d => xScale(d.x)
         )
-        .attr("fill", d => topicColor(d.cluster_name))
-        .on("click", function(event, d) {
+        .attr(
+            "cy",
+            d => yScale(d.y)
+        )
+        .attr(
+            "r",
+            d =>
+                Math.max(
+                    3,
+                    Math.min(
+                        10,
+                        Math.sqrt(d.word_count) / 2
+                    )
+                )
+        )
+        .attr(
+            "fill",
+            d => topicColor(d.cluster_name)
+        )
+        .on(
+            "click",
+            function(event, d) {
 
-            selectPoint(d);
+                event.stopPropagation();
 
-        });
+                selectPoint(d);
+
+            }
+        );
 
 
     // --------------------------------------------------------
@@ -204,15 +247,21 @@ function createSemanticMap() {
     // --------------------------------------------------------
 
     const zoom = d3.zoom()
-        .scaleExtent([0.5, 10])
-        .on("zoom", event => {
+        .scaleExtent([
+            0.5,
+            10
+        ])
+        .on(
+            "zoom",
+            event => {
 
-            points.attr(
-                "transform",
-                event.transform
-            );
+                points.attr(
+                    "transform",
+                    event.transform
+                );
 
-        });
+            }
+        );
 
 
     svg.call(zoom);
@@ -223,18 +272,43 @@ function createSemanticMap() {
     // --------------------------------------------------------
 
     svg.append("text")
-        .attr("x", width / 2)
-        .attr("y", height - 5)
-        .attr("text-anchor", "middle")
-        .text("UMAP dimension 1");
+        .attr(
+            "x",
+            width / 2
+        )
+        .attr(
+            "y",
+            height - 5
+        )
+        .attr(
+            "text-anchor",
+            "middle"
+        )
+        .text(
+            "UMAP dimension 1"
+        );
 
 
     svg.append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("x", -height / 2)
-        .attr("y", 15)
-        .attr("text-anchor", "middle")
-        .text("UMAP dimension 2");
+        .attr(
+            "transform",
+            "rotate(-90)"
+        )
+        .attr(
+            "x",
+            -height / 2
+        )
+        .attr(
+            "y",
+            15
+        )
+        .attr(
+            "text-anchor",
+            "middle"
+        )
+        .text(
+            "UMAP dimension 2"
+        );
 
 }
 
@@ -250,7 +324,11 @@ function createLegend() {
 
 
     const topics = Array.from(
-        new Set(data.map(d => d.cluster_name))
+        new Set(
+            data.map(
+                d => d.cluster_name
+            )
+        )
     ).sort();
 
 
@@ -259,11 +337,17 @@ function createLegend() {
         const item =
             container
                 .append("div")
-                .attr("class", "legend-item");
+                .attr(
+                    "class",
+                    "legend-item"
+                );
 
 
         item.append("div")
-            .attr("class", "legend-color")
+            .attr(
+                "class",
+                "legend-color"
+            )
             .style(
                 "background",
                 topicColor(topic)
@@ -286,50 +370,51 @@ function updateVisualization() {
 
     const search =
         d3.select("#search")
-        .property("value")
-        .toLowerCase()
-        .trim();
+            .property("value")
+            .toLowerCase()
+            .trim();
 
 
     const selectedSection =
         d3.select("#section-filter")
-        .property("value");
+            .property("value");
 
 
     const selectedTopic =
         d3.select("#topic-filter")
-        .property("value");
+            .property("value");
 
 
     points
-        .classed("dimmed", d => {
+        .classed(
+            "dimmed",
+            d => {
 
-            const searchMatch =
-                search === "" ||
-                d.text.toLowerCase()
-                    .includes(search);
-
-
-            const sectionMatch =
-                selectedSection === "all" ||
-                d.section === selectedSection;
+                const searchMatch =
+                    search === "" ||
+                    (d.text || "")
+                        .toLowerCase()
+                        .includes(search);
 
 
-            const topicMatch =
-                selectedTopic === "all" ||
-                d.cluster_name === selectedTopic;
+                const sectionMatch =
+                    selectedSection === "all" ||
+                    d.section === selectedSection;
 
 
-            return !(
-                searchMatch &&
-                sectionMatch &&
-                topicMatch
-            );
-
-        });
+                const topicMatch =
+                    selectedTopic === "all" ||
+                    d.cluster_name === selectedTopic;
 
 
-    updateMatrixHighlight();
+                return !(
+                    searchMatch &&
+                    sectionMatch &&
+                    topicMatch
+                );
+
+            }
+        );
 
 }
 
@@ -343,198 +428,221 @@ function selectPoint(d) {
     selectedPoint = d;
 
 
+    // Remove all previous selection
     points
-        .classed("selected", p =>
-            p.passage_id === d.passage_id
+        .classed(
+            "selected",
+            false
         );
 
 
+    // Remove all neighbor highlighting
     points
-        .classed("neighbor", false);
+        .classed(
+            "neighbor",
+            false
+        );
 
 
-    const neighbors =
-        findNearestNeighbors(d, 5);
+    // Highlight ONLY the clicked point
+    points
+        .filter(
+            p =>
+                p.passage_id ===
+                d.passage_id
+        )
+        .classed(
+            "selected",
+            true
+        );
 
 
-    neighbors.forEach(n => {
-
-        points
-            .filter(p =>
-                p.passage_id === n.passage_id
-            )
-            .classed("neighbor", true);
-
-    });
+    // Show passage detail
+    showMapDetails(d);
 
 
-    showMapDetails(d, neighbors);
-
+    // Highlight corresponding matrix cell
     highlightMatrixCell(d);
 
 }
 
 
 // ============================================================
-// 10. FIND NEAREST NEIGHBORS
+// 10. PASSAGE DETAIL
 // ============================================================
 
-function findNearestNeighbors(d, k) {
-
-    return data
-        .filter(p =>
-            p.passage_id !== d.passage_id
-        )
-        .map(p => {
-
-            const distance =
-                Math.sqrt(
-                    Math.pow(p.x - d.x, 2) +
-                    Math.pow(p.y - d.y, 2)
-                );
-
-            return {
-                ...p,
-                distance: distance
-            };
-
-        })
-        .sort((a, b) =>
-            a.distance - b.distance
-        )
-        .slice(0, k);
-
-}
-
-
-// ============================================================
-// 11. SEMANTIC MAP DETAIL PANEL
-// ============================================================
-
-function showMapDetails(d, neighbors) {
+function showMapDetails(d) {
 
     const panel =
-        d3.select("#map-detail-panel");
+        d3.select(
+            "#map-detail-panel"
+        );
+
+
+    // Safety check
+    if (panel.empty()) {
+
+        console.error(
+            "Cannot find #map-detail-panel"
+        );
+
+        return;
+    }
 
 
     panel.html(`
 
-        <h3>${escapeHTML(d.section)}</h3>
+        <h3>
+            ${escapeHTML(
+                d.section || "Passage"
+            )}
+        </h3>
+
 
         <div class="stat">
+
             <strong>Chapter</strong>
-            ${escapeHTML(d.chapter || "N/A")}
+
+            ${escapeHTML(
+                d.chapter || "N/A"
+            )}
+
         </div>
 
+
         <div class="stat">
+
             <strong>Section</strong>
-            ${escapeHTML(d.section || "N/A")}
+
+            ${escapeHTML(
+                d.section || "N/A"
+            )}
+
         </div>
 
+
         <div class="stat">
+
             <strong>Subsection</strong>
-            ${escapeHTML(d.subsection || "N/A")}
+
+            ${escapeHTML(
+                d.subsection || "N/A"
+            )}
+
         </div>
 
+
         <div class="stat">
+
             <strong>Page</strong>
-            ${d.page}
+
+            ${escapeHTML(
+                d.page
+            )}
+
         </div>
 
+
         <div class="stat">
+
             <strong>Semantic Topic</strong>
-            <span style="
-                color: ${topicColor(d.cluster_name)};
-                font-weight: bold;
-            ">
-                ${escapeHTML(d.cluster_name || "N/A")}
+
+            <span
+                style="
+                    color: ${topicColor(
+                        d.cluster_name
+                    )};
+                    font-weight: bold;
+                "
+            >
+
+                ${escapeHTML(
+                    d.cluster_name ||
+                    "N/A"
+                )}
+
             </span>
+
         </div>
 
+
         <div class="stat">
+
             <strong>Word Count</strong>
-            ${d.word_count}
+
+            ${escapeHTML(
+                d.word_count
+            )}
+
         </div>
+
 
         <hr>
+
 
         <h3>Passage</h3>
 
+
         <p>
-            ${escapeHTML(d.text)}
+
+            ${escapeHTML(
+                d.text
+            )}
+
         </p>
 
-        <hr>
-
-        <h3>Nearest Semantic Passages</h3>
-
-        <div id="map-neighbors"></div>
-
     `);
-
-
-    const neighborContainer =
-        d3.select("#map-neighbors");
-
-
-    neighbors.forEach((n, i) => {
-
-        neighborContainer
-            .append("div")
-            .attr("class", "neighbor-item")
-            .html(`
-
-                <strong>
-                    ${i + 1}. ${escapeHTML(n.section)}
-                </strong>
-
-                <br>
-
-                Page ${n.page}
-
-                <br>
-
-                ${escapeHTML(
-                    n.text.substring(0, 180)
-                )}...
-
-            `);
-
-    });
 
 }
 
 
 // ============================================================
-// 12. MATRIX
+// 11. MATRIX
 // ============================================================
 
 function createMatrix() {
 
-    matrixSvg = d3.select("#matrix");
+    matrixSvg =
+        d3.select("#matrix");
 
 
     matrixWidth =
-        document.querySelector("#matrix")
-        .getBoundingClientRect().width;
+        document
+            .querySelector("#matrix")
+            .getBoundingClientRect()
+            .width;
 
     matrixHeight = 560;
 
 
     matrixSvg
-        .attr("width", matrixWidth)
-        .attr("height", matrixHeight);
+        .attr(
+            "width",
+            matrixWidth
+        )
+        .attr(
+            "height",
+            matrixHeight
+        );
 
 
     const sections =
         Array.from(
-            new Set(data.map(d => d.section))
+            new Set(
+                data.map(
+                    d => d.section
+                )
+            )
         ).sort();
 
 
     const topics =
         Array.from(
-            new Set(data.map(d => d.cluster_name))
+            new Set(
+                data.map(
+                    d => d.cluster_name
+                )
+            )
         ).sort();
 
 
@@ -546,6 +654,7 @@ function createMatrix() {
         const key =
             `${d.section}|||${d.cluster_name}`;
 
+
         counts[key] =
             (counts[key] || 0) + 1;
 
@@ -553,27 +662,34 @@ function createMatrix() {
 
 
     // --------------------------------------------------------
-    // Total number of passages for each topic
-    // Used in the topic label
+    // Topic totals
     // --------------------------------------------------------
 
     const topicTotals = {};
+
 
     topics.forEach(topic => {
 
         topicTotals[topic] =
             data.filter(
-                d => d.cluster_name === topic
+                d =>
+                    d.cluster_name ===
+                    topic
             ).length;
 
     });
 
 
     const margin = {
+
         top: 145,
+
         right: 30,
+
         bottom: 50,
+
         left: 180
+
     };
 
 
@@ -589,31 +705,40 @@ function createMatrix() {
         margin.bottom;
 
 
-    const x = d3.scaleBand()
-        .domain(topics)
-        .range([0, innerWidth])
-        .padding(0.08);
+    const x =
+        d3.scaleBand()
+            .domain(topics)
+            .range([
+                0,
+                innerWidth
+            ])
+            .padding(0.08);
 
 
-    const y = d3.scaleBand()
-        .domain(sections)
-        .range([0, innerHeight])
-        .padding(0.08);
+    const y =
+        d3.scaleBand()
+            .domain(sections)
+            .range([
+                0,
+                innerHeight
+            ])
+            .padding(0.08);
 
 
     const maxCount =
-        d3.max(Object.values(counts));
+        d3.max(
+            Object.values(counts)
+        );
 
-
-    // --------------------------------------------------------
-    // Cell color = count
-    // --------------------------------------------------------
 
     const cellColor =
         d3.scaleSequential(
             d3.interpolateBlues
         )
-        .domain([0, maxCount]);
+        .domain([
+            0,
+            maxCount
+        ]);
 
 
     const g =
@@ -621,114 +746,216 @@ function createMatrix() {
             .append("g")
             .attr(
                 "transform",
-                `translate(${margin.left},${margin.top})`
+                `translate(
+                    ${margin.left},
+                    ${margin.top}
+                )`
             );
 
 
     const cells = [];
 
 
-    sections.forEach(section => {
+    sections.forEach(
+        section => {
 
-        topics.forEach(topic => {
+            topics.forEach(
+                topic => {
 
-            const count =
-                counts[
-                    `${section}|||${topic}`
-                ] || 0;
+                    const count =
+                        counts[
+                            `${section}|||${topic}`
+                        ] || 0;
 
 
-            cells.push({
-                section,
-                topic,
-                count
-            });
+                    cells.push({
 
-        });
+                        section,
 
-    });
+                        topic,
+
+                        count
+
+                    });
+
+                }
+            );
+
+        }
+    );
 
 
     // --------------------------------------------------------
     // MATRIX CELLS
     // --------------------------------------------------------
 
-    g.selectAll(".matrix-cell")
+    g.selectAll(
+        ".matrix-cell"
+    )
         .data(cells)
         .join("rect")
-        .attr("class", "matrix-cell")
-        .attr("x", d => x(d.topic))
-        .attr("y", d => y(d.section))
-        .attr("width", x.bandwidth())
-        .attr("height", y.bandwidth())
-        .attr("fill", d => cellColor(d.count))
-        .on("click", function(event, d) {
+        .attr(
+            "class",
+            "matrix-cell"
+        )
+        .attr(
+            "x",
+            d => x(d.topic)
+        )
+        .attr(
+            "y",
+            d => y(d.section)
+        )
+        .attr(
+            "width",
+            x.bandwidth()
+        )
+        .attr(
+            "height",
+            y.bandwidth()
+        )
+        .attr(
+            "fill",
+            d => cellColor(d.count)
+        )
+        .on(
+            "click",
+            function(event, d) {
 
-            selectMatrixCell(d);
+                selectMatrixCell(d);
 
-        })
+            }
+        )
         .append("title")
-        .text(d =>
-            `${d.section} | ${d.topic}: ${d.count} passages`
+        .text(
+            d =>
+                `${d.section} | ${d.topic}: ${d.count} passages`
         );
 
 
     // --------------------------------------------------------
-    // X LABELS
-    // Topic name + total count
-    // Topic color matches Semantic Map
+    // TOPIC LABELS
     // --------------------------------------------------------
 
     const xLabels =
-        g.selectAll(".x-label")
-            .data(topics)
-            .join("text")
-            .attr("class", "x-label")
-            .attr(
-                "x",
-                d => x(d) + x.bandwidth() / 2
-            )
-            .attr("y", -45)
-            .attr("text-anchor", "middle")
-            .style("font-size", "12px")
-            .style("font-weight", "bold")
-            .style(
-                "fill",
-                d => topicColor(d)
-            );
-
-
-    xLabels.append("tspan")
-        .attr("x", d => x(d) + x.bandwidth() / 2)
-        .attr("dy", 0)
-        .text(d => d);
-
-
-    xLabels.append("tspan")
-        .attr("x", d => x(d) + x.bandwidth() / 2)
-        .attr("dy", 18)
-        .style("fill", "#555")
-        .style("font-size", "11px")
-        .style("font-weight", "normal")
-        .text(d => `n = ${topicTotals[d]}`);
-
-
-    // --------------------------------------------------------
-    // Small color markers above each topic
-    // --------------------------------------------------------
-
-    g.selectAll(".topic-marker")
+        g.selectAll(
+            ".x-label"
+        )
         .data(topics)
-        .join("rect")
-        .attr("class", "topic-marker")
+        .join("text")
+        .attr(
+            "class",
+            "x-label"
+        )
         .attr(
             "x",
-            d => x(d) + x.bandwidth() / 2 - 5
+            d =>
+                x(d) +
+                x.bandwidth() / 2
         )
-        .attr("y", -78)
-        .attr("width", 10)
-        .attr("height", 10)
-        .attr("rx", 2)
+        .attr(
+            "y",
+            -45
+        )
+        .attr(
+            "text-anchor",
+            "middle"
+        )
+        .style(
+            "font-size",
+            "12px"
+        )
+        .style(
+            "font-weight",
+            "bold"
+        )
+        .style(
+            "fill",
+            d => topicColor(d)
+        );
+
+
+    xLabels.append("tspan")
+        .attr(
+            "x",
+            d =>
+                x(d) +
+                x.bandwidth() / 2
+        )
+        .attr(
+            "dy",
+            0
+        )
+        .text(
+            d => d
+        );
+
+
+    xLabels.append("tspan")
+        .attr(
+            "x",
+            d =>
+                x(d) +
+                x.bandwidth() / 2
+        )
+        .attr(
+            "dy",
+            18
+        )
+        .style(
+            "fill",
+            "#555"
+        )
+        .style(
+            "font-size",
+            "11px"
+        )
+        .style(
+            "font-weight",
+            "normal"
+        )
+        .text(
+            d =>
+                `n = ${topicTotals[d]}`
+        );
+
+
+    // --------------------------------------------------------
+    // TOPIC COLOR MARKERS
+    // --------------------------------------------------------
+
+    g.selectAll(
+        ".topic-marker"
+    )
+        .data(topics)
+        .join("rect")
+        .attr(
+            "class",
+            "topic-marker"
+        )
+        .attr(
+            "x",
+            d =>
+                x(d) +
+                x.bandwidth() / 2 -
+                5
+        )
+        .attr(
+            "y",
+            -78
+        )
+        .attr(
+            "width",
+            10
+        )
+        .attr(
+            "height",
+            10
+        )
+        .attr(
+            "rx",
+            2
+        )
         .attr(
             "fill",
             d => topicColor(d)
@@ -739,31 +966,66 @@ function createMatrix() {
     // Y LABELS
     // --------------------------------------------------------
 
-    g.selectAll(".y-label")
+    g.selectAll(
+        ".y-label"
+    )
         .data(sections)
         .join("text")
-        .attr("class", "y-label")
-        .attr("x", -10)
+        .attr(
+            "class",
+            "y-label"
+        )
+        .attr(
+            "x",
+            -10
+        )
         .attr(
             "y",
-            d => y(d) + y.bandwidth() / 2
+            d =>
+                y(d) +
+                y.bandwidth() / 2
         )
-        .attr("text-anchor", "end")
-        .attr("dominant-baseline", "middle")
-        .style("font-size", "11px")
-        .text(d => d);
+        .attr(
+            "text-anchor",
+            "end"
+        )
+        .attr(
+            "dominant-baseline",
+            "middle"
+        )
+        .style(
+            "font-size",
+            "11px"
+        )
+        .text(
+            d => d
+        );
 
 
     // --------------------------------------------------------
-    // Axis titles
+    // AXIS TITLES
     // --------------------------------------------------------
 
     g.append("text")
-        .attr("x", innerWidth / 2)
-        .attr("y", -105)
-        .attr("text-anchor", "middle")
-        .style("font-weight", "bold")
-        .text("Semantic Topic");
+        .attr(
+            "x",
+            innerWidth / 2
+        )
+        .attr(
+            "y",
+            -105
+        )
+        .attr(
+            "text-anchor",
+            "middle"
+        )
+        .style(
+            "font-weight",
+            "bold"
+        )
+        .text(
+            "Semantic Topic"
+        );
 
 
     g.append("text")
@@ -771,17 +1033,31 @@ function createMatrix() {
             "transform",
             "rotate(-90)"
         )
-        .attr("x", -innerHeight / 2)
-        .attr("y", -150)
-        .attr("text-anchor", "middle")
-        .style("font-weight", "bold")
-        .text("Bulletin Section");
+        .attr(
+            "x",
+            -innerHeight / 2
+        )
+        .attr(
+            "y",
+            -150
+        )
+        .attr(
+            "text-anchor",
+            "middle"
+        )
+        .style(
+            "font-weight",
+            "bold"
+        )
+        .text(
+            "Bulletin Section"
+        );
 
 }
 
 
 // ============================================================
-// 13. MATRIX → MAP
+// 12. MATRIX → MAP
 // ============================================================
 
 function selectMatrixCell(d) {
@@ -789,82 +1065,187 @@ function selectMatrixCell(d) {
     selectedMatrixCell = d;
 
 
+    // Highlight matching points
     points
-        .classed("dimmed", p => {
+        .classed(
+            "dimmed",
+            p => {
 
-            return !(
-                p.section === d.section &&
-                p.cluster_name === d.topic
-            );
+                return !(
+                    p.section === d.section &&
+                    p.cluster_name === d.topic
+                );
 
-        });
+            }
+        );
 
 
-    // IMPORTANT:
-    // Matrix has its own detail panel now
-    d3.select("#matrix-detail-panel")
-        .html(`
+    // Highlight selected matrix cell
+    matrixSvg
+        .selectAll(
+            ".matrix-cell"
+        )
+        .attr(
+            "stroke",
+            null
+        )
+        .attr(
+            "stroke-width",
+            null
+        );
 
-            <h3>Matrix Selection</h3>
 
-            <p>
-                <strong>Section:</strong>
-                ${escapeHTML(d.section)}
-            </p>
+    matrixSvg
+        .selectAll(
+            ".matrix-cell"
+        )
+        .filter(
+            cell =>
+                cell.section ===
+                    d.section &&
+                cell.topic ===
+                    d.topic
+        )
+        .attr(
+            "stroke",
+            "black"
+        )
+        .attr(
+            "stroke-width",
+            3
+        );
 
-            <p>
-                <strong>Topic:</strong>
 
-                <span style="
-                    color: ${topicColor(d.topic)};
+    // Matrix has its OWN detail panel
+    const panel =
+        d3.select(
+            "#matrix-detail-panel"
+        );
+
+
+    if (panel.empty()) {
+
+        console.error(
+            "Cannot find #matrix-detail-panel"
+        );
+
+        return;
+    }
+
+
+    panel.html(`
+
+        <h3>
+            Matrix Selection
+        </h3>
+
+
+        <p>
+
+            <strong>
+                Section:
+            </strong>
+
+            ${escapeHTML(
+                d.section
+            )}
+
+        </p>
+
+
+        <p>
+
+            <strong>
+                Topic:
+            </strong>
+
+            <span
+                style="
+                    color: ${topicColor(
+                        d.topic
+                    )};
                     font-weight: bold;
-                ">
-                    ${escapeHTML(d.topic)}
-                </span>
-            </p>
+                "
+            >
 
-            <p>
-                <strong>Passages:</strong>
-                ${d.count}
-            </p>
+                ${escapeHTML(
+                    d.topic
+                )}
 
-            <p>
-                The semantic map is highlighting
-                passages belonging to this
-                section-topic combination.
-            </p>
+            </span>
 
-        `);
+        </p>
+
+
+        <p>
+
+            <strong>
+                Passages:
+            </strong>
+
+            ${d.count}
+
+        </p>
+
+
+        <p>
+
+            The semantic map is highlighting
+            passages belonging to this
+            section-topic combination.
+
+        </p>
+
+    `);
 
 }
 
 
 // ============================================================
-// 14. POINT → MATRIX
+// 13. POINT → MATRIX
 // ============================================================
 
 function highlightMatrixCell(d) {
 
     matrixSvg
-        .selectAll(".matrix-cell")
-        .attr("stroke", null)
-        .attr("stroke-width", null);
+        .selectAll(
+            ".matrix-cell"
+        )
+        .attr(
+            "stroke",
+            null
+        )
+        .attr(
+            "stroke-width",
+            null
+        );
 
 
     matrixSvg
-        .selectAll(".matrix-cell")
-        .filter(cell =>
-            cell.section === d.section &&
-            cell.topic === d.cluster_name
+        .selectAll(
+            ".matrix-cell"
         )
-        .attr("stroke", "black")
-        .attr("stroke-width", 3);
+        .filter(
+            cell =>
+                cell.section ===
+                    d.section &&
+                cell.topic ===
+                    d.cluster_name
+        )
+        .attr(
+            "stroke",
+            "black"
+        )
+        .attr(
+            "stroke-width",
+            3
+        );
 
 }
 
 
 // ============================================================
-// 15. UPDATE MATRIX HIGHLIGHT
+// 14. UPDATE MATRIX HIGHLIGHT
 // ============================================================
 
 function updateMatrixHighlight() {
@@ -875,39 +1256,67 @@ function updateMatrixHighlight() {
 
 
     matrixSvg
-        .selectAll(".matrix-cell")
-        .attr("stroke", null)
-        .attr("stroke-width", null);
+        .selectAll(
+            ".matrix-cell"
+        )
+        .attr(
+            "stroke",
+            null
+        )
+        .attr(
+            "stroke-width",
+            null
+        );
 
 
     matrixSvg
-        .selectAll(".matrix-cell")
-        .filter(cell =>
-            cell.section === selectedMatrixCell.section &&
-            cell.topic === selectedMatrixCell.topic
+        .selectAll(
+            ".matrix-cell"
         )
-        .attr("stroke", "black")
-        .attr("stroke-width", 3);
+        .filter(
+            cell =>
+                cell.section ===
+                    selectedMatrixCell.section &&
+                cell.topic ===
+                    selectedMatrixCell.topic
+        )
+        .attr(
+            "stroke",
+            "black"
+        )
+        .attr(
+            "stroke-width",
+            3
+        );
 
 }
 
 
 // ============================================================
-// 16. RESET
+// 15. RESET
 // ============================================================
 
 function resetVisualization() {
 
     d3.select("#search")
-        .property("value", "");
+        .property(
+            "value",
+            ""
+        );
 
 
     d3.select("#section-filter")
-        .property("value", "all");
+        .property(
+            "value",
+            "all"
+        );
 
 
     d3.select("#topic-filter")
-        .property("value", "all");
+        .property(
+            "value",
+            "all"
+        );
 
 
     selectedPoint = null;
@@ -916,20 +1325,39 @@ function resetVisualization() {
 
 
     points
-        .classed("dimmed", false)
-        .classed("selected", false)
-        .classed("neighbor", false);
+        .classed(
+            "dimmed",
+            false
+        )
+        .classed(
+            "selected",
+            false
+        )
+        .classed(
+            "neighbor",
+            false
+        );
 
 
     matrixSvg
-        .selectAll(".matrix-cell")
-        .attr("stroke", null)
-        .attr("stroke-width", null);
+        .selectAll(
+            ".matrix-cell"
+        )
+        .attr(
+            "stroke",
+            null
+        )
+        .attr(
+            "stroke-width",
+            null
+        );
 
 
-    // Reset BOTH detail panels
+    // Reset Passage Detail
 
-    d3.select("#map-detail-panel")
+    d3.select(
+        "#map-detail-panel"
+    )
         .html(`
             <p>
                 Click a point on the semantic map
@@ -938,7 +1366,11 @@ function resetVisualization() {
         `);
 
 
-    d3.select("#matrix-detail-panel")
+    // Reset Matrix Detail
+
+    d3.select(
+        "#matrix-detail-panel"
+    )
         .html(`
             <p>
                 Click a matrix cell to inspect
@@ -950,21 +1382,46 @@ function resetVisualization() {
 
 
 // ============================================================
-// 17. HTML ESCAPE
+// 16. HTML ESCAPE
 // ============================================================
 
 function escapeHTML(str) {
 
-    if (str === undefined || str === null) {
+    if (
+        str === undefined ||
+        str === null
+    ) {
+
         return "";
+
     }
 
 
     return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
 }
