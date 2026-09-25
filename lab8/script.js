@@ -43,9 +43,12 @@ d3.csv("../data/lab8_embedding_map.csv", d => {
 
 }).then(loadedData => {
 
-    data = loadedData;
+    data = loadedData.filter(d =>
+        d.cluster_name &&
+        d.cluster_name.trim().toLowerCase() !== "unknown"
+    );
 
-    console.log("Loaded passages:", data.length);
+    console.log("Loaded passages after excluding Unknown:", data.length);
 
     initialize();
 
@@ -54,7 +57,6 @@ d3.csv("../data/lab8_embedding_map.csv", d => {
     console.error("Error loading CSV:", error);
 
 });
-
 
 // ============================================================
 // 3. INITIALIZE
