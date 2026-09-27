@@ -415,26 +415,47 @@
 
 
                     <div class="control year-control">
-
+                    
                         <label>
                             Release year
                         </label>
-
+                        
                         <div class="year-values">
-
+                        
                             <span id="year-min-value">
-                                —
+                                1900
                             </span>
-
+                        
                             <span>–</span>
-
+                        
                             <span id="year-max-value">
-                                —
+                                2022
                             </span>
-
+                        
+                        </div>
+                        
+                        <div class="range-wrapper">
+                        
+                            <input
+                                type="range"
+                                id="year-start"
+                                min="1900"
+                                max="2022"
+                                value="1900"
+                            >
+                        
+                            <input
+                                type="range"
+                                id="year-end"
+                                min="1900"
+                                max="2022"
+                                value="2022"
+                            >
+                        
+                        </div>
+                        
                         </div>
 
-                    </div>
 
 
                     <button
