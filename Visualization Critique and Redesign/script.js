@@ -1,5 +1,12 @@
 // ============================================================
-// 1. GLOBAL VARIABLES
+// NETFLIX CONTENT EVOLUTION
+// Visualization Critique & Redesign
+// D3.js v7
+// ============================================================
+
+
+// ============================================================
+// GLOBAL STATE
 // ============================================================
 
 let allData = [];
@@ -7,120 +14,169 @@ let filteredData = [];
 
 let selectedGenre = null;
 
+
+// ============================================================
+// CONSTANTS
+// ============================================================
+
+const RED = "#e50914";
+const LIGHT = "#c7c7c7";
+const MUTED = "#777";
+const DARK_BAR = "#2d2d2d";
+
 const margin = {
-    top: 40,
-    right: 30,
-    bottom: 55,
-    left: 65
+    top: 30,
+    right: 90,
+    bottom: 50,
+    left: 55
 };
 
 
 // ============================================================
-// 2. LOAD DATA
+// LOAD DATA
 // ============================================================
 
-d3.csv("data/netflix.csv").then(data => {
+d3.csv("data/netflix.csv")
+    .then(data => {
 
-    // --------------------------------------------------------
-    // Parse data
-    // --------------------------------------------------------
+        allData = data
+            .map(parseRow)
+            .filter(d => !isNaN(d.release_year));
 
-    data.forEach(d => {
+        console.log(
+            `Loaded ${allData.length} Netflix titles.`
+        );
 
-        d.release_year = +d.release_year;
-        d.runtime = +d.runtime;
-        d.seasons = +d.seasons;
-        d.imdb_score = +d.imdb_score;
-        d.imdb_votes = +d.imdb_votes;
+        initializeFilters();
+        updateDashboard();
 
-        // Clean strings
-        d.type = d.type ? d.type.trim() : "";
-        d.genre = d.genre ? d.genre.trim() : "";
-        d.country = d.country ? d.country.trim() : "";
-        d.age_certification = d.age_certification
-            ? d.age_certification.trim()
-            : "Unknown";
+    })
+    .catch(error => {
 
+        console.error(
+            "Could not load netflix.csv:",
+            error
+        );
+
+        d3.select("#time-chart")
+            .append("div")
+            .style("color", RED)
+            .style("padding", "30px 0")
+            .text(
+                "Could not load data/netflix.csv. " +
+                "Please check the file path."
+            );
     });
 
-    // Remove rows without a valid release year
-    allData = data.filter(d =>
-        !isNaN(d.release_year) &&
-        d.release_year > 0
-    );
 
-    filteredData = allData;
+// ============================================================
+// PARSE ROW
+// ============================================================
 
-    console.log("Netflix data loaded:", allData);
-    console.log("Number of titles:", allData.length);
+function parseRow(d) {
 
-    // --------------------------------------------------------
-    // Initialize controls
-    // --------------------------------------------------------
+    return {
 
-    initializeFilters();
+        id: d.id,
 
-    // --------------------------------------------------------
-    // Initial visualization
-    // --------------------------------------------------------
+        title: d.title || "Unknown",
 
-    updateDashboard();
+        type: (d.type || "").trim(),
 
-}).catch(error => {
+        release_year: +d.release_year,
 
-    console.error("Error loading Netflix CSV:", error);
+        age_certification:
+            (d.age_certification || "Unknown").trim(),
 
-});
+        runtime: +d.runtime || 0,
+
+        seasons: +d.seasons || 0,
+
+        imdb_score: +d.imdb_score || 0,
+
+        imdb_votes: +d.imdb_votes || 0,
+
+        country:
+            (d.country || "").trim(),
+
+        genre:
+            (d.genre || "").trim()
+    };
+}
 
 
 // ============================================================
-// 3. INITIALIZE FILTERS
+// FILTER INITIALIZATION
 // ============================================================
 
 function initializeFilters() {
 
-    const typeFilter = d3.select("#type-filter");
-    const yearStart = d3.select("#year-start");
-    const yearEnd = d3.select("#year-end");
+    const minYear = d3.min(
+        allData,
+        d => d.release_year
+    );
 
-    const minYear = d3.min(allData, d => d.release_year);
-    const maxYear = d3.max(allData, d => d.release_year);
+    const maxYear = d3.max(
+        allData,
+        d => d.release_year
+    );
 
-    // Set year input limits
-    yearStart
+
+    const start = d3.select("#year-start");
+    const end = d3.select("#year-end");
+
+
+    start
         .attr("min", minYear)
         .attr("max", maxYear)
         .property("value", minYear);
 
-    yearEnd
+    end
         .attr("min", minYear)
         .attr("max", maxYear)
         .property("value", maxYear);
 
-    // Type filter
-    typeFilter.on("change", function () {
+
+    // Content type
+
+    d3.select("#type-filter")
+        .on("change", () => {
+
+            selectedGenre = null;
+
+            updateDashboard();
+        });
+
+
+    // Year range
+
+    start.on("change", () => {
+
         selectedGenre = null;
+
         updateDashboard();
     });
 
-    // Year filters
-    yearStart.on("change", function () {
+
+    end.on("change", () => {
+
         selectedGenre = null;
+
         updateDashboard();
     });
 
-    yearEnd.on("change", function () {
-        selectedGenre = null;
-        updateDashboard();
-    });
 
-    // Reset button
+    // Reset
+
     d3.select("#reset-button")
-        .on("click", function () {
+        .on("click", () => {
 
-            typeFilter.property("value", "All");
-            yearStart.property("value", minYear);
-            yearEnd.property("value", maxYear);
+            d3.select("#type-filter")
+                .property("value", "All");
+
+            start.property("value", minYear);
+
+            end.property("value", maxYear);
 
             selectedGenre = null;
 
@@ -130,29 +186,40 @@ function initializeFilters() {
 
 
 // ============================================================
-// 4. UPDATE ENTIRE DASHBOARD
+// UPDATE DASHBOARD
 // ============================================================
 
 function updateDashboard() {
 
-    const type = d3.select("#type-filter").property("value");
+    const type =
+        d3.select("#type-filter")
+            .property("value");
 
-    let startYear = +d3.select("#year-start").property("value");
-    let endYear = +d3.select("#year-end").property("value");
 
-    // Prevent invalid range
+    let startYear =
+        +d3.select("#year-start")
+            .property("value");
+
+
+    let endYear =
+        +d3.select("#year-end")
+            .property("value");
+
+
     if (startYear > endYear) {
+
         const temp = startYear;
+
         startYear = endYear;
         endYear = temp;
 
-        d3.select("#year-start").property("value", startYear);
-        d3.select("#year-end").property("value", endYear);
+        d3.select("#year-start")
+            .property("value", startYear);
+
+        d3.select("#year-end")
+            .property("value", endYear);
     }
 
-    // --------------------------------------------------------
-    // Filter data
-    // --------------------------------------------------------
 
     filteredData = allData.filter(d => {
 
@@ -167,251 +234,376 @@ function updateDashboard() {
         return typeMatch && yearMatch;
     });
 
-    console.log("Filtered data:", filteredData);
 
-    // --------------------------------------------------------
-    // Update everything
-    // --------------------------------------------------------
+    // Update period
 
-    updateKPIs(filteredData);
-    updateTimeChart(filteredData);
-    updateGenreChart(filteredData);
-    updateRatingChart(filteredData);
-    updateCountryChart(filteredData);
+    d3.select("#chart-period")
+        .text(`${startYear} — ${endYear}`);
+
+
+    // Update all components
+
+    updateKPIs();
+
+    updateTimeChart();
+
+    updateGenreChart();
+
+    updateRatingChart();
+
+    updateCountryChart();
 }
 
 
 // ============================================================
-// 5. KPI CARDS
+// KPI
 // ============================================================
 
-function updateKPIs(data) {
+function updateKPIs() {
 
-    const totalTitles = data.length;
+    const total =
+        filteredData.length;
 
-    const totalMovies = data.filter(d =>
-        d.type === "Movie"
-    ).length;
 
-    const totalShows = data.filter(d =>
-        d.type === "Show"
-    ).length;
+    const movies =
+        filteredData.filter(
+            d => d.type === "Movie"
+        ).length;
 
-    const validScores = data
-        .map(d => d.imdb_score)
-        .filter(d => !isNaN(d) && d > 0);
 
-    const averageScore = validScores.length > 0
-        ? d3.mean(validScores)
-        : null;
+    const shows =
+        filteredData.filter(
+            d => d.type === "Show"
+        ).length;
+
+
+    const validScores =
+        filteredData
+            .map(d => d.imdb_score)
+            .filter(d => d > 0);
+
+
+    const averageScore =
+        validScores.length
+            ? d3.mean(validScores)
+            : null;
+
 
     d3.select("#total-titles")
-        .text(d3.format(",")(totalTitles));
+        .text(d3.format(",")(total));
+
 
     d3.select("#total-movies")
-        .text(d3.format(",")(totalMovies));
+        .text(d3.format(",")(movies));
+
 
     d3.select("#total-shows")
-        .text(d3.format(",")(totalShows));
+        .text(d3.format(",")(shows));
+
 
     d3.select("#avg-score")
         .text(
-            averageScore !== null
-                ? averageScore.toFixed(2)
-                : "N/A"
+            averageScore === null
+                ? "—"
+                : averageScore.toFixed(2)
         );
 }
 
 
 // ============================================================
-// 6. TIME SERIES
+// TIME SERIES
 // ============================================================
 
-function updateTimeChart(data) {
+function updateTimeChart() {
 
-    const container = d3.select("#time-chart");
+    const container =
+        d3.select("#time-chart");
 
-    container.selectAll("*").remove();
 
-    if (data.length === 0) {
+    container
+        .selectAll("*")
+        .remove();
+
+
+    if (!filteredData.length) {
+
         container
             .append("p")
-            .attr("class", "no-data")
-            .text("No data available for the selected filters.");
+            .style("color", MUTED)
+            .text("No data for this selection.");
 
         return;
     }
 
-    // --------------------------------------------------------
-    // Container size
-    // --------------------------------------------------------
 
-    const containerNode = container.node();
+    const node = container.node();
 
-    const width = Math.max(
-        containerNode.getBoundingClientRect().width,
-        500
-    );
+    const width =
+        node.getBoundingClientRect().width;
 
-    const height = 400;
+
+    const height = 500;
+
 
     const innerWidth =
-        width - margin.left - margin.right;
+        width -
+        margin.left -
+        margin.right;
+
 
     const innerHeight =
-        height - margin.top - margin.bottom;
+        height -
+        margin.top -
+        margin.bottom;
 
 
     // --------------------------------------------------------
-    // Yearly counts
+    // YEAR DATA
     // --------------------------------------------------------
 
-    const years = d3.range(
-        d3.min(data, d => d.release_year),
-        d3.max(data, d => d.release_year) + 1
+    const yearly = d3.rollups(
+        filteredData,
+
+        v => v.length,
+
+        d => d.release_year,
+
+        d => d.type
     );
 
-    const movieCounts = new Map(
-        d3.rollups(
-            data.filter(d => d.type === "Movie"),
-            v => v.length,
+
+    const movieMap = new Map();
+
+    const showMap = new Map();
+
+
+    yearly.forEach(([year, types]) => {
+
+        const typeMap =
+            new Map(types);
+
+        movieMap.set(
+            year,
+            typeMap.get("Movie") || 0
+        );
+
+        showMap.set(
+            year,
+            typeMap.get("Show") || 0
+        );
+    });
+
+
+    const minYear =
+        d3.min(
+            filteredData,
             d => d.release_year
-        )
-    );
+        );
 
-    const showCounts = new Map(
-        d3.rollups(
-            data.filter(d => d.type === "Show"),
-            v => v.length,
+
+    const maxYear =
+        d3.max(
+            filteredData,
             d => d.release_year
-        )
-    );
+        );
 
-    const movieData = years.map(year => ({
-        year: year,
-        count: movieCounts.get(year) || 0
-    }));
 
-    const showData = years.map(year => ({
-        year: year,
-        count: showCounts.get(year) || 0
-    }));
+    const years =
+        d3.range(
+            minYear,
+            maxYear + 1
+        );
+
+
+    const movieData =
+        years.map(year => ({
+            year,
+            value: movieMap.get(year) || 0
+        }));
+
+
+    const showData =
+        years.map(year => ({
+            year,
+            value: showMap.get(year) || 0
+        }));
 
 
     // --------------------------------------------------------
     // SVG
     // --------------------------------------------------------
 
-    const svg = container
-        .append("svg")
-        .attr("width", width)
-        .attr("height", height);
+    const svg =
+        container
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
 
-    const g = svg
-        .append("g")
+
+    const g =
+        svg.append("g")
+            .attr(
+                "transform",
+                `translate(
+                    ${margin.left},
+                    ${margin.top}
+                )`
+            );
+
+
+    // --------------------------------------------------------
+    // SCALES
+    // --------------------------------------------------------
+
+    const x =
+        d3.scaleLinear()
+            .domain([minYear, maxYear])
+            .range([0, innerWidth]);
+
+
+    const maxValue =
+        d3.max([
+            d3.max(movieData, d => d.value),
+            d3.max(showData, d => d.value)
+        ]);
+
+
+    const y =
+        d3.scaleLinear()
+            .domain([0, maxValue])
+            .nice()
+            .range([innerHeight, 0]);
+
+
+    // --------------------------------------------------------
+    // GRID
+    // --------------------------------------------------------
+
+    g.append("g")
+        .selectAll("line")
+        .data(y.ticks(6))
+        .join("line")
+        .attr("class", "grid-line")
+        .attr("x1", 0)
+        .attr("x2", innerWidth)
         .attr(
-            "transform",
-            `translate(${margin.left},${margin.top})`
+            "y1",
+            d => y(d)
+        )
+        .attr(
+            "y2",
+            d => y(d)
         );
 
 
     // --------------------------------------------------------
-    // Scales
+    // AXIS
     // --------------------------------------------------------
-
-    const x = d3.scaleLinear()
-        .domain([
-            d3.min(years),
-            d3.max(years)
-        ])
-        .range([0, innerWidth]);
-
-    const maxCount = d3.max([
-        d3.max(movieData, d => d.count),
-        d3.max(showData, d => d.count)
-    ]);
-
-    const y = d3.scaleLinear()
-        .domain([0, maxCount])
-        .nice()
-        .range([innerHeight, 0]);
-
-
-    // --------------------------------------------------------
-    // Axes
-    // --------------------------------------------------------
-
-    const xAxis = d3.axisBottom(x)
-        .tickFormat(d3.format("d"))
-        .ticks(Math.min(years.length, 10));
-
-    const yAxis = d3.axisLeft(y)
-        .ticks(6);
 
     g.append("g")
-        .attr("class", "x-axis")
+        .attr("class", "axis")
         .attr(
             "transform",
-            `translate(0,${innerHeight})`
+            `translate(
+                0,
+                ${innerHeight}
+            )`
         )
-        .call(xAxis);
+        .call(
+            d3.axisBottom(x)
+                .ticks(
+                    Math.min(
+                        8,
+                        years.length
+                    )
+                )
+                .tickFormat(
+                    d3.format("d")
+                )
+        );
+
 
     g.append("g")
-        .attr("class", "y-axis")
-        .call(yAxis);
-
-
-    // --------------------------------------------------------
-    // Grid lines
-    // --------------------------------------------------------
-
-    g.append("g")
-        .attr("class", "grid")
+        .attr("class", "axis")
         .call(
             d3.axisLeft(y)
                 .ticks(6)
-                .tickSize(-innerWidth)
-                .tickFormat("")
+                .tickFormat(
+                    d3.format(",")
+                )
         );
 
 
     // --------------------------------------------------------
-    // Line generator
+    // LINE GENERATOR
     // --------------------------------------------------------
 
-    const line = d3.line()
-        .x(d => x(d.year))
-        .y(d => y(d.count))
-        .curve(d3.curveMonotoneX);
+    const line =
+        d3.line()
+            .x(d => x(d.year))
+            .y(d => y(d.value))
+            .curve(
+                d3.curveMonotoneX
+            );
 
 
     // --------------------------------------------------------
-    // Movie line
+    // MOVIE LINE
     // --------------------------------------------------------
 
     g.append("path")
         .datum(movieData)
-        .attr("class", "line movie-line")
+        .attr(
+            "class",
+            "movie-line"
+        )
         .attr("fill", "none")
         .attr("d", line);
 
 
     // --------------------------------------------------------
-    // Show line
+    // SHOW LINE
     // --------------------------------------------------------
 
     g.append("path")
         .datum(showData)
-        .attr("class", "line show-line")
+        .attr(
+            "class",
+            "show-line"
+        )
         .attr("fill", "none")
         .attr("d", line);
 
 
     // --------------------------------------------------------
-    // Data points
+    // END LABELS
     // --------------------------------------------------------
 
-    addTimePoints(
+    addEndLabel(
+        g,
+        movieData,
+        x,
+        y,
+        "Movie",
+        RED
+    );
+
+
+    addEndLabel(
+        g,
+        showData,
+        x,
+        y,
+        "TV Show",
+        LIGHT
+    );
+
+
+    // --------------------------------------------------------
+    // INTERACTION POINTS
+    // --------------------------------------------------------
+
+    addInteractivePoints(
         g,
         movieData,
         x,
@@ -419,61 +611,106 @@ function updateTimeChart(data) {
         "Movie"
     );
 
-    addTimePoints(
+
+    addInteractivePoints(
         g,
         showData,
         x,
         y,
         "TV Show"
     );
-
-
-    // --------------------------------------------------------
-    // Axis labels
-    // --------------------------------------------------------
-
-    g.append("text")
-        .attr("class", "axis-label")
-        .attr("x", innerWidth / 2)
-        .attr("y", innerHeight + 45)
-        .attr("text-anchor", "middle")
-        .text("Release Year");
-
-    g.append("text")
-        .attr("class", "axis-label")
-        .attr("transform", "rotate(-90)")
-        .attr("x", -innerHeight / 2)
-        .attr("y", -45)
-        .attr("text-anchor", "middle")
-        .text("Number of Titles");
-
-
-    // --------------------------------------------------------
-    // Legend
-    // --------------------------------------------------------
-
-    addLineLegend(
-        svg,
-        width,
-        "Movie",
-        "movie-line"
-    );
-
-    addLineLegend(
-        svg,
-        width,
-        "TV Show",
-        "show-line",
-        80
-    );
 }
 
 
 // ============================================================
-// 7. TIME SERIES POINTS + TOOLTIP
+// END LABEL
 // ============================================================
 
-function addTimePoints(
+function addEndLabel(
+    g,
+    data,
+    x,
+    y,
+    label,
+    color
+) {
+
+    const valid =
+        data.filter(
+            d => d.value > 0
+        );
+
+
+    if (!valid.length) return;
+
+
+    const last =
+        valid[valid.length - 1];
+
+
+    const group =
+        g.append("g")
+            .attr(
+                "transform",
+                `translate(
+                    ${x(last.year) + 10},
+                    ${y(last.value)}
+                )`
+            );
+
+
+    group.append("circle")
+        .attr("r", 4)
+        .attr(
+            "fill",
+            color
+        );
+
+
+    group.append("text")
+        .attr(
+            "class",
+            "line-end-label"
+        )
+        .attr(
+            "x",
+            10
+        )
+        .attr(
+            "y",
+            -5
+        )
+        .attr(
+            "fill",
+            color
+        )
+        .text(label);
+
+
+    group.append("text")
+        .attr(
+            "class",
+            "line-end-value"
+        )
+        .attr(
+            "x",
+            10
+        )
+        .attr(
+            "y",
+            11
+        )
+        .text(
+            d3.format(",")(last.value)
+        );
+}
+
+
+// ============================================================
+// INTERACTIVE POINTS
+// ============================================================
+
+function addInteractivePoints(
     g,
     data,
     x,
@@ -481,105 +718,94 @@ function addTimePoints(
     type
 ) {
 
-    g.selectAll(`.point-${type.replace(" ", "-")}`)
-        .data(data)
-        .enter()
-        .append("circle")
+    g.selectAll(
+        `.point-${type.replace(" ", "-")}`
+    )
+        .data(
+            data.filter(
+                d => d.value > 0
+            )
+        )
+        .join("circle")
         .attr(
             "class",
             `time-point point-${type.replace(" ", "-")}`
         )
-        .attr("cx", d => x(d.year))
-        .attr("cy", d => y(d.count))
-        .attr("r", 3)
-        .on("mouseover", function (event, d) {
+        .attr(
+            "cx",
+            d => x(d.year)
+        )
+        .attr(
+            "cy",
+            d => y(d.value)
+        )
+        .attr("r", 5)
+
+        .on("mouseenter", function(event, d) {
+
+            d3.select(this)
+                .style("opacity", 1)
+                .attr("r", 7);
 
             showTooltip(
                 event,
-                `<strong>${type}</strong><br>
-                 Year: ${d.year}<br>
-                 Titles: ${d3.format(",")(d.count)}`
+
+                `
+                <div class="tooltip-title">
+                    ${type}
+                </div>
+
+                <div class="tooltip-value">
+                    ${d.year}
+                    ·
+                    ${d3.format(",")(d.value)}
+                    titles
+                </div>
+                `
             );
+        })
+
+        .on("mousemove", moveTooltip)
+
+        .on("mouseleave", function() {
 
             d3.select(this)
-                .attr("r", 6);
-
-        })
-        .on("mousemove", function (event) {
-
-            moveTooltip(event);
-
-        })
-        .on("mouseout", function () {
+                .style("opacity", 0)
+                .attr("r", 5);
 
             hideTooltip();
-
-            d3.select(this)
-                .attr("r", 3);
         });
 }
 
 
 // ============================================================
-// 8. LINE LEGEND
-// ============================================================
-
-function addLineLegend(
-    svg,
-    width,
-    label,
-    className,
-    offset = 0
-) {
-
-    const legend = svg
-        .append("g")
-        .attr(
-            "transform",
-            `translate(${width - 150},${20 + offset})`
-        );
-
-    legend.append("line")
-        .attr("class", className)
-        .attr("x1", 0)
-        .attr("x2", 25)
-        .attr("y1", 0)
-        .attr("y2", 0);
-
-    legend.append("text")
-        .attr("x", 35)
-        .attr("y", 5)
-        .text(label);
-}
-
-
-// ============================================================
-// 9. GENRE DATA
+// GENRE DATA
 // ============================================================
 
 function getGenreData(data) {
 
-    const counts = new Map();
+    const counts =
+        new Map();
+
 
     data.forEach(d => {
 
         if (!d.genre) return;
 
-        const genres = d.genre
+
+        d.genre
             .split(",")
             .map(g => g.trim())
-            .filter(g => g !== "");
+            .filter(Boolean)
+            .forEach(genre => {
 
-        genres.forEach(genre => {
-
-            counts.set(
-                genre,
-                (counts.get(genre) || 0) + 1
-            );
-
-        });
-
+                counts.set(
+                    genre,
+                    (counts.get(genre) || 0) + 1
+                );
+            });
     });
+
 
     return Array.from(
         counts,
@@ -588,347 +814,604 @@ function getGenreData(data) {
             count
         })
     )
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
+        .sort(
+            (a, b) =>
+                b.count - a.count
+        )
+        .slice(0, 10);
 }
 
 
 // ============================================================
-// 10. GENRE BAR CHART
+// GENRE CHART
 // ============================================================
 
-function updateGenreChart(data) {
+function updateGenreChart() {
 
-    const container = d3.select("#genre-chart");
+    const container =
+        d3.select("#genre-chart");
 
-    container.selectAll("*").remove();
 
-    const genreData = getGenreData(data);
+    container
+        .selectAll("*")
+        .remove();
 
-    if (genreData.length === 0) {
 
+    const data =
+        getGenreData(filteredData);
+
+
+    if (!data.length) return;
+
+
+    const width =
         container
-            .append("p")
-            .text("No genre data available.");
+            .node()
+            .getBoundingClientRect()
+            .width;
 
-        return;
-    }
 
-    const containerNode = container.node();
+    const height =
+        400;
 
-    const width = Math.max(
-        containerNode.getBoundingClientRect().width,
-        400
-    );
 
-    const height = 420;
+    const left = 105;
+    const right = 65;
+    const top = 10;
+    const bottom = 20;
+
 
     const innerWidth =
-        width - margin.left - margin.right;
+        width - left - right;
+
 
     const innerHeight =
-        height - margin.top - margin.bottom;
+        height - top - bottom;
 
 
-    const svg = container
-        .append("svg")
-        .attr("width", width)
-        .attr("height", height);
+    const svg =
+        container
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
 
-    const g = svg
-        .append("g")
+
+    const g =
+        svg.append("g")
+            .attr(
+                "transform",
+                `translate(
+                    ${left},
+                    ${top}
+                )`
+            );
+
+
+    const x =
+        d3.scaleLinear()
+            .domain([
+                0,
+                d3.max(
+                    data,
+                    d => d.count
+                )
+            ])
+            .range([
+                0,
+                innerWidth
+            ]);
+
+
+    const y =
+        d3.scaleBand()
+            .domain(
+                data.map(
+                    d => d.genre
+                )
+            )
+            .range([
+                0,
+                innerHeight
+            ])
+            .padding(0.38);
+
+
+    // subtle reference line
+
+    g.append("line")
+        .attr("x1", 0)
+        .attr("x2", 0)
+        .attr("y1", 0)
+        .attr("y2", innerHeight)
         .attr(
-            "transform",
-            `translate(${margin.left},${margin.top})`
+            "stroke",
+            "#333"
         );
 
 
-    // --------------------------------------------------------
-    // Scales
-    // --------------------------------------------------------
-
-    const x = d3.scaleLinear()
-        .domain([
-            0,
-            d3.max(genreData, d => d.count)
-        ])
-        .nice()
-        .range([0, innerWidth]);
-
-    const y = d3.scaleBand()
-        .domain(
-            genreData.map(d => d.genre)
-        )
-        .range([0, innerHeight])
-        .padding(0.25);
-
-
-    // --------------------------------------------------------
-    // Axes
-    // --------------------------------------------------------
-
-    g.append("g")
-        .attr("class", "x-axis")
-        .attr(
-            "transform",
-            `translate(0,${innerHeight})`
-        )
-        .call(
-            d3.axisBottom(x)
-                .ticks(5)
-                .tickFormat(d3.format("d"))
-        );
-
-    g.append("g")
-        .attr("class", "y-axis")
-        .call(d3.axisLeft(y));
-
-
-    // --------------------------------------------------------
-    // Bars
-    // --------------------------------------------------------
+    // bars
 
     g.selectAll(".genre-bar")
-        .data(genreData)
-        .enter()
-        .append("rect")
-        .attr("class", "genre-bar")
-        .attr("x", 0)
-        .attr("y", d => y(d.genre))
-        .attr("width", d => x(d.count))
-        .attr("height", y.bandwidth())
+        .data(data)
+        .join("rect")
+        .attr(
+            "class",
+            "genre-bar"
+        )
+        .attr(
+            "x",
+            0
+        )
+        .attr(
+            "y",
+            d => y(d.genre)
+        )
+        .attr(
+            "height",
+            y.bandwidth()
+        )
+        .attr(
+            "width",
+            d => x(d.count)
+        )
         .classed(
             "selected",
-            d => selectedGenre === d.genre
+            d =>
+                selectedGenre === d.genre
         )
-        .on("mouseover", function (event, d) {
+
+        .on("mouseenter", function(event, d) {
 
             showTooltip(
                 event,
-                `<strong>${d.genre}</strong><br>
-                 Titles: ${d3.format(",")(d.count)}`
+
+                `
+                <div class="tooltip-title">
+                    ${d.genre}
+                </div>
+
+                <div class="tooltip-value">
+                    ${d3.format(",")(d.count)}
+                    titles
+                </div>
+                `
             );
 
+            if (
+                selectedGenre !== d.genre
+            ) {
+
+                d3.select(this)
+                    .attr(
+                        "fill",
+                        RED
+                    );
+            }
         })
+
         .on("mousemove", moveTooltip)
-        .on("mouseout", hideTooltip)
 
-        // Click to highlight
-        .on("click", function (event, d) {
+        .on("mouseleave", function(event, d) {
 
-            if (selectedGenre === d.genre) {
+            hideTooltip();
+
+            if (
+                selectedGenre !== d.genre
+            ) {
+
+                d3.select(this)
+                    .attr(
+                        "fill",
+                        DARK_BAR
+                    );
+            }
+        })
+
+        .on("click", function(event, d) {
+
+            if (
+                selectedGenre === d.genre
+            ) {
+
                 selectedGenre = null;
+
             } else {
+
                 selectedGenre = d.genre;
             }
 
-            updateGenreChart(data);
+
+            updateGenreChart();
+
+            updateGenreStatus();
         });
 
 
-    // --------------------------------------------------------
-    // Values
-    // --------------------------------------------------------
+    // labels
 
-    g.selectAll(".genre-value")
-        .data(genreData)
-        .enter()
-        .append("text")
-        .attr("class", "bar-value")
-        .attr("x", d => x(d.count) + 6)
+    g.selectAll(".genre-label")
+        .data(data)
+        .join("text")
+        .attr(
+            "class",
+            "genre-label"
+        )
+        .attr(
+            "x",
+            -14
+        )
         .attr(
             "y",
-            d => y(d.genre) + y.bandwidth() / 2
+            d =>
+                y(d.genre) +
+                y.bandwidth() / 2
         )
-        .attr("dominant-baseline", "middle")
-        .text(d => d3.format(",")(d.count));
+        .attr(
+            "text-anchor",
+            "end"
+        )
+        .attr(
+            "dominant-baseline",
+            "middle"
+        )
+        .text(
+            d => d.genre
+        );
+
+
+    // counts
+
+    g.selectAll(".genre-count")
+        .data(data)
+        .join("text")
+        .attr(
+            "class",
+            "genre-count"
+        )
+        .attr(
+            "x",
+            d =>
+                x(d.count) + 10
+        )
+        .attr(
+            "y",
+            d =>
+                y(d.genre) +
+                y.bandwidth() / 2
+        )
+        .attr(
+            "dominant-baseline",
+            "middle"
+        )
+        .text(
+            d =>
+                d3.format(",")(
+                    d.count
+                )
+        );
 }
 
 
 // ============================================================
-// 11. AGE CERTIFICATION
+// GENRE STATUS
 // ============================================================
 
-function updateRatingChart(data) {
+function updateGenreStatus() {
 
-    const container = d3.select("#rating-chart");
-
-    container.selectAll("*").remove();
-
-    const ratingCounts = d3.rollups(
-        data,
-        v => v.length,
-        d => d.age_certification || "Unknown"
-    )
-    .map(([rating, count]) => ({
-        rating,
-        count
-    }))
-    .sort((a, b) => b.count - a.count);
+    const element =
+        d3.select(
+            "#genre-selection"
+        );
 
 
-    if (ratingCounts.length === 0) {
+    if (!selectedGenre) {
 
-        container
-            .append("p")
-            .text("No certification data available.");
+        element.text(
+            "Click a genre to highlight it."
+        );
 
         return;
     }
 
 
-    const containerNode = container.node();
-
-    const width = Math.max(
-        containerNode.getBoundingClientRect().width,
-        400
-    );
-
-    const height = 420;
-
-    const innerWidth =
-        width - margin.left - margin.right;
-
-    const innerHeight =
-        height - margin.top - margin.bottom;
-
-
-    const svg = container
-        .append("svg")
-        .attr("width", width)
-        .attr("height", height);
-
-    const g = svg
-        .append("g")
-        .attr(
-            "transform",
-            `translate(${margin.left},${margin.top})`
-        );
-
-
-    // --------------------------------------------------------
-    // Scales
-    // --------------------------------------------------------
-
-    const x = d3.scaleBand()
-        .domain(
-            ratingCounts.map(d => d.rating)
-        )
-        .range([0, innerWidth])
-        .padding(0.2);
-
-    const y = d3.scaleLinear()
-        .domain([
-            0,
-            d3.max(ratingCounts, d => d.count)
-        ])
-        .nice()
-        .range([innerHeight, 0]);
-
-
-    // --------------------------------------------------------
-    // Axes
-    // --------------------------------------------------------
-
-    g.append("g")
-        .attr(
-            "transform",
-            `translate(0,${innerHeight})`
-        )
-        .attr("class", "x-axis")
-        .call(d3.axisBottom(x));
-
-    g.append("g")
-        .attr("class", "y-axis")
-        .call(
-            d3.axisLeft(y)
-                .ticks(5)
-                .tickFormat(d3.format("d"))
-        );
-
-
-    // --------------------------------------------------------
-    // Bars
-    // --------------------------------------------------------
-
-    g.selectAll(".rating-bar")
-        .data(ratingCounts)
-        .enter()
-        .append("rect")
-        .attr("class", "rating-bar")
-        .attr("x", d => x(d.rating))
-        .attr("y", d => y(d.count))
-        .attr("width", x.bandwidth())
-        .attr(
-            "height",
-            d => innerHeight - y(d.count)
-        )
-        .on("mouseover", function (event, d) {
-
-            showTooltip(
-                event,
-                `<strong>${d.rating}</strong><br>
-                 Titles: ${d3.format(",")(d.count)}`
+    const count =
+        getGenreData(filteredData)
+            .find(
+                d =>
+                    d.genre ===
+                    selectedGenre
             );
 
-        })
-        .on("mousemove", moveTooltip)
-        .on("mouseout", hideTooltip);
+
+    if (!count) {
+
+        element.text("");
+
+        return;
+    }
 
 
-    // --------------------------------------------------------
-    // Values
-    // --------------------------------------------------------
-
-    g.selectAll(".rating-value")
-        .data(ratingCounts)
-        .enter()
-        .append("text")
-        .attr("class", "bar-value")
-        .attr(
-            "x",
-            d => x(d.rating) + x.bandwidth() / 2
-        )
-        .attr(
-            "y",
-            d => y(d.count) - 7
-        )
-        .attr("text-anchor", "middle")
-        .text(d => d3.format(",")(d.count));
+    element.text(
+        `${selectedGenre} · ${d3.format(",")(count.count)} titles`
+    );
 }
 
 
 // ============================================================
-// 12. COUNTRY DATA
+// RATING DATA
+// ============================================================
+
+function getRatingData(data) {
+
+    return d3.rollups(
+
+        data,
+
+        v => v.length,
+
+        d =>
+            d.age_certification ||
+            "Unknown"
+
+    )
+        .map(
+            ([rating, count]) => ({
+                rating,
+                count
+            })
+        )
+        .sort(
+            (a, b) =>
+                b.count - a.count
+        );
+}
+
+
+// ============================================================
+// RATING CHART
+// ============================================================
+
+function updateRatingChart() {
+
+    const container =
+        d3.select("#rating-chart");
+
+
+    container
+        .selectAll("*")
+        .remove();
+
+
+    const data =
+        getRatingData(
+            filteredData
+        );
+
+
+    const width =
+        container
+            .node()
+            .getBoundingClientRect()
+            .width;
+
+
+    const height = 400;
+
+
+    const left = 95;
+    const right = 60;
+    const top = 10;
+    const bottom = 20;
+
+
+    const innerWidth =
+        width - left - right;
+
+
+    const innerHeight =
+        height - top - bottom;
+
+
+    const svg =
+        container
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+
+    const g =
+        svg.append("g")
+            .attr(
+                "transform",
+                `translate(
+                    ${left},
+                    ${top}
+                )`
+            );
+
+
+    const x =
+        d3.scaleLinear()
+            .domain([
+                0,
+                d3.max(
+                    data,
+                    d => d.count
+                )
+            ])
+            .range([
+                0,
+                innerWidth
+            ]);
+
+
+    const y =
+        d3.scaleBand()
+            .domain(
+                data.map(
+                    d => d.rating
+                )
+            )
+            .range([
+                0,
+                innerHeight
+            ])
+            .padding(0.32);
+
+
+    g.selectAll(".rating-bar")
+        .data(data)
+        .join("rect")
+        .attr(
+            "class",
+            "rating-bar"
+        )
+        .attr(
+            "x",
+            0
+        )
+        .attr(
+            "y",
+            d => y(d.rating)
+        )
+        .attr(
+            "height",
+            y.bandwidth()
+        )
+        .attr(
+            "width",
+            d => x(d.count)
+        )
+
+        .on("mouseenter", function(event, d) {
+
+            d3.select(this)
+                .attr(
+                    "fill",
+                    RED
+                );
+
+            showTooltip(
+                event,
+
+                `
+                <div class="tooltip-title">
+                    ${d.rating}
+                </div>
+
+                <div class="tooltip-value">
+                    ${d3.format(",")(d.count)}
+                    titles
+                </div>
+                `
+            );
+        })
+
+        .on("mousemove", moveTooltip)
+
+        .on("mouseleave", function() {
+
+            d3.select(this)
+                .attr(
+                    "fill",
+                    "#333"
+                );
+
+            hideTooltip();
+        });
+
+
+    g.selectAll(".rating-label")
+        .data(data)
+        .join("text")
+        .attr(
+            "class",
+            "rating-label"
+        )
+        .attr(
+            "x",
+            -12
+        )
+        .attr(
+            "y",
+            d =>
+                y(d.rating) +
+                y.bandwidth() / 2
+        )
+        .attr(
+            "text-anchor",
+            "end"
+        )
+        .attr(
+            "dominant-baseline",
+            "middle"
+        )
+        .text(
+            d => d.rating
+        );
+
+
+    g.selectAll(".rating-count")
+        .data(data)
+        .join("text")
+        .attr(
+            "class",
+            "rating-count"
+        )
+        .attr(
+            "x",
+            d =>
+                x(d.count) + 10
+        )
+        .attr(
+            "y",
+            d =>
+                y(d.rating) +
+                y.bandwidth() / 2
+        )
+        .attr(
+            "dominant-baseline",
+            "middle"
+        )
+        .text(
+            d =>
+                d3.format(",")(
+                    d.count
+                )
+        );
+}
+
+
+// ============================================================
+// COUNTRY DATA
 // ============================================================
 
 function getCountryData(data) {
 
-    const counts = new Map();
+    const counts =
+        new Map();
+
 
     data.forEach(d => {
 
         if (!d.country) return;
 
-        /*
-         * Some datasets may contain multiple countries
-         * separated by commas.
-         */
-        const countries = d.country
+
+        d.country
             .split(",")
-            .map(c => c.trim())
-            .filter(c => c !== "");
+            .map(
+                c => c.trim()
+            )
+            .filter(Boolean)
+            .forEach(country => {
 
-        countries.forEach(country => {
-
-            counts.set(
-                country,
-                (counts.get(country) || 0) + 1
-            );
-
-        });
-
+                counts.set(
+                    country,
+                    (counts.get(country) || 0) + 1
+                );
+            });
     });
+
 
     return Array.from(
         counts,
@@ -937,208 +1420,307 @@ function getCountryData(data) {
             count
         })
     )
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
+        .sort(
+            (a, b) =>
+                b.count - a.count
+        )
+        .slice(0, 10);
 }
 
 
 // ============================================================
-// 13. COUNTRY BAR CHART
+// COUNTRY CHART
 // ============================================================
 
-function updateCountryChart(data) {
+function updateCountryChart() {
 
-    const container = d3.select("#country-chart");
+    const container =
+        d3.select("#country-chart");
 
-    container.selectAll("*").remove();
 
-    const countryData = getCountryData(data);
+    container
+        .selectAll("*")
+        .remove();
 
-    if (countryData.length === 0) {
 
+    const data =
+        getCountryData(
+            filteredData
+        );
+
+
+    const width =
         container
-            .append("p")
-            .text("No country data available.");
-
-        return;
-    }
+            .node()
+            .getBoundingClientRect()
+            .width;
 
 
-    const containerNode = container.node();
+    const height = 400;
 
-    const width = Math.max(
-        containerNode.getBoundingClientRect().width,
-        400
-    );
 
-    const height = 420;
+    const left = 80;
+    const right = 70;
+    const top = 10;
+    const bottom = 20;
+
 
     const innerWidth =
-        width - margin.left - margin.right;
+        width - left - right;
+
 
     const innerHeight =
-        height - margin.top - margin.bottom;
+        height - top - bottom;
 
 
-    const svg = container
-        .append("svg")
-        .attr("width", width)
-        .attr("height", height);
-
-    const g = svg
-        .append("g")
-        .attr(
-            "transform",
-            `translate(${margin.left},${margin.top})`
-        );
+    const svg =
+        container
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
 
 
-    // --------------------------------------------------------
-    // Scales
-    // --------------------------------------------------------
-
-    const x = d3.scaleLinear()
-        .domain([
-            0,
-            d3.max(countryData, d => d.count)
-        ])
-        .nice()
-        .range([0, innerWidth]);
-
-    const y = d3.scaleBand()
-        .domain(
-            countryData.map(d => d.country)
-        )
-        .range([0, innerHeight])
-        .padding(0.25);
+    const g =
+        svg.append("g")
+            .attr(
+                "transform",
+                `translate(
+                    ${left},
+                    ${top}
+                )`
+            );
 
 
-    // --------------------------------------------------------
-    // Axes
-    // --------------------------------------------------------
-
-    g.append("g")
-        .attr("class", "x-axis")
-        .attr(
-            "transform",
-            `translate(0,${innerHeight})`
-        )
-        .call(
-            d3.axisBottom(x)
-                .ticks(5)
-                .tickFormat(d3.format("d"))
-        );
-
-    g.append("g")
-        .attr("class", "y-axis")
-        .call(d3.axisLeft(y));
+    const x =
+        d3.scaleLinear()
+            .domain([
+                0,
+                d3.max(
+                    data,
+                    d => d.count
+                )
+            ])
+            .range([
+                0,
+                innerWidth
+            ]);
 
 
-    // --------------------------------------------------------
-    // Bars
-    // --------------------------------------------------------
+    const y =
+        d3.scaleBand()
+            .domain(
+                data.map(
+                    d => d.country
+                )
+            )
+            .range([
+                0,
+                innerHeight
+            ])
+            .padding(0.35);
+
 
     g.selectAll(".country-bar")
-        .data(countryData)
-        .enter()
-        .append("rect")
-        .attr("class", "country-bar")
-        .attr("x", 0)
-        .attr("y", d => y(d.country))
-        .attr("width", d => x(d.count))
-        .attr("height", y.bandwidth())
-        .on("mouseover", function (event, d) {
+        .data(data)
+        .join("rect")
+        .attr(
+            "class",
+            "country-bar"
+        )
+        .attr(
+            "x",
+            0
+        )
+        .attr(
+            "y",
+            d => y(d.country)
+        )
+        .attr(
+            "height",
+            y.bandwidth()
+        )
+        .attr(
+            "width",
+            d => x(d.count)
+        )
+
+        .on("mouseenter", function(event, d) {
+
+            d3.select(this)
+                .attr(
+                    "fill",
+                    RED
+                );
 
             showTooltip(
                 event,
-                `<strong>${d.country}</strong><br>
-                 Titles: ${d3.format(",")(d.count)}`
+
+                `
+                <div class="tooltip-title">
+                    ${d.country}
+                </div>
+
+                <div class="tooltip-value">
+                    ${d3.format(",")(d.count)}
+                    titles
+                </div>
+                `
             );
-
         })
+
         .on("mousemove", moveTooltip)
-        .on("mouseout", hideTooltip);
+
+        .on("mouseleave", function() {
+
+            d3.select(this)
+                .attr(
+                    "fill",
+                    "#333"
+                );
+
+            hideTooltip();
+        });
 
 
-    // --------------------------------------------------------
-    // Values
-    // --------------------------------------------------------
-
-    g.selectAll(".country-value")
-        .data(countryData)
-        .enter()
-        .append("text")
-        .attr("class", "bar-value")
-        .attr("x", d => x(d.count) + 6)
+    g.selectAll(".country-label")
+        .data(data)
+        .join("text")
+        .attr(
+            "class",
+            "country-label"
+        )
+        .attr(
+            "x",
+            -12
+        )
         .attr(
             "y",
-            d => y(d.country) + y.bandwidth() / 2
+            d =>
+                y(d.country) +
+                y.bandwidth() / 2
         )
-        .attr("dominant-baseline", "middle")
-        .text(d => d3.format(",")(d.count));
+        .attr(
+            "text-anchor",
+            "end"
+        )
+        .attr(
+            "dominant-baseline",
+            "middle"
+        )
+        .text(
+            d => d.country
+        );
+
+
+    g.selectAll(".country-count")
+        .data(data)
+        .join("text")
+        .attr(
+            "class",
+            "country-count"
+        )
+        .attr(
+            "x",
+            d =>
+                x(d.count) + 10
+        )
+        .attr(
+            "y",
+            d =>
+                y(d.country) +
+                y.bandwidth() / 2
+        )
+        .attr(
+            "dominant-baseline",
+            "middle"
+        )
+        .text(
+            d =>
+                d3.format(",")(
+                    d.count
+                )
+        );
 }
 
 
 // ============================================================
-// 14. TOOLTIP
+// TOOLTIP
 // ============================================================
 
-function showTooltip(event, html) {
+function showTooltip(
+    event,
+    html
+) {
 
-    let tooltip = d3.select("#d3-tooltip");
+    const tooltip =
+        d3.select(
+            "#d3-tooltip"
+        );
 
-    // Create tooltip if it does not exist
-    if (tooltip.empty()) {
-
-        tooltip = d3.select("body")
-            .append("div")
-            .attr("id", "d3-tooltip")
-            .attr("class", "d3-tooltip");
-    }
 
     tooltip
         .html(html)
-        .style("display", "block")
         .style(
-            "left",
-            `${event.pageX + 12}px`
-        )
-        .style(
-            "top",
-            `${event.pageY + 12}px`
+            "display",
+            "block"
         );
+
+
+    moveTooltip(event);
 }
 
 
 function moveTooltip(event) {
 
-    d3.select("#d3-tooltip")
+    d3.select(
+        "#d3-tooltip"
+    )
         .style(
             "left",
-            `${event.pageX + 12}px`
+            `${event.pageX + 14}px`
         )
         .style(
             "top",
-            `${event.pageY + 12}px`
+            `${event.pageY + 14}px`
         );
 }
 
 
 function hideTooltip() {
 
-    d3.select("#d3-tooltip")
-        .style("display", "none");
+    d3.select(
+        "#d3-tooltip"
+    )
+        .style(
+            "display",
+            "none"
+        );
 }
 
 
 // ============================================================
-// 15. RESPONSIVE REDRAW
+// RESPONSIVE REDRAW
 // ============================================================
 
-window.addEventListener("resize", function () {
+let resizeTimer = null;
 
-    if (allData.length > 0) {
-        updateDashboard();
+window.addEventListener(
+    "resize",
+    () => {
+
+        clearTimeout(
+            resizeTimer
+        );
+
+        resizeTimer = setTimeout(
+            () => {
+
+                if (allData.length) {
+                    updateDashboard();
+                }
+
+            },
+            150
+        );
     }
-
-});
+);
