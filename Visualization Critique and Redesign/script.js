@@ -1,230 +1,270 @@
 // ============================================================
-// NETFLIX CONTENT EVOLUTION
-// Visualization Critique & Redesign
-// D3.js v7
+// Netflix Visualization Critique & Redesign
 // ============================================================
 
-
-// ============================================================
-// GLOBAL STATE
-// ============================================================
+const DATA_PATH = "data/netflix.csv";
 
 let allData = [];
 let filteredData = [];
 
-let selectedGenre = null;
-
 
 // ============================================================
-// CONSTANTS
+// 1. LOAD DATA
 // ============================================================
 
-const RED = "#e50914";
-const LIGHT = "#c7c7c7";
-const MUTED = "#777";
-const DARK_BAR = "#2d2d2d";
-
-const margin = {
-    top: 30,
-    right: 90,
-    bottom: 50,
-    left: 55
-};
-
-
-// ============================================================
-// LOAD DATA
-// ============================================================
-
-d3.csv("data/netflix.csv")
+d3.csv(DATA_PATH)
     .then(data => {
 
         allData = data
-            .map(parseRow)
+            .map(d => ({
+                id: d.id,
+                title: d.title,
+                type: d.type,
+                release_year: +d.release_year,
+                age_certification: d.age_certification || "Unknown",
+                runtime: +d.runtime || 0,
+                seasons: +d.seasons || 0,
+                imdb_score: +d.imdb_score || 0,
+                imdb_votes: +d.imdb_votes || 0,
+                country: d.country || "Unknown",
+                genre: d.genre || ""
+            }))
             .filter(d => !isNaN(d.release_year));
 
-        console.log(
-            `Loaded ${allData.length} Netflix titles.`
-        );
+        console.log(`Loaded ${allData.length} Netflix titles.`);
 
-        initializeFilters();
+        initializeControls();
         updateDashboard();
 
     })
     .catch(error => {
 
-        console.error(
-            "Could not load netflix.csv:",
-            error
-        );
+        console.error("Could not load data/netflix.csv:", error);
 
-        d3.select("#time-chart")
-            .append("div")
-            .style("color", RED)
-            .style("padding", "30px 0")
-            .text(
-                "Could not load data/netflix.csv. " +
-                "Please check the file path."
-            );
+        const container = document.querySelector("#time-chart");
+
+        if (container) {
+            container.innerHTML = `
+                <div style="
+                    color:#e50914;
+                    padding:30px;
+                    font-family:Arial,sans-serif;
+                ">
+                    Could not load data/netflix.csv.
+                    Please check the file path.
+                </div>
+            `;
+        }
     });
 
 
 // ============================================================
-// PARSE ROW
+// 2. INITIALIZE CONTROLS
 // ============================================================
 
-function parseRow(d) {
+function initializeControls() {
 
-    return {
+    const typeFilter = d3.select("#type-filter");
 
-        id: d.id,
+    if (!typeFilter.empty()) {
 
-        title: d.title || "Unknown",
+        typeFilter
+            .on("change", function () {
+                updateDashboard();
+            });
+    }
 
-        type: (d.type || "").trim(),
 
-        release_year: +d.release_year,
+    const resetButton = d3.select("#reset-button");
 
-        age_certification:
-            (d.age_certification || "Unknown").trim(),
+    if (!resetButton.empty()) {
 
-        runtime: +d.runtime || 0,
+        resetButton
+            .on("click", function () {
 
-        seasons: +d.seasons || 0,
+                const minYear = d3.min(allData, d => d.release_year);
+                const maxYear = d3.max(allData, d => d.release_year);
 
-        imdb_score: +d.imdb_score || 0,
+                const sliders = getYearSliders();
 
-        imdb_votes: +d.imdb_votes || 0,
+                sliders.forEach(slider => {
 
-        country:
-            (d.country || "").trim(),
+                    if (slider.id === "year-start") {
+                        slider.value = minYear;
+                    }
 
-        genre:
-            (d.genre || "").trim()
-    };
+                    if (slider.id === "year-end") {
+                        slider.value = maxYear;
+                    }
+                });
+
+                updateYearLabels();
+
+                updateDashboard();
+            });
+    }
+
+
+    // Find any range sliders currently present in the HTML.
+    const sliders = document.querySelectorAll(
+        'input[type="range"]'
+    );
+
+    sliders.forEach(slider => {
+
+        slider.addEventListener("input", function () {
+
+            updateYearLabels();
+            updateDashboard();
+
+        });
+
+    });
+
+
+    updateYearLabels();
 }
 
 
 // ============================================================
-// FILTER INITIALIZATION
+// 3. FIND YEAR SLIDERS
 // ============================================================
 
-function initializeFilters() {
+function getYearSliders() {
 
-    const minYear = d3.min(
-        allData,
-        d => d.release_year
+    return Array.from(
+        document.querySelectorAll('input[type="range"]')
+    );
+}
+
+
+function getStartYear() {
+
+    const sliders = getYearSliders();
+
+    // Prefer an explicit year-start slider
+    const start = sliders.find(
+        s => s.id === "year-start"
     );
 
-    const maxYear = d3.max(
-        allData,
-        d => d.release_year
+    if (start) {
+        return +start.value;
+    }
+
+    // Otherwise use the first range slider
+    if (sliders.length >= 1) {
+        return +sliders[0].value;
+    }
+
+    // Fallback
+    return d3.min(allData, d => d.release_year);
+}
+
+
+function getEndYear() {
+
+    const sliders = getYearSliders();
+
+    // Prefer an explicit year-end slider
+    const end = sliders.find(
+        s => s.id === "year-end"
     );
 
+    if (end) {
+        return +end.value;
+    }
 
-    const start = d3.select("#year-start");
-    const end = d3.select("#year-end");
+    // Otherwise use the second range slider
+    if (sliders.length >= 2) {
+        return +sliders[1].value;
+    }
 
-
-    start
-        .attr("min", minYear)
-        .attr("max", maxYear)
-        .property("value", minYear);
-
-    end
-        .attr("min", minYear)
-        .attr("max", maxYear)
-        .property("value", maxYear);
-
-
-    // Content type
-
-    d3.select("#type-filter")
-        .on("change", () => {
-
-            selectedGenre = null;
-
-            updateDashboard();
-        });
-
-
-    // Year range
-
-    start.on("change", () => {
-
-        selectedGenre = null;
-
-        updateDashboard();
-    });
-
-
-    end.on("change", () => {
-
-        selectedGenre = null;
-
-        updateDashboard();
-    });
-
-
-    // Reset
-
-    d3.select("#reset-button")
-        .on("click", () => {
-
-            d3.select("#type-filter")
-                .property("value", "All");
-
-            start.property("value", minYear);
-
-            end.property("value", maxYear);
-
-            selectedGenre = null;
-
-            updateDashboard();
-        });
+    // Fallback
+    return d3.max(allData, d => d.release_year);
 }
 
 
 // ============================================================
-// UPDATE DASHBOARD
+// 4. UPDATE YEAR LABELS
+// ============================================================
+
+function updateYearLabels() {
+
+    if (!allData.length) return;
+
+    let startYear = getStartYear();
+    let endYear = getEndYear();
+
+    if (startYear > endYear) {
+
+        const temp = startYear;
+        startYear = endYear;
+        endYear = temp;
+    }
+
+
+    const minLabel =
+        document.querySelector("#year-min-value");
+
+    const maxLabel =
+        document.querySelector("#year-max-value");
+
+
+    if (minLabel) {
+        minLabel.textContent = startYear;
+    }
+
+    if (maxLabel) {
+        maxLabel.textContent = endYear;
+    }
+}
+
+
+// ============================================================
+// 5. MAIN UPDATE FUNCTION
 // ============================================================
 
 function updateDashboard() {
 
-    const type =
-        d3.select("#type-filter")
-            .property("value");
+    if (!allData.length) return;
 
 
-    let startYear =
-        +d3.select("#year-start")
-            .property("value");
+    // --------------------------------------------------------
+    // Controls
+    // --------------------------------------------------------
+
+    let type = "All";
+
+    const typeElement =
+        document.querySelector("#type-filter");
+
+    if (typeElement) {
+        type = typeElement.value;
+    }
 
 
-    let endYear =
-        +d3.select("#year-end")
-            .property("value");
+    let startYear = getStartYear();
+    let endYear = getEndYear();
 
 
     if (startYear > endYear) {
 
         const temp = startYear;
-
         startYear = endYear;
         endYear = temp;
-
-        d3.select("#year-start")
-            .property("value", startYear);
-
-        d3.select("#year-end")
-            .property("value", endYear);
     }
 
+
+    // --------------------------------------------------------
+    // Filter data
+    // --------------------------------------------------------
 
     filteredData = allData.filter(d => {
 
         const typeMatch =
             type === "All" ||
+            type === "all" ||
+            type === "" ||
             d.type === type;
 
         const yearMatch =
@@ -235,114 +275,551 @@ function updateDashboard() {
     });
 
 
-    // Update period
+    console.log(
+        `Filtered data: ${filteredData.length} titles`
+    );
 
-    d3.select("#chart-period")
-        .text(`${startYear} — ${endYear}`);
 
+    // --------------------------------------------------------
+    // Draw visualizations
+    // --------------------------------------------------------
 
-    // Update all components
+    drawTimeChart(
+        filteredData,
+        startYear,
+        endYear
+    );
 
-    updateKPIs();
+    drawGenreChart(filteredData);
 
-    updateTimeChart();
+    drawRatingChart(filteredData);
 
-    updateGenreChart();
+    drawCountryChart(filteredData);
 
-    updateRatingChart();
-
-    updateCountryChart();
+    updateYearLabels();
 }
 
 
 // ============================================================
-// KPI
+// 6. CLEAR SVG / CONTAINER
 // ============================================================
 
-function updateKPIs() {
-
-    const total =
-        filteredData.length;
-
-
-    const movies =
-        filteredData.filter(
-            d => d.type === "Movie"
-        ).length;
-
-
-    const shows =
-        filteredData.filter(
-            d => d.type === "Show"
-        ).length;
-
-
-    const validScores =
-        filteredData
-            .map(d => d.imdb_score)
-            .filter(d => d > 0);
-
-
-    const averageScore =
-        validScores.length
-            ? d3.mean(validScores)
-            : null;
-
-
-    d3.select("#total-titles")
-        .text(d3.format(",")(total));
-
-
-    d3.select("#total-movies")
-        .text(d3.format(",")(movies));
-
-
-    d3.select("#total-shows")
-        .text(d3.format(",")(shows));
-
-
-    d3.select("#avg-score")
-        .text(
-            averageScore === null
-                ? "—"
-                : averageScore.toFixed(2)
-        );
-}
-
-
-// ============================================================
-// TIME SERIES
-// ============================================================
-
-function updateTimeChart() {
+function clearContainer(selector) {
 
     const container =
-        d3.select("#time-chart");
+        d3.select(selector);
 
-
-    container
-        .selectAll("*")
-        .remove();
-
-
-    if (!filteredData.length) {
-
-        container
-            .append("p")
-            .style("color", MUTED)
-            .text("No data for this selection.");
-
-        return;
+    if (container.empty()) {
+        console.warn(
+            `Container ${selector} was not found.`
+        );
+        return null;
     }
 
+    container.selectAll("*").remove();
 
-    const node = container.node();
+    return container;
+}
+
+
+// ============================================================
+// 7. TIME SERIES
+// ============================================================
+
+function drawTimeChart(data, startYear, endYear) {
+
+    const container =
+        clearContainer("#time-chart");
+
+    if (!container) return;
+
 
     const width =
-        node.getBoundingClientRect().width;
+        container.node().clientWidth || 900;
+
+    const height = 400;
+
+    const margin = {
+        top: 35,
+        right: 35,
+        bottom: 55,
+        left: 65
+    };
 
 
-    const height = 500;
+    const svg = container
+        .append("svg")
+        .attr("width", "100%")
+        .attr("height", height)
+        .attr(
+            "viewBox",
+            `0 0 ${width} ${height}`
+        );
+
+
+    const innerWidth =
+        width -
+        margin.left -
+        margin.right;
+
+    const innerHeight =
+        height -
+        margin.top -
+        margin.bottom;
+
+
+    const chart = svg
+        .append("g")
+        .attr(
+            "transform",
+            `translate(${margin.left},${margin.top})`
+        );
+
+
+    // --------------------------------------------------------
+    // Aggregate by year
+    // --------------------------------------------------------
+
+    const years = d3.range(
+        startYear,
+        endYear + 1
+    );
+
+
+    const movieByYear =
+        d3.rollup(
+            data.filter(d => d.type === "Movie"),
+            v => v.length,
+            d => d.release_year
+        );
+
+
+    const showByYear =
+        d3.rollup(
+            data.filter(d => d.type === "Show"),
+            v => v.length,
+            d => d.release_year
+        );
+
+
+    const movieData =
+        years.map(year => ({
+            year,
+            value: movieByYear.get(year) || 0
+        }));
+
+
+    const showData =
+        years.map(year => ({
+            year,
+            value: showByYear.get(year) || 0
+        }));
+
+
+    // --------------------------------------------------------
+    // Scales
+    // --------------------------------------------------------
+
+    const x =
+        d3.scaleLinear()
+            .domain([startYear, endYear])
+            .range([0, innerWidth]);
+
+
+    const maxValue =
+        d3.max(
+            [...movieData, ...showData],
+            d => d.value
+        ) || 1;
+
+
+    const y =
+        d3.scaleLinear()
+            .domain([0, maxValue])
+            .nice()
+            .range([innerHeight, 0]);
+
+
+    // --------------------------------------------------------
+    // Grid
+    // --------------------------------------------------------
+
+    chart
+        .append("g")
+        .attr("class", "grid")
+        .call(
+            d3.axisLeft(y)
+                .tickSize(-innerWidth)
+                .tickFormat("")
+        );
+
+
+    // --------------------------------------------------------
+    // Axes
+    // --------------------------------------------------------
+
+    chart
+        .append("g")
+        .attr(
+            "transform",
+            `translate(0,${innerHeight})`
+        )
+        .call(
+            d3.axisBottom(x)
+                .ticks(Math.min(10, years.length))
+                .tickFormat(d3.format("d"))
+        );
+
+
+    chart
+        .append("g")
+        .call(
+            d3.axisLeft(y)
+                .ticks(6)
+        );
+
+
+    // --------------------------------------------------------
+    // Lines
+    // --------------------------------------------------------
+
+    const line =
+        d3.line()
+            .x(d => x(d.year))
+            .y(d => y(d.value))
+            .curve(d3.curveMonotoneX);
+
+
+    chart
+        .append("path")
+        .datum(movieData)
+        .attr("class", "netflix-line movie-line")
+        .attr("fill", "none")
+        .attr("d", line);
+
+
+    chart
+        .append("path")
+        .datum(showData)
+        .attr("class", "netflix-line show-line")
+        .attr("fill", "none")
+        .attr("d", line);
+
+
+    // --------------------------------------------------------
+    // Points
+    // --------------------------------------------------------
+
+    addPoints(
+        chart,
+        movieData,
+        x,
+        y,
+        "movie-point"
+    );
+
+    addPoints(
+        chart,
+        showData,
+        x,
+        y,
+        "show-point"
+    );
+
+
+    // --------------------------------------------------------
+    // Tooltip
+    // --------------------------------------------------------
+
+    const tooltip =
+        getTooltip();
+
+
+    const points =
+        chart.selectAll(".data-point");
+
+
+    points
+        .on("mouseenter", function(event, d) {
+
+            tooltip
+                .style("opacity", 1)
+                .html(`
+                    <strong>${d.type}</strong><br>
+                    Year: ${d.year}<br>
+                    Titles: ${d.value}
+                `);
+
+        })
+        .on("mousemove", function(event) {
+
+            tooltip
+                .style("left", `${event.pageX + 12}px`)
+                .style("top", `${event.pageY - 30}px`);
+
+        })
+        .on("mouseleave", function() {
+
+            tooltip
+                .style("opacity", 0);
+
+        });
+
+
+    // --------------------------------------------------------
+    // Legend
+    // --------------------------------------------------------
+
+    const legend =
+        d3.select("#time-legend");
+
+    if (!legend.empty()) {
+
+        legend.html(`
+            <span class="legend-item">
+                <span class="legend-dot movie-dot"></span>
+                Movies
+            </span>
+
+            <span class="legend-item">
+                <span class="legend-dot show-dot"></span>
+                TV Shows
+            </span>
+        `);
+    }
+}
+
+
+// ============================================================
+// 8. ADD POINTS
+// ============================================================
+
+function addPoints(
+    chart,
+    data,
+    x,
+    y,
+    className
+) {
+
+    const type =
+        className.includes("movie")
+            ? "Movie"
+            : "TV Show";
+
+
+    chart
+        .selectAll(`.${className}`)
+        .data(data)
+        .enter()
+        .append("circle")
+        .attr("class", `data-point ${className}`)
+        .attr("cx", d => x(d.year))
+        .attr("cy", d => y(d.value))
+        .attr("r", 3.5)
+        .attr("data-type", type);
+}
+
+
+// ============================================================
+// 9. GENRE CHART
+// ============================================================
+
+function drawGenreChart(data) {
+
+    const container =
+        clearContainer("#genre-chart");
+
+    if (!container) return;
+
+
+    const genreCounts = new Map();
+
+
+    data.forEach(d => {
+
+        if (!d.genre) return;
+
+        const genres =
+            d.genre
+                .split(",")
+                .map(g => g.trim())
+                .filter(Boolean);
+
+
+        genres.forEach(genre => {
+
+            genreCounts.set(
+                genre,
+                (genreCounts.get(genre) || 0) + 1
+            );
+
+        });
+
+    });
+
+
+    const genreData =
+        Array.from(
+            genreCounts,
+            ([genre, count]) => ({
+                genre,
+                count
+            })
+        )
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+
+    drawHorizontalBarChart(
+        container,
+        genreData,
+        "genre",
+        "count",
+        "Genre",
+        420
+    );
+}
+
+
+// ============================================================
+// 10. AGE CERTIFICATION
+// ============================================================
+
+function drawRatingChart(data) {
+
+    const container =
+        clearContainer("#rating-chart");
+
+    if (!container) return;
+
+
+    const counts =
+        d3.rollup(
+            data,
+            v => v.length,
+            d => d.age_certification || "Unknown"
+        );
+
+
+    const ratingData =
+        Array.from(
+            counts,
+            ([rating, count]) => ({
+                rating,
+                count
+            })
+        )
+        .sort((a, b) => b.count - a.count);
+
+
+    drawHorizontalBarChart(
+        container,
+        ratingData,
+        "rating",
+        "count",
+        "Certification",
+        360
+    );
+}
+
+
+// ============================================================
+// 11. COUNTRY
+// ============================================================
+
+function drawCountryChart(data) {
+
+    const container =
+        clearContainer("#country-chart");
+
+    if (!container) return;
+
+
+    const countryCounts = new Map();
+
+
+    data.forEach(d => {
+
+        if (!d.country) return;
+
+
+        const countries =
+            d.country
+                .split(",")
+                .map(c => c.trim())
+                .filter(Boolean);
+
+
+        countries.forEach(country => {
+
+            countryCounts.set(
+                country,
+                (countryCounts.get(country) || 0) + 1
+            );
+
+        });
+
+    });
+
+
+    const countryData =
+        Array.from(
+            countryCounts,
+            ([country, count]) => ({
+                country,
+                count
+            })
+        )
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+
+    drawHorizontalBarChart(
+        container,
+        countryData,
+        "country",
+        "count",
+        "Country",
+        420
+    );
+}
+
+
+// ============================================================
+// 12. GENERIC HORIZONTAL BAR CHART
+// ============================================================
+
+function drawHorizontalBarChart(
+    container,
+    data,
+    categoryKey,
+    valueKey,
+    label,
+    height
+) {
+
+    const width =
+        container.node().clientWidth || 500;
+
+
+    const margin = {
+        top: 15,
+        right: 30,
+        bottom: 30,
+        left: 115
+    };
+
+
+    const svg =
+        container
+            .append("svg")
+            .attr("width", "100%")
+            .attr("height", height)
+            .attr(
+                "viewBox",
+                `0 0 ${width} ${height}`
+            );
 
 
     const innerWidth =
@@ -357,1370 +834,155 @@ function updateTimeChart() {
         margin.bottom;
 
 
-    // --------------------------------------------------------
-    // YEAR DATA
-    // --------------------------------------------------------
-
-    const yearly = d3.rollups(
-        filteredData,
-
-        v => v.length,
-
-        d => d.release_year,
-
-        d => d.type
-    );
-
-
-    const movieMap = new Map();
-
-    const showMap = new Map();
-
-
-    yearly.forEach(([year, types]) => {
-
-        const typeMap =
-            new Map(types);
-
-        movieMap.set(
-            year,
-            typeMap.get("Movie") || 0
-        );
-
-        showMap.set(
-            year,
-            typeMap.get("Show") || 0
-        );
-    });
-
-
-    const minYear =
-        d3.min(
-            filteredData,
-            d => d.release_year
-        );
-
-
-    const maxYear =
-        d3.max(
-            filteredData,
-            d => d.release_year
-        );
-
-
-    const years =
-        d3.range(
-            minYear,
-            maxYear + 1
-        );
-
-
-    const movieData =
-        years.map(year => ({
-            year,
-            value: movieMap.get(year) || 0
-        }));
-
-
-    const showData =
-        years.map(year => ({
-            year,
-            value: showMap.get(year) || 0
-        }));
-
-
-    // --------------------------------------------------------
-    // SVG
-    // --------------------------------------------------------
-
-    const svg =
-        container
-            .append("svg")
-            .attr("width", width)
-            .attr("height", height);
-
-
-    const g =
+    const chart =
         svg.append("g")
             .attr(
                 "transform",
-                `translate(
-                    ${margin.left},
-                    ${margin.top}
-                )`
+                `translate(${margin.left},${margin.top})`
             );
 
 
-    // --------------------------------------------------------
-    // SCALES
-    // --------------------------------------------------------
+    const y =
+        d3.scaleBand()
+            .domain(
+                data.map(d => d[categoryKey])
+            )
+            .range([0, innerHeight])
+            .padding(0.22);
+
 
     const x =
         d3.scaleLinear()
-            .domain([minYear, maxYear])
+            .domain([
+                0,
+                d3.max(
+                    data,
+                    d => d[valueKey]
+                ) || 1
+            ])
+            .nice()
             .range([0, innerWidth]);
 
 
-    const maxValue =
-        d3.max([
-            d3.max(movieData, d => d.value),
-            d3.max(showData, d => d.value)
-        ]);
-
-
-    const y =
-        d3.scaleLinear()
-            .domain([0, maxValue])
-            .nice()
-            .range([innerHeight, 0]);
-
-
-    // --------------------------------------------------------
-    // GRID
-    // --------------------------------------------------------
-
-    g.append("g")
-        .selectAll("line")
-        .data(y.ticks(6))
-        .join("line")
-        .attr("class", "grid-line")
-        .attr("x1", 0)
-        .attr("x2", innerWidth)
-        .attr(
-            "y1",
-            d => y(d)
-        )
-        .attr(
-            "y2",
-            d => y(d)
-        );
-
-
-    // --------------------------------------------------------
-    // AXIS
-    // --------------------------------------------------------
-
-    g.append("g")
-        .attr("class", "axis")
-        .attr(
-            "transform",
-            `translate(
-                0,
-                ${innerHeight}
-            )`
-        )
+    // Grid
+    chart
+        .append("g")
+        .attr("class", "grid")
         .call(
             d3.axisBottom(x)
-                .ticks(
-                    Math.min(
-                        8,
-                        years.length
-                    )
-                )
-                .tickFormat(
-                    d3.format("d")
-                )
+                .tickSize(innerHeight)
+                .tickFormat("")
+        )
+        .attr(
+            "transform",
+            `translate(0,0)`
         );
 
 
-    g.append("g")
-        .attr("class", "axis")
+    // Y axis
+    chart
+        .append("g")
         .call(
             d3.axisLeft(y)
-                .ticks(6)
-                .tickFormat(
-                    d3.format(",")
-                )
         );
 
 
-    // --------------------------------------------------------
-    // LINE GENERATOR
-    // --------------------------------------------------------
-
-    const line =
-        d3.line()
-            .x(d => x(d.year))
-            .y(d => y(d.value))
-            .curve(
-                d3.curveMonotoneX
-            );
-
-
-    // --------------------------------------------------------
-    // MOVIE LINE
-    // --------------------------------------------------------
-
-    g.append("path")
-        .datum(movieData)
-        .attr(
-            "class",
-            "movie-line"
-        )
-        .attr("fill", "none")
-        .attr("d", line);
-
-
-    // --------------------------------------------------------
-    // SHOW LINE
-    // --------------------------------------------------------
-
-    g.append("path")
-        .datum(showData)
-        .attr(
-            "class",
-            "show-line"
-        )
-        .attr("fill", "none")
-        .attr("d", line);
-
-
-    // --------------------------------------------------------
-    // END LABELS
-    // --------------------------------------------------------
-
-    addEndLabel(
-        g,
-        movieData,
-        x,
-        y,
-        "Movie",
-        RED
-    );
-
-
-    addEndLabel(
-        g,
-        showData,
-        x,
-        y,
-        "TV Show",
-        LIGHT
-    );
-
-
-    // --------------------------------------------------------
-    // INTERACTION POINTS
-    // --------------------------------------------------------
-
-    addInteractivePoints(
-        g,
-        movieData,
-        x,
-        y,
-        "Movie"
-    );
-
-
-    addInteractivePoints(
-        g,
-        showData,
-        x,
-        y,
-        "TV Show"
-    );
-}
-
-
-// ============================================================
-// END LABEL
-// ============================================================
-
-function addEndLabel(
-    g,
-    data,
-    x,
-    y,
-    label,
-    color
-) {
-
-    const valid =
-        data.filter(
-            d => d.value > 0
-        );
-
-
-    if (!valid.length) return;
-
-
-    const last =
-        valid[valid.length - 1];
-
-
-    const group =
-        g.append("g")
-            .attr(
-                "transform",
-                `translate(
-                    ${x(last.year) + 10},
-                    ${y(last.value)}
-                )`
-            );
-
-
-    group.append("circle")
-        .attr("r", 4)
-        .attr(
-            "fill",
-            color
-        );
-
-
-    group.append("text")
-        .attr(
-            "class",
-            "line-end-label"
-        )
-        .attr(
-            "x",
-            10
-        )
+    // Bars
+    chart
+        .selectAll(".bar")
+        .data(data)
+        .enter()
+        .append("rect")
+        .attr("class", "bar")
+        .attr("x", 0)
         .attr(
             "y",
-            -5
+            d => y(d[categoryKey])
         )
-        .attr(
-            "fill",
-            color
-        )
-        .text(label);
-
-
-    group.append("text")
-        .attr(
-            "class",
-            "line-end-value"
-        )
-        .attr(
-            "x",
-            10
-        )
-        .attr(
-            "y",
-            11
-        )
-        .text(
-            d3.format(",")(last.value)
-        );
-}
-
-
-// ============================================================
-// INTERACTIVE POINTS
-// ============================================================
-
-function addInteractivePoints(
-    g,
-    data,
-    x,
-    y,
-    type
-) {
-
-    g.selectAll(
-        `.point-${type.replace(" ", "-")}`
-    )
-        .data(
-            data.filter(
-                d => d.value > 0
-            )
-        )
-        .join("circle")
-        .attr(
-            "class",
-            `time-point point-${type.replace(" ", "-")}`
-        )
-        .attr(
-            "cx",
-            d => x(d.year)
-        )
-        .attr(
-            "cy",
-            d => y(d.value)
-        )
-        .attr("r", 5)
-
+        .attr("height", y.bandwidth())
+        .attr("width", 0)
         .on("mouseenter", function(event, d) {
 
             d3.select(this)
+                .classed("bar-hover", true);
+
+            const tooltip =
+                getTooltip();
+
+            tooltip
                 .style("opacity", 1)
-                .attr("r", 7);
+                .html(`
+                    <strong>${d[categoryKey]}</strong><br>
+                    Titles: ${d[valueKey].toLocaleString()}
+                `);
 
-            showTooltip(
-                event,
-
-                `
-                <div class="tooltip-title">
-                    ${type}
-                </div>
-
-                <div class="tooltip-value">
-                    ${d.year}
-                    ·
-                    ${d3.format(",")(d.value)}
-                    titles
-                </div>
-                `
-            );
         })
+        .on("mousemove", function(event) {
 
-        .on("mousemove", moveTooltip)
+            getTooltip()
+                .style(
+                    "left",
+                    `${event.pageX + 12}px`
+                )
+                .style(
+                    "top",
+                    `${event.pageY - 30}px`
+                );
 
+        })
         .on("mouseleave", function() {
 
             d3.select(this)
-                .style("opacity", 0)
-                .attr("r", 5);
+                .classed("bar-hover", false);
 
-            hideTooltip();
-        });
-}
+            getTooltip()
+                .style("opacity", 0);
 
-
-// ============================================================
-// GENRE DATA
-// ============================================================
-
-function getGenreData(data) {
-
-    const counts =
-        new Map();
-
-
-    data.forEach(d => {
-
-        if (!d.genre) return;
-
-
-        d.genre
-            .split(",")
-            .map(g => g.trim())
-            .filter(Boolean)
-            .forEach(genre => {
-
-                counts.set(
-                    genre,
-                    (counts.get(genre) || 0) + 1
-                );
-            });
-    });
-
-
-    return Array.from(
-        counts,
-        ([genre, count]) => ({
-            genre,
-            count
         })
-    )
-        .sort(
-            (a, b) =>
-                b.count - a.count
-        )
-        .slice(0, 10);
-}
-
-
-// ============================================================
-// GENRE CHART
-// ============================================================
-
-function updateGenreChart() {
-
-    const container =
-        d3.select("#genre-chart");
-
-
-    container
-        .selectAll("*")
-        .remove();
-
-
-    const data =
-        getGenreData(filteredData);
-
-
-    if (!data.length) return;
-
-
-    const width =
-        container
-            .node()
-            .getBoundingClientRect()
-            .width;
-
-
-    const height =
-        400;
-
-
-    const left = 105;
-    const right = 65;
-    const top = 10;
-    const bottom = 20;
-
-
-    const innerWidth =
-        width - left - right;
-
-
-    const innerHeight =
-        height - top - bottom;
-
-
-    const svg =
-        container
-            .append("svg")
-            .attr("width", width)
-            .attr("height", height);
-
-
-    const g =
-        svg.append("g")
-            .attr(
-                "transform",
-                `translate(
-                    ${left},
-                    ${top}
-                )`
-            );
-
-
-    const x =
-        d3.scaleLinear()
-            .domain([
-                0,
-                d3.max(
-                    data,
-                    d => d.count
-                )
-            ])
-            .range([
-                0,
-                innerWidth
-            ]);
-
-
-    const y =
-        d3.scaleBand()
-            .domain(
-                data.map(
-                    d => d.genre
-                )
-            )
-            .range([
-                0,
-                innerHeight
-            ])
-            .padding(0.38);
-
-
-    // subtle reference line
-
-    g.append("line")
-        .attr("x1", 0)
-        .attr("x2", 0)
-        .attr("y1", 0)
-        .attr("y2", innerHeight)
-        .attr(
-            "stroke",
-            "#333"
-        );
-
-
-    // bars
-
-    g.selectAll(".genre-bar")
-        .data(data)
-        .join("rect")
-        .attr(
-            "class",
-            "genre-bar"
-        )
-        .attr(
-            "x",
-            0
-        )
-        .attr(
-            "y",
-            d => y(d.genre)
-        )
-        .attr(
-            "height",
-            y.bandwidth()
-        )
+        .transition()
+        .duration(700)
         .attr(
             "width",
-            d => x(d.count)
-        )
-        .classed(
-            "selected",
-            d =>
-                selectedGenre === d.genre
-        )
-
-        .on("mouseenter", function(event, d) {
-
-            showTooltip(
-                event,
-
-                `
-                <div class="tooltip-title">
-                    ${d.genre}
-                </div>
-
-                <div class="tooltip-value">
-                    ${d3.format(",")(d.count)}
-                    titles
-                </div>
-                `
-            );
-
-            if (
-                selectedGenre !== d.genre
-            ) {
-
-                d3.select(this)
-                    .attr(
-                        "fill",
-                        RED
-                    );
-            }
-        })
-
-        .on("mousemove", moveTooltip)
-
-        .on("mouseleave", function(event, d) {
-
-            hideTooltip();
-
-            if (
-                selectedGenre !== d.genre
-            ) {
-
-                d3.select(this)
-                    .attr(
-                        "fill",
-                        DARK_BAR
-                    );
-            }
-        })
-
-        .on("click", function(event, d) {
-
-            if (
-                selectedGenre === d.genre
-            ) {
-
-                selectedGenre = null;
-
-            } else {
-
-                selectedGenre = d.genre;
-            }
-
-
-            updateGenreChart();
-
-            updateGenreStatus();
-        });
-
-
-    // labels
-
-    g.selectAll(".genre-label")
-        .data(data)
-        .join("text")
-        .attr(
-            "class",
-            "genre-label"
-        )
-        .attr(
-            "x",
-            -14
-        )
-        .attr(
-            "y",
-            d =>
-                y(d.genre) +
-                y.bandwidth() / 2
-        )
-        .attr(
-            "text-anchor",
-            "end"
-        )
-        .attr(
-            "dominant-baseline",
-            "middle"
-        )
-        .text(
-            d => d.genre
-        );
-
-
-    // counts
-
-    g.selectAll(".genre-count")
-        .data(data)
-        .join("text")
-        .attr(
-            "class",
-            "genre-count"
-        )
-        .attr(
-            "x",
-            d =>
-                x(d.count) + 10
-        )
-        .attr(
-            "y",
-            d =>
-                y(d.genre) +
-                y.bandwidth() / 2
-        )
-        .attr(
-            "dominant-baseline",
-            "middle"
-        )
-        .text(
-            d =>
-                d3.format(",")(
-                    d.count
-                )
+            d => x(d[valueKey])
         );
 }
 
 
 // ============================================================
-// GENRE STATUS
+// 13. TOOLTIP
 // ============================================================
 
-function updateGenreStatus() {
+function getTooltip() {
 
-    const element =
-        d3.select(
-            "#genre-selection"
-        );
+    let tooltip =
+        d3.select("#tooltip");
 
 
-    if (!selectedGenre) {
+    if (tooltip.empty()) {
 
-        element.text(
-            "Click a genre to highlight it."
-        );
-
-        return;
+        tooltip =
+            d3.select("body")
+                .append("div")
+                .attr("id", "tooltip")
+                .attr("class", "tooltip");
     }
 
 
-    const count =
-        getGenreData(filteredData)
-            .find(
-                d =>
-                    d.genre ===
-                    selectedGenre
-            );
-
-
-    if (!count) {
-
-        element.text("");
-
-        return;
-    }
-
-
-    element.text(
-        `${selectedGenre} · ${d3.format(",")(count.count)} titles`
-    );
+    return tooltip;
 }
 
 
 // ============================================================
-// RATING DATA
+// 14. WINDOW RESIZE
 // ============================================================
-
-function getRatingData(data) {
-
-    return d3.rollups(
-
-        data,
-
-        v => v.length,
-
-        d =>
-            d.age_certification ||
-            "Unknown"
-
-    )
-        .map(
-            ([rating, count]) => ({
-                rating,
-                count
-            })
-        )
-        .sort(
-            (a, b) =>
-                b.count - a.count
-        );
-}
-
-
-// ============================================================
-// RATING CHART
-// ============================================================
-
-function updateRatingChart() {
-
-    const container =
-        d3.select("#rating-chart");
-
-
-    container
-        .selectAll("*")
-        .remove();
-
-
-    const data =
-        getRatingData(
-            filteredData
-        );
-
-
-    const width =
-        container
-            .node()
-            .getBoundingClientRect()
-            .width;
-
-
-    const height = 400;
-
-
-    const left = 95;
-    const right = 60;
-    const top = 10;
-    const bottom = 20;
-
-
-    const innerWidth =
-        width - left - right;
-
-
-    const innerHeight =
-        height - top - bottom;
-
-
-    const svg =
-        container
-            .append("svg")
-            .attr("width", width)
-            .attr("height", height);
-
-
-    const g =
-        svg.append("g")
-            .attr(
-                "transform",
-                `translate(
-                    ${left},
-                    ${top}
-                )`
-            );
-
-
-    const x =
-        d3.scaleLinear()
-            .domain([
-                0,
-                d3.max(
-                    data,
-                    d => d.count
-                )
-            ])
-            .range([
-                0,
-                innerWidth
-            ]);
-
-
-    const y =
-        d3.scaleBand()
-            .domain(
-                data.map(
-                    d => d.rating
-                )
-            )
-            .range([
-                0,
-                innerHeight
-            ])
-            .padding(0.32);
-
-
-    g.selectAll(".rating-bar")
-        .data(data)
-        .join("rect")
-        .attr(
-            "class",
-            "rating-bar"
-        )
-        .attr(
-            "x",
-            0
-        )
-        .attr(
-            "y",
-            d => y(d.rating)
-        )
-        .attr(
-            "height",
-            y.bandwidth()
-        )
-        .attr(
-            "width",
-            d => x(d.count)
-        )
-
-        .on("mouseenter", function(event, d) {
-
-            d3.select(this)
-                .attr(
-                    "fill",
-                    RED
-                );
-
-            showTooltip(
-                event,
-
-                `
-                <div class="tooltip-title">
-                    ${d.rating}
-                </div>
-
-                <div class="tooltip-value">
-                    ${d3.format(",")(d.count)}
-                    titles
-                </div>
-                `
-            );
-        })
-
-        .on("mousemove", moveTooltip)
-
-        .on("mouseleave", function() {
-
-            d3.select(this)
-                .attr(
-                    "fill",
-                    "#333"
-                );
-
-            hideTooltip();
-        });
-
-
-    g.selectAll(".rating-label")
-        .data(data)
-        .join("text")
-        .attr(
-            "class",
-            "rating-label"
-        )
-        .attr(
-            "x",
-            -12
-        )
-        .attr(
-            "y",
-            d =>
-                y(d.rating) +
-                y.bandwidth() / 2
-        )
-        .attr(
-            "text-anchor",
-            "end"
-        )
-        .attr(
-            "dominant-baseline",
-            "middle"
-        )
-        .text(
-            d => d.rating
-        );
-
-
-    g.selectAll(".rating-count")
-        .data(data)
-        .join("text")
-        .attr(
-            "class",
-            "rating-count"
-        )
-        .attr(
-            "x",
-            d =>
-                x(d.count) + 10
-        )
-        .attr(
-            "y",
-            d =>
-                y(d.rating) +
-                y.bandwidth() / 2
-        )
-        .attr(
-            "dominant-baseline",
-            "middle"
-        )
-        .text(
-            d =>
-                d3.format(",")(
-                    d.count
-                )
-        );
-}
-
-
-// ============================================================
-// COUNTRY DATA
-// ============================================================
-
-function getCountryData(data) {
-
-    const counts =
-        new Map();
-
-
-    data.forEach(d => {
-
-        if (!d.country) return;
-
-
-        d.country
-            .split(",")
-            .map(
-                c => c.trim()
-            )
-            .filter(Boolean)
-            .forEach(country => {
-
-                counts.set(
-                    country,
-                    (counts.get(country) || 0) + 1
-                );
-            });
-    });
-
-
-    return Array.from(
-        counts,
-        ([country, count]) => ({
-            country,
-            count
-        })
-    )
-        .sort(
-            (a, b) =>
-                b.count - a.count
-        )
-        .slice(0, 10);
-}
-
-
-// ============================================================
-// COUNTRY CHART
-// ============================================================
-
-function updateCountryChart() {
-
-    const container =
-        d3.select("#country-chart");
-
-
-    container
-        .selectAll("*")
-        .remove();
-
-
-    const data =
-        getCountryData(
-            filteredData
-        );
-
-
-    const width =
-        container
-            .node()
-            .getBoundingClientRect()
-            .width;
-
-
-    const height = 400;
-
-
-    const left = 80;
-    const right = 70;
-    const top = 10;
-    const bottom = 20;
-
-
-    const innerWidth =
-        width - left - right;
-
-
-    const innerHeight =
-        height - top - bottom;
-
-
-    const svg =
-        container
-            .append("svg")
-            .attr("width", width)
-            .attr("height", height);
-
-
-    const g =
-        svg.append("g")
-            .attr(
-                "transform",
-                `translate(
-                    ${left},
-                    ${top}
-                )`
-            );
-
-
-    const x =
-        d3.scaleLinear()
-            .domain([
-                0,
-                d3.max(
-                    data,
-                    d => d.count
-                )
-            ])
-            .range([
-                0,
-                innerWidth
-            ]);
-
-
-    const y =
-        d3.scaleBand()
-            .domain(
-                data.map(
-                    d => d.country
-                )
-            )
-            .range([
-                0,
-                innerHeight
-            ])
-            .padding(0.35);
-
-
-    g.selectAll(".country-bar")
-        .data(data)
-        .join("rect")
-        .attr(
-            "class",
-            "country-bar"
-        )
-        .attr(
-            "x",
-            0
-        )
-        .attr(
-            "y",
-            d => y(d.country)
-        )
-        .attr(
-            "height",
-            y.bandwidth()
-        )
-        .attr(
-            "width",
-            d => x(d.count)
-        )
-
-        .on("mouseenter", function(event, d) {
-
-            d3.select(this)
-                .attr(
-                    "fill",
-                    RED
-                );
-
-            showTooltip(
-                event,
-
-                `
-                <div class="tooltip-title">
-                    ${d.country}
-                </div>
-
-                <div class="tooltip-value">
-                    ${d3.format(",")(d.count)}
-                    titles
-                </div>
-                `
-            );
-        })
-
-        .on("mousemove", moveTooltip)
-
-        .on("mouseleave", function() {
-
-            d3.select(this)
-                .attr(
-                    "fill",
-                    "#333"
-                );
-
-            hideTooltip();
-        });
-
-
-    g.selectAll(".country-label")
-        .data(data)
-        .join("text")
-        .attr(
-            "class",
-            "country-label"
-        )
-        .attr(
-            "x",
-            -12
-        )
-        .attr(
-            "y",
-            d =>
-                y(d.country) +
-                y.bandwidth() / 2
-        )
-        .attr(
-            "text-anchor",
-            "end"
-        )
-        .attr(
-            "dominant-baseline",
-            "middle"
-        )
-        .text(
-            d => d.country
-        );
-
-
-    g.selectAll(".country-count")
-        .data(data)
-        .join("text")
-        .attr(
-            "class",
-            "country-count"
-        )
-        .attr(
-            "x",
-            d =>
-                x(d.count) + 10
-        )
-        .attr(
-            "y",
-            d =>
-                y(d.country) +
-                y.bandwidth() / 2
-        )
-        .attr(
-            "dominant-baseline",
-            "middle"
-        )
-        .text(
-            d =>
-                d3.format(",")(
-                    d.count
-                )
-        );
-}
-
-
-// ============================================================
-// TOOLTIP
-// ============================================================
-
-function showTooltip(
-    event,
-    html
-) {
-
-    const tooltip =
-        d3.select(
-            "#d3-tooltip"
-        );
-
-
-    tooltip
-        .html(html)
-        .style(
-            "display",
-            "block"
-        );
-
-
-    moveTooltip(event);
-}
-
-
-function moveTooltip(event) {
-
-    d3.select(
-        "#d3-tooltip"
-    )
-        .style(
-            "left",
-            `${event.pageX + 14}px`
-        )
-        .style(
-            "top",
-            `${event.pageY + 14}px`
-        );
-}
-
-
-function hideTooltip() {
-
-    d3.select(
-        "#d3-tooltip"
-    )
-        .style(
-            "display",
-            "none"
-        );
-}
-
-
-// ============================================================
-// RESPONSIVE REDRAW
-// ============================================================
-
-let resizeTimer = null;
 
 window.addEventListener(
     "resize",
-    () => {
+    function() {
 
-        clearTimeout(
-            resizeTimer
-        );
+        if (allData.length) {
+            updateDashboard();
+        }
 
-        resizeTimer = setTimeout(
-            () => {
-
-                if (allData.length) {
-                    updateDashboard();
-                }
-
-            },
-            150
-        );
     }
 );
