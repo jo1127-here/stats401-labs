@@ -1601,79 +1601,219 @@ function drawRatingChart(data) {
 function drawCountryChart(data) {
 
     const container =
-        clearContainer(
-            "#country-chart"
-        );
+        clearContainer("#country-chart");
 
+    if (!container) return;
 
-    if (!container) {
-        return;
-    }
+    const node = container.node();
 
+    const width =
+        node.clientWidth || 700;
 
-    const counts =
-        new Map();
+    const height = 390;
 
+    // -----------------------------------------
+    // Count countries from filtered data
+    // -----------------------------------------
+
+    const counts = new Map();
 
     data.forEach(d => {
 
-        if (!d.country) {
-            return;
-        }
+        if (!d.country) return;
 
+        d.country
+            .split(",")
+            .map(country => country.trim())
+            .filter(Boolean)
+            .forEach(country => {
 
-        const countries =
-            d.country
-                .split(",")
-                .map(
-                    country =>
-                        country.trim()
-                )
-                .filter(Boolean);
+                counts.set(
+                    country,
+                    (counts.get(country) || 0) + 1
+                );
 
-
-        countries.forEach(country => {
-
-            counts.set(
-                country,
-                (
-                    counts.get(country) || 0
-                ) + 1
-            );
-
-        });
+            });
 
     });
 
 
-    const countryData =
-        Array.from(
-            counts,
-            ([country, count]) => ({
-                country,
-                count
+    // -----------------------------------------
+    // Create SVG
+    // -----------------------------------------
+
+    const svg =
+        container
+            .append("svg")
+            .attr("width", "100%")
+            .attr("height", height)
+            .attr(
+                "viewBox",
+                `0 0 ${width} ${height}`
+            );
+
+
+    // -----------------------------------------
+    // Projection
+    // -----------------------------------------
+
+    const projection =
+        d3.geoNaturalEarth1()
+            .fitSize(
+                [width, height],
+                {
+                    type: "Sphere"
+                }
+            );
+
+    const path =
+        d3.geoPath()
+            .projection(projection);
+
+
+    // -----------------------------------------
+    // Load world map
+    // -----------------------------------------
+
+    d3.json(
+        "https://unpkg.com/world-atlas@2/countries-110m.json"
+    )
+    .then(world => {
+
+        const countries =
+            topojson.feature(
+                world,
+                world.objects.countries
+            );
+
+
+        // -------------------------------------
+        // Color scale
+        // -------------------------------------
+
+        const maxCount =
+            d3.max(
+                Array.from(counts.values())
+            ) || 1;
+
+        const colorScale =
+            d3.scaleSequential()
+                .domain([0, maxCount])
+                .interpolator(
+                    d3.interpolateReds
+                );
+
+
+        // -------------------------------------
+        // Draw countries
+        // -------------------------------------
+
+        svg
+            .append("g")
+            .selectAll("path")
+            .data(countries.features)
+            .enter()
+            .append("path")
+            .attr("class", "country-map")
+            .attr("d", path)
+            .attr(
+                "fill",
+                d => {
+
+                    const name =
+                        d.properties.name;
+
+                    const value =
+                        counts.get(name) || 0;
+
+                    return value > 0
+                        ? colorScale(value)
+                        : "rgba(255,255,255,0.08)";
+                }
+            )
+            .attr(
+                "stroke",
+                "rgba(255,255,255,0.18)"
+            )
+            .attr(
+                "stroke-width",
+                0.5
+            )
+            .on("mouseenter", function(event, d) {
+
+                const name =
+                    d.properties.name;
+
+                const value =
+                    counts.get(name) || 0;
+
+                d3.select(this)
+                    .attr(
+                        "stroke",
+                        "#ffffff"
+                    )
+                    .attr(
+                        "stroke-width",
+                        1.5
+                    );
+
+
+                const tooltip =
+                    getTooltip();
+
+                tooltip
+                    .style("opacity", 1)
+                    .html(`
+                        <strong>${name}</strong>
+                        <br>
+                        Titles:
+                        ${value.toLocaleString()}
+                    `);
+
             })
-        )
-        .sort(
-            (a, b) =>
-                b.count - a.count
-        )
-        .slice(
-            0,
-            10
+            .on("mousemove", function(event) {
+
+                getTooltip()
+                    .style(
+                        "left",
+                        `${event.pageX + 14}px`
+                    )
+                    .style(
+                        "top",
+                        `${event.pageY - 35}px`
+                    );
+
+            })
+            .on("mouseleave", function() {
+
+                d3.select(this)
+                    .attr(
+                        "stroke",
+                        "rgba(255,255,255,0.18)"
+                    )
+                    .attr(
+                        "stroke-width",
+                        0.5
+                    );
+
+                getTooltip()
+                    .style(
+                        "opacity",
+                        0
+                    );
+
+            });
+
+    })
+    .catch(error => {
+
+        console.error(
+            "Could not load world map:",
+            error
         );
 
-
-    drawHorizontalBars(
-        container,
-        countryData,
-        "country",
-        "count",
-        390,
-        "country"
-    );
+    });
 }
-
 
 // ============================================================
 // 20. GENERIC HORIZONTAL BAR CHART
