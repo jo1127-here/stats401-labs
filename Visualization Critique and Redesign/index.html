@@ -1,432 +1,1000 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Visualization Critique and Redesign</title>
 
     <link rel="stylesheet" href="style.css">
 
+    <!-- D3 -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 
-<body>
 
-<main class="report-container">
+<body>
 
     <!-- =====================================================
          HEADER
     ====================================================== -->
 
-    <header class="report-header">
-        <p class="course-label">STATS 401 · DATA VISUALIZATION</p>
+    <header class="site-header">
 
-        <h1>Visualization Critique and Redesign</h1>
+        <div class="header-content">
 
-        <p class="subtitle">
-            A critique and redesign of a Netflix content dashboard
-        </p>
+            <p class="eyebrow">
+                STATS 401 · VISUALIZATION PROJECT
+            </p>
 
-        <div class="header-meta">
-            <span>Individual Project</span>
-            <span>·</span>
-            <span>D3.js Redesign</span>
+            <h1>
+                Visualization Critique<br>
+                <span>and Redesign</span>
+            </h1>
+
+            <p class="header-description">
+                A critique and redesign of a Netflix content
+                visualization using interactive D3.js techniques.
+            </p>
+
         </div>
+
     </header>
 
 
-    <!-- =====================================================
-         1. ORIGINAL VISUALIZATION
-    ====================================================== -->
 
-    <section class="report-section">
-
-        <h2>1. Original Visualization</h2>
-
-        <p>
-            The original visualization is a Tableau-style dashboard exploring
-            Netflix's global content catalog across time, geography, genres,
-            content types, and ratings. The dashboard combines several views,
-            including time trends, geographic distribution, genre information,
-            ratings, and title-level metadata.
-        </p>
-
-        <figure class="original-figure">
-            <img
-                src="images/dashboard.jpg"
-                alt="Original Netflix dashboard visualization"
-            >
-
-            <figcaption>
-                <strong>Figure 1.</strong>
-                Original Netflix dashboard from
-                <a href="https://github.com/prathu10/Netflix_EDA_Dashboard"
-                   target="_blank">
-                    Netflix EDA Dashboard
-                </a>.
-            </figcaption>
-        </figure>
-
-        <p>
-            The underlying dataset contains Netflix titles together with
-            attributes such as title, content type, release year, age
-            certification, runtime, seasons, country, genre, IMDb score, and
-            IMDb vote count. The original dashboard is designed for a broad
-            audience interested in understanding the composition and evolution
-            of Netflix's catalog. Typical tasks include identifying trends in
-            content production, comparing Movies and TV Shows, examining
-            popular genres and certifications, and exploring geographic
-            differences.
-        </p>
-
-    </section>
+    <main class="page">
 
 
-    <!-- =====================================================
-         2. REDESIGN
-    ====================================================== -->
+        <!-- =================================================
+             1. ORIGINAL VISUALIZATION
+        ================================================== -->
 
-    <section class="report-section">
+        <section class="report-section">
 
-        <h2>2. Redesigned Visualization</h2>
+            <div class="section-heading">
 
-        <p>
-            The redesign focuses on a more specific analytical question:
-            <strong>How has the composition of Netflix's content catalog
-            changed over time?</strong>
-            The visualization uses a time-series view as the primary analytical
-            component, while genre, certification, and country distributions
-            provide supporting context.
-        </p>
+                <span class="section-number">
+                    01
+                </span>
 
-        <div class="visualization-shell">
-
-            <div class="viz-header">
                 <div>
-                    <p class="viz-kicker">NETFLIX CONTENT EVOLUTION</p>
-                    <h3>How has the catalog changed over time?</h3>
+                    <h2>Original Visualization</h2>
+
                     <p>
-                        Explore the balance between Movies and TV Shows and
-                        examine changes in genres, certifications, and
-                        production countries.
+                        Understanding the original dashboard,
+                        its data, and its intended analytical tasks.
                     </p>
                 </div>
-            </div>
-
-            <div class="viz-controls">
-
-                <div class="control-group">
-                    <label for="type-filter">Content Type</label>
-
-                    <select id="type-filter">
-                        <option value="All">All Content</option>
-                        <option value="Movie">Movies</option>
-                        <option value="Show">TV Shows</option>
-                    </select>
-                </div>
-
-
-                <div class="control-group year-control">
-
-                    <label>Release Year</label>
-
-                    <div class="year-values">
-                        <span id="year-min-value"></span>
-                        <span>–</span>
-                        <span id="year-max-value"></span>
-                    </div>
-
-                    <div class="range-wrapper">
-
-                        <input
-                            type="range"
-                            id="year-start"
-                            min="1900"
-                            max="2022"
-                            value="1900"
-                        >
-
-                        <input
-                            type="range"
-                            id="year-end"
-                            min="1900"
-                            max="2022"
-                            value="2022"
-                        >
-
-                    </div>
-
-                </div>
-
-
-                <button id="reset-button">
-                    Reset
-                </button>
 
             </div>
 
 
-            <!-- Main time-series visualization -->
+            <div class="original-layout">
 
-            <div class="viz-panel main-panel">
+                <figure class="original-figure">
 
-                <div class="panel-heading">
+                    <img
+                        src="images/original_dashboard.png"
+                        alt="Original Netflix Tableau dashboard"
+                    >
+
+                    <figcaption>
+                        Original Netflix dashboard created in Tableau.
+                    </figcaption>
+
+                </figure>
+
+
+                <div class="context-text">
+
+                    <h3>About the visualization</h3>
+
+                    <p>
+                        The original visualization is a Tableau dashboard
+                        exploring Netflix movies and television shows.
+                        It combines several views to describe the catalog
+                        across time, genre, age certification, content type,
+                        and production country.
+                    </p>
+
+                    <p>
+                        The dashboard is primarily designed for users who
+                        want an overview of Netflix's content catalog and
+                        its distribution across different categories.
+                        The multiple views allow users to explore both
+                        individual titles and broader catalog-level patterns.
+                    </p>
+
+
+                    <div class="source-block">
+
+                        <span>Source</span>
+
+                        <a
+                            href="https://github.com/prathu10/Netflix_EDA_Dashboard"
+                            target="_blank"
+                        >
+                            Original Netflix EDA Dashboard ↗
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             2. CRITIQUE
+        ================================================== -->
+
+        <section class="report-section">
+
+            <div class="section-heading">
+
+                <span class="section-number">
+                    02
+                </span>
+
+                <div>
+                    <h2>Visualization Critique</h2>
+
+                    <p>
+                        Strengths and weaknesses of the original design.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="report-text">
+
+                <h3>Original Visualization and Context</h3>
+
+                <p>
+                    The original dashboard brings together several
+                    complementary views of Netflix content. The user can
+                    inspect title-level information while also seeing
+                    distributions by genre, age certification, content
+                    type, geography, and year. This makes the dashboard
+                    useful as a general exploratory overview rather than
+                    as a visualization focused on a single analytical
+                    question.
+                </p>
+
+
+                <h3>Strengths</h3>
+
+                <div class="strength-list">
+
+                    <div class="report-point">
+
+                        <span class="point-number">01</span>
+
+                        <div>
+                            <strong>Multiple complementary views</strong>
+
+                            <p>
+                                The dashboard combines temporal,
+                                categorical, and geographic views.
+                                These different encodings allow users
+                                to explore several aspects of the
+                                dataset without relying on a single
+                                visualization.
+                            </p>
+                        </div>
+
+                    </div>
+
+
+                    <div class="report-point">
+
+                        <span class="point-number">02</span>
+
+                        <div>
+                            <strong>Broad exploratory coverage</strong>
+
+                            <p>
+                                The dashboard provides a useful overview
+                                of Netflix's catalog. Users can move from
+                                title-level information to larger patterns
+                                in genre, content type, certification,
+                                and geography.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <h3>Weaknesses</h3>
+
+                <div class="weakness-list">
+
+                    <div class="report-point">
+
+                        <span class="point-number">01</span>
+
+                        <div>
+                            <strong>
+                                Weak visual hierarchy
+                            </strong>
+
+                            <p>
+                                The original dashboard contains many
+                                heterogeneous views, but does not establish
+                                a strong primary analytical task. As a
+                                result, users may not immediately know which
+                                comparison should receive the most attention.
+                            </p>
+                        </div>
+
+                    </div>
+
+
+                    <div class="report-point">
+
+                        <span class="point-number">02</span>
+
+                        <div>
+                            <strong>
+                                Difficult comparison in the stacked area chart
+                            </strong>
+
+                            <p>
+                                The stacked area chart shows the number of
+                                movies and television shows over time.
+                                However, only the bottom category has a
+                                common baseline. Comparing the upper series
+                                across years therefore requires estimating
+                                differences between changing boundaries.
+                            </p>
+                        </div>
+
+                    </div>
+
+
+                    <div class="report-point">
+
+                        <span class="point-number">03</span>
+
+                        <div>
+                            <strong>
+                                Ambiguous genre categories
+                            </strong>
+
+                            <p>
+                                Many titles contain multiple genres such as
+                                "Comedy, Drama, Romance." Treating these
+                                combinations as individual categories makes
+                                it difficult to determine the prevalence of
+                                individual genres. The redesign separates
+                                multi-label genres before counting them.
+                            </p>
+                        </div>
+
+                    </div>
+
+
+                    <div class="report-point">
+
+                        <span class="point-number">04</span>
+
+                        <div>
+                            <strong>
+                                Area-based comparisons are imprecise
+                            </strong>
+
+                            <p>
+                                The original treemap provides a compact
+                                overview of content type, but comparing
+                                areas is less precise than comparing
+                                aligned positions or lengths. The redesign
+                                therefore emphasizes line and bar charts
+                                for quantitative comparisons.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             3. REDESIGN
+        ================================================== -->
+
+        <section class="report-section redesign-section">
+
+            <div class="section-heading">
+
+                <span class="section-number">
+                    03
+                </span>
+
+                <div>
+                    <h2>Redesign</h2>
+
+                    <p>
+                        An interactive D3.js redesign focused on
+                        Netflix content evolution.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="redesign-introduction">
+
+                <p>
+                    The redesign focuses the visualization around a clearer
+                    question: <strong>How has Netflix's content catalog
+                    changed over time?</strong> The main temporal comparison
+                    uses separate lines for movies and television shows,
+                    while supporting views reveal genre, certification,
+                    and country patterns.
+                </p>
+
+            </div>
+
+
+
+            <!-- =============================================
+                 D3 VISUALIZATION
+            ============================================== -->
+
+            <div class="visualization-wrapper">
+
+
+                <!-- Visualization Header -->
+
+                <div class="viz-header">
+
                     <div>
-                        <h4>Content by Release Year</h4>
-                        <p>
-                            Number of titles released in each year
+
+                        <p class="viz-eyebrow">
+                            NETFLIX CONTENT EVOLUTION
                         </p>
+
+                        <h3>
+                            How has the catalog changed over time?
+                        </h3>
+
                     </div>
 
-                    <div id="time-legend" class="legend"></div>
+                    <div class="viz-status">
+                        Interactive
+                    </div>
+
                 </div>
 
-                <div id="time-chart" class="chart"></div>
+
+
+                <!-- Controls -->
+
+                <div class="viz-controls">
+
+                    <div class="control">
+
+                        <label for="type-filter">
+                            Content type
+                        </label>
+
+                        <select id="type-filter">
+
+                            <option value="All">
+                                All
+                            </option>
+
+                            <option value="Movie">
+                                Movies
+                            </option>
+
+                            <option value="Show">
+                                TV Shows
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="control year-control">
+
+                        <label>
+                            Release year
+                        </label>
+
+                        <div class="year-values">
+
+                            <span id="year-min-value">
+                                —
+                            </span>
+
+                            <span>–</span>
+
+                            <span id="year-max-value">
+                                —
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        id="reset-button"
+                        type="button"
+                    >
+                        Reset
+                    </button>
+
+                </div>
+
+
+
+                <!-- KPI -->
+
+                <div class="kpi-row">
+
+                    <div class="kpi">
+
+                        <span class="kpi-label">
+                            Titles
+                        </span>
+
+                        <span
+                            class="kpi-value"
+                            id="kpi-total"
+                        >
+                            —
+                        </span>
+
+                    </div>
+
+
+                    <div class="kpi">
+
+                        <span class="kpi-label">
+                            Movies
+                        </span>
+
+                        <span
+                            class="kpi-value"
+                            id="kpi-movies"
+                        >
+                            —
+                        </span>
+
+                    </div>
+
+
+                    <div class="kpi">
+
+                        <span class="kpi-label">
+                            TV Shows
+                        </span>
+
+                        <span
+                            class="kpi-value"
+                            id="kpi-shows"
+                        >
+                            —
+                        </span>
+
+                    </div>
+
+
+                    <div class="kpi">
+
+                        <span class="kpi-label">
+                            Avg. IMDb Score
+                        </span>
+
+                        <span
+                            class="kpi-value"
+                            id="kpi-score"
+                        >
+                            —
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- MAIN CHART -->
+
+                <div class="chart-panel main-chart-panel">
+
+                    <div class="chart-heading">
+
+                        <div>
+
+                            <h4>
+                                Content released over time
+                            </h4>
+
+                            <p>
+                                Number of titles by release year
+                            </p>
+
+                        </div>
+
+                        <div
+                            class="chart-legend"
+                            id="time-legend"
+                        ></div>
+
+                    </div>
+
+                    <div
+                        id="time-chart"
+                        class="chart"
+                    ></div>
+
+                </div>
+
+
+
+                <!-- SECONDARY CHARTS -->
+
+                <div class="chart-grid">
+
+
+                    <!-- GENRE -->
+
+                    <div class="chart-panel">
+
+                        <div class="chart-heading">
+
+                            <div>
+
+                                <h4>
+                                    Most common genres
+                                </h4>
+
+                                <p>
+                                    Multi-label genres counted individually
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div
+                            id="genre-chart"
+                            class="chart"
+                        ></div>
+
+                    </div>
+
+
+
+                    <!-- CERTIFICATION -->
+
+                    <div class="chart-panel">
+
+                        <div class="chart-heading">
+
+                            <div>
+
+                                <h4>
+                                    Age certification
+                                </h4>
+
+                                <p>
+                                    Distribution of content ratings
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div
+                            id="rating-chart"
+                            class="chart"
+                        ></div>
+
+                    </div>
+
+
+
+                    <!-- COUNTRY -->
+
+                    <div class="chart-panel country-panel">
+
+                        <div class="chart-heading">
+
+                            <div>
+
+                                <h4>
+                                    Production countries
+                                </h4>
+
+                                <p>
+                                    Countries with the most titles
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div
+                            id="country-chart"
+                            class="chart"
+                        ></div>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- Tooltip -->
+
+                <div
+                    id="tooltip"
+                    class="tooltip"
+                ></div>
+
+
+                <div class="interaction-hint">
+
+                    <span class="hint-dot"></span>
+
+                    Hover over the charts to inspect individual values.
+
+                </div>
 
             </div>
 
 
-            <!-- Supporting visualizations -->
 
-            <div class="supporting-grid">
+            <!-- =============================================
+                 REDESIGN DECISIONS
+            ============================================== -->
 
-                <div class="viz-panel">
+            <div class="report-text redesign-decisions">
 
-                    <div class="panel-heading">
+                <h3>Redesign Decisions</h3>
+
+
+                <div class="decision-grid">
+
+                    <div class="decision">
+
+                        <span>01</span>
+
                         <div>
-                            <h4>Genres</h4>
+
+                            <strong>
+                                Stronger visual hierarchy
+                            </strong>
+
                             <p>
-                                Individual genre labels across titles
+                                The redesign places the time-series
+                                comparison first because temporal change
+                                provides a more coherent organizing question
+                                for the dashboard.
                             </p>
+
                         </div>
+
                     </div>
 
-                    <div id="genre-chart" class="chart"></div>
 
-                </div>
+                    <div class="decision">
 
+                        <span>02</span>
 
-                <div class="viz-panel">
-
-                    <div class="panel-heading">
                         <div>
-                            <h4>Age Certification</h4>
+
+                            <strong>
+                                Separate lines instead of stacked areas
+                            </strong>
+
                             <p>
-                                Distribution of content certifications
+                                Movies and TV shows are represented by
+                                separate lines so that both categories
+                                share the same baseline and can be compared
+                                directly across years.
                             </p>
+
                         </div>
+
                     </div>
 
-                    <div id="rating-chart" class="chart"></div>
 
-                </div>
+                    <div class="decision">
 
+                        <span>03</span>
 
-                <div class="viz-panel">
-
-                    <div class="panel-heading">
                         <div>
-                            <h4>Production Countries</h4>
+
+                            <strong>
+                                Normalize multi-label genres
+                            </strong>
+
                             <p>
-                                Countries represented in the catalog
+                                Genre strings are split into individual
+                                categories. A title such as "Comedy, Drama"
+                                therefore contributes once to Comedy and
+                                once to Drama.
                             </p>
+
                         </div>
+
                     </div>
 
-                    <div id="country-chart" class="chart"></div>
+
+                    <div class="decision">
+
+                        <span>04</span>
+
+                        <div>
+
+                            <strong>
+                                Coordinated filtering
+                            </strong>
+
+                            <p>
+                                The content-type and year controls update
+                                all views simultaneously, allowing users
+                                to investigate a specific subset without
+                                losing the overall structure.
+                            </p>
+
+                        </div>
+
+                    </div>
 
                 </div>
 
             </div>
 
-        </div>
-
-        <div id="tooltip" class="tooltip"></div>
-
-    </section>
+        </section>
 
 
-    <!-- =====================================================
-         3. CRITIQUE AND REDESIGN REPORT
-    ====================================================== -->
 
-    <section class="report-section report-text">
+        <!-- =================================================
+             4. ORIGINAL VS REDESIGN
+        ================================================== -->
 
-        <h2>3. Visualization Critique and Redesign Report</h2>
+        <section class="report-section">
 
+            <div class="section-heading">
 
-        <h3>Original Visualization and Context</h3>
+                <span class="section-number">
+                    04
+                </span>
 
-        <p>
-            The original visualization is a multi-view dashboard based on a
-            Netflix content dataset. It presents information about titles,
-            release years, content types, genres, ratings, countries, and
-            IMDb-related metadata. Its intended audience is a general audience
-            interested in exploring Netflix's catalog rather than a specialized
-            analytical audience. The dashboard supports several exploratory
-            tasks, including comparing Movies and TV Shows, identifying
-            temporal trends, examining genre distributions, and exploring the
-            geographic composition of the catalog. Its broad coverage makes it
-            useful as an exploratory overview, but it also creates challenges
-            for users who want to answer one specific question efficiently.
-        </p>
+                <div>
 
+                    <h2>Original vs. Redesign</h2>
 
-        <h3>Critique</h3>
+                    <p>
+                        How the redesign changes the analytical experience.
+                    </p>
 
-        <p>
-            The original dashboard has several strengths. First, it provides
-            multiple perspectives on the same dataset. Time, geography, genre,
-            and content type are represented together, allowing users to move
-            between different levels of analysis. Second, the dashboard uses
-            familiar graphical forms, such as maps, bars, and time-based
-            charts, which lowers the learning cost for a general audience.
-            These views also make it possible to discover patterns without
-            requiring users to inspect the raw data directly.
-        </p>
+                </div>
 
-        <p>
-            However, the visualization has three important weaknesses. First,
-            the large number of heterogeneous views creates weak visual
-            hierarchy. Because several charts compete for attention, the
-            dashboard does not establish a clear primary analytical task.
-            Second, the stacked area representation of Movies and TV Shows
-            makes direct comparison difficult because only the lower series
-            shares a common baseline. A line chart provides a more precise
-            comparison of changes over time. Third, the genre visualization
-            treats multi-label genre combinations such as "Comedy, Drama" as
-            categories. This makes it difficult to determine which individual
-            genres are most common. The geographic view also emphasizes spatial
-            distribution rather than precise ranking, which is useful for
-            overview but less effective for comparing countries with similar
-            values.
-        </p>
+            </div>
 
 
-        <h3>Redesign Rationale</h3>
+            <div class="comparison-table">
 
-        <p>
-            The redesign makes three major changes. First, it establishes
-            catalog evolution over time as the primary analytical task and
-            places a two-line time series at the center of the visualization.
-            This gives users a shared baseline and makes differences between
-            Movies and TV Shows easier to compare. Second, the genre field is
-            parsed into individual genre labels before aggregation. A title
-            containing multiple genres therefore contributes to each relevant
-            genre, producing a more interpretable ranking. Third, the
-            supporting views use horizontal bars for certifications and
-            production countries. Position along a common scale allows users
-            to compare categories more directly than area-based encodings.
-        </p>
+                <div class="comparison-row comparison-header">
 
-        <p>
-            The redesign also introduces coordinated filtering by content type
-            and release-year range. The same filters update all supporting
-            views, allowing users to examine whether patterns change across
-            different periods or between Movies and TV Shows. Hover interactions
-            provide exact values without permanently displaying labels for
-            every mark, reducing visual clutter while preserving access to
-            detailed information.
-        </p>
+                    <div>
+                        Design aspect
+                    </div>
+
+                    <div>
+                        Original
+                    </div>
+
+                    <div>
+                        Redesign
+                    </div>
+
+                </div>
 
 
-        <h3>Original vs. Redesign</h3>
+                <div class="comparison-row">
 
-        <p>
-            Compared with the original dashboard, the redesign prioritizes
-            analytical clarity over the number of views shown simultaneously.
-            The original is stronger as a broad exploratory dashboard because
-            it exposes many dimensions at once. The redesign instead provides
-            a clearer visual hierarchy and makes temporal comparison the main
-            task. The line chart improves comparison of content types, while
-            the normalized genre and country aggregations reduce ambiguity in
-            categorical comparisons. Interactive filtering also allows users
-            to focus on smaller subsets of the catalog without introducing
-            additional charts.
-        </p>
+                    <div>
+                        Primary structure
+                    </div>
 
-        <p>
-            These improvements involve trade-offs. The redesigned
-            visualization intentionally removes some of the title-level detail
-            and geographic emphasis present in the original. It also remains
-            dependent on the structure and completeness of the underlying
-            dataset. In particular, country and genre fields may contain
-            multiple labels per title, so their counts represent category
-            occurrences rather than mutually exclusive titles. The redesign
-            therefore improves the clarity of the selected analytical tasks,
-            but it is not intended to replace every exploratory function of
-            the original dashboard.
-        </p>
+                    <div>
+                        Multiple independent views
+                    </div>
 
-    </section>
+                    <div>
+                        Temporal evolution as the primary task
+                    </div>
+
+                </div>
 
 
-    <!-- =====================================================
-         4. REFERENCES
-    ====================================================== -->
+                <div class="comparison-row">
 
-    <section class="report-section references">
+                    <div>
+                        Movie / Show comparison
+                    </div>
 
-        <h2>4. Data Source and References</h2>
+                    <div>
+                        Stacked area
+                    </div>
 
-        <ol>
+                    <div>
+                        Separate lines with a shared baseline
+                    </div>
 
-            <li>
-                Prathu10.
-                <em>Netflix EDA Dashboard</em>.
-                GitHub.
-                <a
-                    href="https://github.com/prathu10/Netflix_EDA_Dashboard"
-                    target="_blank"
-                >
-                    https://github.com/prathu10/Netflix_EDA_Dashboard
-                </a>
-            </li>
+                </div>
 
-            <li>
-                Netflix content dataset used for the redesigned
-                visualization. Dataset fields include title, type, release
-                year, certification, runtime, seasons, IMDb score, IMDb
-                votes, country, and genre.
-            </li>
 
-            <li>
-                D3.js.
-                <em>Data-Driven Documents</em>.
-                <a
-                    href="https://d3js.org/"
-                    target="_blank"
-                >
-                    https://d3js.org/
-                </a>
-            </li>
+                <div class="comparison-row">
 
-        </ol>
+                    <div>
+                        Genre
+                    </div>
 
-    </section>
+                    <div>
+                        Multi-genre combinations
+                    </div>
+
+                    <div>
+                        Individual genre categories
+                    </div>
+
+                </div>
+
+
+                <div class="comparison-row">
+
+                    <div>
+                        Interaction
+                    </div>
+
+                    <div>
+                        Tableau filtering
+                    </div>
+
+                    <div>
+                        Coordinated D3 filtering and hover
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="report-text">
+
+                <h3>Improvements and Trade-offs</h3>
+
+                <p>
+                    The redesign makes quantitative comparisons easier by
+                    using common baselines and aligned positions. It also
+                    gives the dashboard a clearer visual hierarchy and
+                    provides coordinated interaction across views.
+                    However, the redesign sacrifices some of the breadth of
+                    the original dashboard. The geographic map, title-level
+                    metadata, and some of the original exploratory details
+                    are not retained as primary views. The result is
+                    therefore more focused, but less comprehensive as a
+                    general-purpose catalog browser.
+                </p>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             5. REFERENCES
+        ================================================== -->
+
+        <section class="report-section references-section">
+
+            <div class="section-heading">
+
+                <span class="section-number">
+                    05
+                </span>
+
+                <div>
+
+                    <h2>References</h2>
+
+                    <p>
+                        Data and visualization sources.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <ol class="references">
+
+                <li>
+                    Prathu10.
+                    <em>Netflix EDA Dashboard</em>.
+                    GitHub.
+                    <a
+                        href="https://github.com/prathu10/Netflix_EDA_Dashboard"
+                        target="_blank"
+                    >
+                        Repository
+                    </a>
+                </li>
+
+                <li>
+                    Netflix titles dataset used by the original project,
+                    including title, type, release year, genre,
+                    certification, country, and IMDb-related metadata.
+                </li>
+
+                <li>
+                    D3.js.
+                    <a
+                        href="https://d3js.org/"
+                        target="_blank"
+                    >
+                        Data-Driven Documents
+                    </a>.
+                </li>
+
+            </ol>
+
+        </section>
+
+
+    </main>
+
 
 
     <!-- =====================================================
          FOOTER
     ====================================================== -->
 
-    <footer class="report-footer">
+    <footer>
 
         <p>
-            STATS 401 · Data Visualization
-        </p>
-
-        <p>
-            Visualization Critique and Redesign
+            STATS 401 · Visualization Critique and Redesign
         </p>
 
     </footer>
 
-</main>
 
 
-<script src="script.js"></script>
+    <!-- =====================================================
+         SCRIPT
+    ====================================================== -->
+
+    <script src="script.js"></script>
 
 </body>
+
 </html>
