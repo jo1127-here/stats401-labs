@@ -1233,11 +1233,11 @@ function addTimePoints(
                 tooltip
                     .style(
                         "left",
-                        `${event.pageX + 14}px`
+                        `${event.clientX + 14}px`
                     )
                     .style(
                         "top",
-                        `${event.pageY - 35}px`
+                        `${event.clientY - 35}px`
                     );
             }
         )
@@ -1943,11 +1943,11 @@ function drawCountryChart(data) {
                     getTooltip()
                         .style(
                             "left",
-                            `${event.pageX + 14}px`
+                            `${event.clientX + 14}px`
                         )
                         .style(
                             "top",
-                            `${event.pageY - 35}px`
+                            `${event.clientY - 35}px`
                         );
                 }
             )
@@ -2386,11 +2386,11 @@ function drawHorizontalBars(
                 tooltip
                     .style(
                         "left",
-                        `${event.pageX + 14}px`
+                        `${event.clientX + 14}px`
                     )
                     .style(
                         "top",
-                        `${event.pageY - 35}px`
+                        `${event.clientY - 35}px`
                     );
             }
         )
@@ -2487,28 +2487,17 @@ function drawHorizontalBars(
 // ============================================================
 
 function getTooltip() {
-
-    let tooltip =
-        d3.select(
-            "#tooltip"
-        );
-
+    let tooltip = d3.select("#tooltip");
 
     if (tooltip.empty()) {
-
-        tooltip =
-            d3.select("body")
-                .append("div")
-                .attr(
-                    "id",
-                    "tooltip"
-                );
+        tooltip = d3.select("body")
+            .append("div")
+            .attr("id", "tooltip")
+            .attr("class", "tooltip");
     }
-
 
     return tooltip;
 }
-
 
 // ============================================================
 // 22. RESPONSIVE REDRAW
