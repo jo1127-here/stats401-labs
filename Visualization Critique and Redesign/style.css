@@ -167,15 +167,9 @@ a:hover {
 ========================================================= */
 
 .original-layout {
-    display: grid;
-
-    grid-template-columns:
-        minmax(0, 1.6fr)
-        minmax(260px, 0.8fr);
-
-    gap: 38px;
-
-    align-items: start;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
 }
 
 .original-figure {
@@ -184,7 +178,6 @@ a:hover {
 
 .original-figure img {
     width: 100%;
-
     border: 1px solid #dedfe2;
 
     box-shadow:
@@ -193,60 +186,44 @@ a:hover {
 
 .original-figure figcaption {
     margin-top: 10px;
-
     color: #858a92;
-
     font-size: 12px;
 }
 
 .context-text h3,
 .report-text h3 {
     margin: 0 0 14px;
-
     font-size: 20px;
-
     letter-spacing: -0.02em;
 }
 
 .context-text p,
 .report-text p {
     margin: 0 0 17px;
-
     color: #555b64;
-
     font-size: 15px;
-
     line-height: 1.75;
 }
 
 .source-block {
     margin-top: 30px;
-
     padding-top: 18px;
-
     border-top: 1px solid #dedfe3;
 }
 
 .source-block span {
     display: block;
-
     margin-bottom: 5px;
-
     color: #8a9098;
-
     font-size: 11px;
-
     text-transform: uppercase;
-
     letter-spacing: 0.08em;
 }
 
 .source-block a {
     font-size: 14px;
-
     font-weight: 600;
 }
-
 
 /* =========================================================
    REPORT POINTS
