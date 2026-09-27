@@ -616,7 +616,13 @@ function addPoints(
         .attr("class", `data-point ${className}`)
         .attr("cx", d => x(d.year))
         .attr("cy", d => y(d.value))
-        .attr("r", 3.5)
+        .attr("r", 4)
+        .attr(
+            "fill",
+            type === "Movie" ? "#e50914" : "#5bc0eb"
+        )
+        .attr("stroke", "#ffffff")
+        .attr("stroke-width", 1.5)
         .attr("data-type", type);
 }
 
@@ -894,6 +900,7 @@ function drawHorizontalBarChart(
         .enter()
         .append("rect")
         .attr("class", "bar")
+        .attr("fill", "#e50914")
         .attr("x", 0)
         .attr(
             "y",
