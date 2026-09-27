@@ -687,6 +687,15 @@ a:hover {
     height: 7px;
 
     border-radius: 50%;
+   
+}
+
+.movie-dot {
+    background: #e50914;
+}
+
+.show-dot {
+    background: #5bc0eb;
 }
 
 
