@@ -1011,3 +1011,106 @@ footer {
         display: none;
     }
 }
+
+
+/* ============================================================
+   Netflix Redesign - Visualization Colors
+   ============================================================ */
+
+/* Main time-series lines */
+.netflix-line {
+    fill: none;
+    stroke-width: 3px;
+}
+
+.movie-line {
+    stroke: #e50914;
+}
+
+.show-line {
+    stroke: #5bc0eb;
+}
+
+
+/* Time-series data points */
+.data-point {
+    stroke: #ffffff;
+    stroke-width: 1.5px;
+}
+
+.movie-point {
+    fill: #e50914;
+}
+
+.show-point {
+    fill: #5bc0eb;
+}
+
+
+/* Bar charts */
+.bar {
+    fill: #e50914;
+    opacity: 0.85;
+}
+
+.bar:hover,
+.bar-hover {
+    fill: #ff4d5a;
+    opacity: 1;
+}
+
+
+/* Grid lines */
+.grid line {
+    stroke: rgba(255, 255, 255, 0.10);
+    stroke-width: 1px;
+}
+
+.grid path {
+    stroke: none;
+}
+
+
+/* Axes */
+#time-chart .domain,
+#genre-chart .domain,
+#rating-chart .domain,
+#country-chart .domain {
+    stroke: rgba(255, 255, 255, 0.35);
+}
+
+#time-chart .tick line,
+#genre-chart .tick line,
+#rating-chart .tick line,
+#country-chart .tick line {
+    stroke: rgba(255, 255, 255, 0.15);
+}
+
+#time-chart text,
+#genre-chart text,
+#rating-chart text,
+#country-chart text {
+    fill: rgba(255, 255, 255, 0.72);
+}
+
+
+/* Legend */
+.legend-item {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.legend-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.movie-dot {
+    background: #e50914;
+}
+
+.show-dot {
+    background: #5bc0eb;
+}
