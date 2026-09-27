@@ -413,28 +413,21 @@ function resetFilters() {
 // ============================================================
 // 11. MAIN UPDATE
 // ============================================================
-
 function updateDashboard() {
 
     if (!allData.length) {
         return;
     }
 
-
     clearSelection();
 
-
     const typeFilter =
-        document.querySelector(
-            "#type-filter"
-        );
-
+        document.querySelector("#type-filter");
 
     const selectedType =
         typeFilter
             ? typeFilter.value
             : "All";
-
 
     const startYear =
         Math.min(
@@ -442,13 +435,11 @@ function updateDashboard() {
             getEndYear()
         );
 
-
     const endYear =
         Math.max(
             getStartYear(),
             getEndYear()
         );
-
 
     filteredData =
         allData.filter(d => {
@@ -458,53 +449,58 @@ function updateDashboard() {
                 selectedType === "" ||
                 d.type === selectedType;
 
-
             const yearMatch =
                 d.release_year >= startYear &&
                 d.release_year <= endYear;
-
 
             return typeMatch && yearMatch;
         });
 
 
-    // ============================================================
-// UPDATE KPI
-// ============================================================
+    // ========================================================
+    // UPDATE KPI
+    // ========================================================
 
-    const totalTitles = filteredData.length;
-    
+    const totalTitles =
+        filteredData.length;
+
     const movieCount =
         filteredData.filter(
             d => d.type === "Movie"
         ).length;
-    
+
     const showCount =
         filteredData.filter(
             d => d.type === "Show"
         ).length;
-    
+
     const validScores =
         filteredData
             .map(d => d.imdb_score)
             .filter(
                 d => Number.isFinite(d) && d > 0
             );
-    
+
     const avgScore =
         validScores.length
             ? d3.mean(validScores)
             : null;
-    
+
     d3.select("#kpi-total")
-        .text(totalTitles.toLocaleString());
-    
+        .text(
+            totalTitles.toLocaleString()
+        );
+
     d3.select("#kpi-movies")
-        .text(movieCount.toLocaleString());
-    
+        .text(
+            movieCount.toLocaleString()
+        );
+
     d3.select("#kpi-shows")
-        .text(showCount.toLocaleString());
-    
+        .text(
+            showCount.toLocaleString()
+        );
+
     d3.select("#kpi-score")
         .text(
             avgScore !== null
@@ -513,62 +509,23 @@ function updateDashboard() {
         );
 
 
-        // ========================================================
-    // UPDATE SUMMARY CARDS
+    // ========================================================
+    // UPDATE CHARTS
     // ========================================================
 
-    const totalTitles = filteredData.length;
-
-    const movieCount = filteredData.filter(
-        d => d.type === "Movie"
-    ).length;
-
-    const tvShowCount = filteredData.filter(
-        d => d.type === "Show"
-    ).length;
-
-    const scores = filteredData
-        .map(d => d.imdb_score)
-        .filter(d => Number.isFinite(d) && d > 0);
-
-    const avgScore = scores.length
-        ? d3.mean(scores)
-        : null;
-
-    // These IDs should match the IDs in your HTML
-    d3.select("#total-titles")
-        .text(totalTitles.toLocaleString());
-
-    d3.select("#movie-count")
-        .text(movieCount.toLocaleString());
-
-    d3.select("#tv-count")
-        .text(tvShowCount.toLocaleString());
-
-    d3.select("#avg-score")
-        .text(
-            avgScore !== null
-                ? avgScore.toFixed(1)
-                : "—"
-        );
-
-    
     drawTimeChart(
         filteredData,
         startYear,
         endYear
     );
 
-
     drawGenreChart(
         filteredData
     );
 
-
     drawRatingChart(
         filteredData
     );
-
 
     drawCountryChart(
         filteredData
@@ -577,7 +534,6 @@ function updateDashboard() {
 
     updateYearLabels();
 }
-
 
 // ============================================================
 // 12. CLEAR CONTAINER
