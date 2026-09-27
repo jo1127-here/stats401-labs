@@ -321,14 +321,28 @@ input[type="range"]::-moz-range-thumb {
 
 /* ============================================================
    MAIN TIME-SERIES PANEL
+   (fancier: subtle glass card + hover lift — chart only)
    ============================================================ */
 
 .viz-panel {
+    position: relative;
     margin-bottom: 18px;
     padding: 24px;
     background: rgba(255, 255, 255, 0.035);
     border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 14px;
+    transition:
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        transform 0.25s ease;
+}
+
+.viz-panel:hover {
+    border-color: rgba(229, 9, 20, 0.35);
+    box-shadow:
+        0 14px 34px rgba(0, 0, 0, 0.35),
+        0 0 0 1px rgba(229, 9, 20, 0.06) inset;
+    transform: translateY(-2px);
 }
 
 .viz-panel-header {
@@ -407,14 +421,17 @@ input[type="range"]::-moz-range-thumb {
     height: 9px;
     margin-right: 6px;
     border-radius: 50%;
+    box-shadow: 0 0 6px currentColor;
 }
 
 .movie-dot {
     background: #e50914;
+    color: #e50914;
 }
 
 .show-dot {
     background: #5bc0eb;
+    color: #5bc0eb;
 }
 
 
@@ -463,6 +480,8 @@ input[type="range"]::-moz-range-thumb {
 
 /* ============================================================
    TIME-SERIES LINES
+   (glow/shadow filters are applied via SVG defs in JS;
+    CSS just keeps the stroke crisp and animatable)
    ============================================================ */
 
 .netflix-line {
@@ -480,6 +499,10 @@ input[type="range"]::-moz-range-thumb {
     stroke: #5bc0eb !important;
 }
 
+.netflix-area {
+    pointer-events: none;
+}
+
 
 /* ============================================================
    DATA POINTS
@@ -492,7 +515,7 @@ input[type="range"]::-moz-range-thumb {
     cursor: pointer;
     transition:
         opacity 0.15s ease,
-        filter 0.15s ease;
+        r 0.15s ease;
 }
 
 .data-point.movie-point {
@@ -507,9 +530,6 @@ input[type="range"]::-moz-range-thumb {
     opacity: 1 !important;
     stroke: #ffffff !important;
     stroke-width: 3px !important;
-    filter: drop-shadow(
-        0 0 5px rgba(255, 255, 255, 0.55)
-    );
 }
 
 .data-point.dimmed-point {
@@ -519,28 +539,24 @@ input[type="range"]::-moz-range-thumb {
 
 /* ============================================================
    BARS
+   (fill comes from the gradient defs added in JS;
+    hover/selected glow comes from the SVG filter)
    ============================================================ */
 
 .bar {
-    fill: #e50914 !important;
-    opacity: 0.82;
-    rx: 3px;
+    opacity: 0.9;
     transition:
-        opacity 0.2s ease,
-        filter 0.2s ease;
+        opacity 0.2s ease;
 }
 
-.bar:hover,
-.bar-hover,
 .bar.selected-bar {
-    fill: #ff5360 !important;
-    opacity: 1;
-    filter: brightness(1.15);
+    opacity: 1 !important;
 }
 
 
 /* ============================================================
    TOOLTIP
+   (fancier: blurred glass card with a thin glowing edge)
    ============================================================ */
 
 #tooltip {
@@ -549,16 +565,26 @@ input[type="range"]::-moz-range-thumb {
     pointer-events: none;
     min-width: 120px;
     padding: 10px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(229, 9, 20, 0.35);
     border-radius: 8px;
-    background: rgba(20, 20, 20, 0.96);
+    background: rgba(17, 17, 17, 0.85);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     color: #ffffff;
     box-shadow:
-        0 8px 25px rgba(0, 0, 0, 0.3);
+        0 10px 30px rgba(0, 0, 0, 0.4),
+        0 0 18px rgba(229, 9, 20, 0.18);
     font-size: 0.78rem;
     line-height: 1.5;
     opacity: 0;
-    transition: opacity 0.12s ease;
+    transform: translateY(2px);
+    transition:
+        opacity 0.15s ease,
+        transform 0.15s ease;
+}
+
+#tooltip[style*="opacity: 1"] {
+    transform: translateY(0);
 }
 
 #tooltip strong {
