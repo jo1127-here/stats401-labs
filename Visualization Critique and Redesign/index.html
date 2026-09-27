@@ -1,680 +1,1617 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Visualization Critique and Redesign</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <link rel="stylesheet" href="style.css">
+    <title>Visualization Critique and Redesign | Netflix</title>
 
-    <!-- D3.js -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <style>
+
+        /* =====================================================
+           GLOBAL
+        ===================================================== */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            background: #0b0b0b;
+            color: #f2f2f2;
+            font-family:
+                Inter,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+            line-height: 1.5;
+        }
+
+        a {
+            color: #e50914;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+
+        /* =====================================================
+           HEADER
+        ===================================================== */
+
+        .hero {
+            min-height: 520px;
+            padding: 70px 7vw 80px;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+
+            border-bottom: 1px solid #242424;
+
+            background:
+                radial-gradient(
+                    circle at 82% 30%,
+                    rgba(229, 9, 20, 0.12),
+                    transparent 32%
+                ),
+                #0b0b0b;
+        }
+
+        .hero-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .eyebrow {
+            font-size: 12px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #777;
+        }
+
+        .netflix-mark {
+            color: #e50914;
+            font-size: 44px;
+            font-weight: 900;
+            letter-spacing: -0.08em;
+        }
+
+        .hero-title {
+            max-width: 1000px;
+        }
+
+        .hero h1 {
+            margin: 0;
+            font-size: clamp(52px, 8vw, 118px);
+            line-height: 0.88;
+            letter-spacing: -0.065em;
+            font-weight: 800;
+        }
+
+        .hero h1 span {
+            color: #e50914;
+        }
+
+        .hero-subtitle {
+            max-width: 680px;
+            margin-top: 35px;
+
+            font-size: 18px;
+            color: #9a9a9a;
+        }
+
+        .hero-bottom {
+            display: flex;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .hero-bottom a {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+        }
+
+
+        /* =====================================================
+           PAGE
+        ===================================================== */
+
+        .page {
+            width: min(1450px, 88vw);
+            margin: 0 auto;
+        }
+
+        .section {
+            padding: 110px 0;
+            border-bottom: 1px solid #242424;
+        }
+
+        .section-number {
+            color: #e50914;
+            font-size: 12px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+        }
+
+        .section-title {
+            margin: 0 0 45px;
+
+            font-size: clamp(32px, 4vw, 58px);
+            line-height: 0.95;
+            letter-spacing: -0.045em;
+        }
+
+
+        /* =====================================================
+           ORIGINAL
+        ===================================================== */
+
+        .original-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 4fr) minmax(240px, 1fr);
+            gap: 42px;
+            align-items: start;
+        }
+
+        .original-image-wrap {
+            background: #111;
+            border: 1px solid #282828;
+            padding: 14px;
+        }
+
+        .original-image {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .caption {
+            margin: 13px 0 0;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .original-meta {
+            border-top: 1px solid #333;
+        }
+
+        .meta-item {
+            padding: 22px 0;
+            border-bottom: 1px solid #292929;
+        }
+
+        .meta-label {
+            display: block;
+            margin-bottom: 7px;
+
+            color: #666;
+            font-size: 10px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .meta-value {
+            display: block;
+            color: #ddd;
+            font-size: 15px;
+        }
+
+
+        /* =====================================================
+           REDESIGN HEADER
+        ===================================================== */
+
+        .redesign-intro {
+            display: flex;
+            justify-content: space-between;
+            gap: 50px;
+            align-items: flex-end;
+            margin-bottom: 45px;
+        }
+
+        .redesign-question {
+            max-width: 760px;
+        }
+
+        .redesign-question h3 {
+            margin: 0;
+
+            font-size: clamp(30px, 4vw, 55px);
+            line-height: 1;
+            letter-spacing: -0.045em;
+        }
+
+        .redesign-question h3 span {
+            color: #e50914;
+        }
+
+        .redesign-description {
+            max-width: 420px;
+            color: #777;
+            font-size: 14px;
+        }
+
+
+        /* =====================================================
+           FILTER BAR
+        ===================================================== */
+
+        .filter-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            padding: 18px 0;
+            margin-bottom: 45px;
+
+            border-top: 1px solid #333;
+            border-bottom: 1px solid #333;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .filter-label {
+            color: #666;
+            font-size: 10px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        select,
+        input {
+            border: 1px solid #444;
+            background: #151515;
+            color: #f2f2f2;
+
+            padding: 8px 12px;
+
+            font-family: inherit;
+            font-size: 13px;
+
+            outline: none;
+        }
+
+        select:focus,
+        input:focus {
+            border-color: #e50914;
+        }
+
+        .year-range {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .year-input {
+            width: 85px;
+        }
+
+        .range-separator {
+            color: #555;
+        }
+
+        .reset-button {
+            border: none;
+            background: transparent;
+            color: #888;
+
+            padding: 7px 0;
+
+            font-family: inherit;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+
+            cursor: pointer;
+        }
+
+        .reset-button:hover {
+            color: #e50914;
+        }
+
+
+        /* =====================================================
+           KPI
+        ===================================================== */
+
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+
+            margin-bottom: 60px;
+
+            border-top: 1px solid #333;
+            border-bottom: 1px solid #333;
+        }
+
+        .kpi {
+            padding: 27px 25px;
+
+            border-right: 1px solid #292929;
+        }
+
+        .kpi:last-child {
+            border-right: none;
+        }
+
+        .kpi-value {
+            display: block;
+
+            font-size: clamp(30px, 4vw, 52px);
+            line-height: 1;
+            letter-spacing: -0.05em;
+            font-weight: 700;
+
+            color: #f2f2f2;
+        }
+
+        .kpi-label {
+            display: block;
+            margin-top: 10px;
+
+            color: #666;
+            font-size: 10px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+
+        /* =====================================================
+           MAIN CHART
+        ===================================================== */
+
+        .main-chart {
+            position: relative;
+
+            padding: 30px 0 15px;
+
+            border-top: 1px solid #333;
+        }
+
+        .chart-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+
+            margin-bottom: 10px;
+        }
+
+        .chart-heading h3 {
+            margin: 0;
+
+            font-size: 22px;
+            font-weight: 500;
+            letter-spacing: -0.025em;
+        }
+
+        .chart-heading p {
+            margin: 5px 0 0;
+
+            color: #666;
+            font-size: 12px;
+        }
+
+        .chart-period {
+            color: #555;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+        }
+
+        #time-chart {
+            width: 100%;
+            min-height: 500px;
+        }
+
+
+        /* =====================================================
+           SECONDARY CHARTS
+        ===================================================== */
+
+        .secondary-grid {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 55px;
+
+            margin-top: 65px;
+        }
+
+        .chart-panel {
+            min-width: 0;
+
+            padding-top: 25px;
+
+            border-top: 1px solid #333;
+        }
+
+        .chart-panel.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .panel-title {
+            margin: 0;
+
+            font-size: 20px;
+            font-weight: 500;
+            letter-spacing: -0.025em;
+        }
+
+        .panel-subtitle {
+            margin: 6px 0 20px;
+
+            color: #666;
+            font-size: 12px;
+        }
+
+        #genre-chart,
+        #rating-chart,
+        #country-chart {
+            width: 100%;
+            min-height: 400px;
+        }
+
+
+        /* =====================================================
+           D3
+        ===================================================== */
+
+        .axis path,
+        .axis line {
+            stroke: #333;
+        }
+
+        .axis text {
+            fill: #777;
+            font-size: 11px;
+        }
+
+        .grid-line {
+            stroke: #1e1e1e;
+            stroke-width: 1;
+        }
+
+        .axis-label {
+            fill: #555;
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .movie-line {
+            stroke: #e50914;
+            stroke-width: 3;
+        }
+
+        .show-line {
+            stroke: #c7c7c7;
+            stroke-width: 2.5;
+        }
+
+        .time-point {
+            cursor: crosshair;
+            opacity: 0;
+        }
+
+        .time-point:hover {
+            opacity: 1;
+        }
+
+        .line-end-label {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .line-end-value {
+            fill: #777;
+            font-size: 11px;
+        }
+
+        .genre-bar {
+            fill: #2d2d2d;
+            cursor: pointer;
+            transition:
+                fill 0.2s ease,
+                opacity 0.2s ease;
+        }
+
+        .genre-bar:hover {
+            fill: #e50914;
+        }
+
+        .genre-bar.selected {
+            fill: #e50914;
+        }
+
+        .genre-label {
+            fill: #aaa;
+            font-size: 12px;
+        }
+
+        .genre-count {
+            fill: #777;
+            font-size: 11px;
+        }
+
+        .rating-bar {
+            fill: #333;
+            transition:
+                fill 0.2s ease,
+                opacity 0.2s ease;
+        }
+
+        .rating-bar:hover {
+            fill: #e50914;
+        }
+
+        .rating-label {
+            fill: #aaa;
+            font-size: 11px;
+        }
+
+        .rating-count {
+            fill: #777;
+            font-size: 11px;
+        }
+
+        .country-bar {
+            fill: #333;
+            cursor: pointer;
+        }
+
+        .country-bar:hover {
+            fill: #e50914;
+        }
+
+        .country-label {
+            fill: #aaa;
+            font-size: 12px;
+        }
+
+        .country-count {
+            fill: #777;
+            font-size: 11px;
+        }
+
+
+        /* =====================================================
+           TOOLTIP
+        ===================================================== */
+
+        #d3-tooltip {
+            position: absolute;
+
+            display: none;
+
+            pointer-events: none;
+
+            padding: 11px 14px;
+
+            background: #171717;
+            border: 1px solid #444;
+
+            color: #f2f2f2;
+
+            font-size: 12px;
+
+            box-shadow:
+                0 10px 35px rgba(0, 0, 0, 0.35);
+
+            z-index: 1000;
+        }
+
+        .tooltip-title {
+            color: #fff;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .tooltip-value {
+            color: #999;
+        }
+
+
+        /* =====================================================
+           GENRE STATUS
+        ===================================================== */
+
+        .selection-status {
+            min-height: 20px;
+            margin-top: 8px;
+
+            color: #e50914;
+
+            font-size: 11px;
+            letter-spacing: 0.04em;
+        }
+
+
+        /* =====================================================
+           CRITIQUE
+        ===================================================== */
+
+        .critique-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+        }
+
+        .critique-column h3 {
+            margin: 0 0 30px;
+
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: #e50914;
+        }
+
+        .critique-item {
+            padding: 22px 0;
+            border-top: 1px solid #292929;
+        }
+
+        .critique-item:last-child {
+            border-bottom: 1px solid #292929;
+        }
+
+        .critique-item h4 {
+            margin: 0 0 8px;
+
+            font-size: 17px;
+            font-weight: 500;
+        }
+
+        .critique-item p {
+            margin: 0;
+
+            color: #777;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+
+        /* =====================================================
+           REDESIGN DECISIONS
+        ===================================================== */
+
+        .decision-list {
+            border-top: 1px solid #333;
+        }
+
+        .decision {
+            display: grid;
+            grid-template-columns: 100px 1fr 2fr;
+            gap: 30px;
+
+            padding: 27px 0;
+
+            border-bottom: 1px solid #292929;
+        }
+
+        .decision-number {
+            color: #e50914;
+
+            font-size: 13px;
+            letter-spacing: 0.1em;
+        }
+
+        .decision-title {
+            font-size: 18px;
+        }
+
+        .decision-description {
+            color: #777;
+            font-size: 14px;
+        }
+
+
+        /* =====================================================
+           REFERENCES
+        ===================================================== */
+
+        .references {
+            max-width: 850px;
+        }
+
+        .references p {
+            color: #777;
+            font-size: 14px;
+        }
+
+
+        /* =====================================================
+           FOOTER
+        ===================================================== */
+
+        footer {
+            padding: 50px 0 80px;
+
+            color: #555;
+            font-size: 11px;
+
+            display: flex;
+            justify-content: space-between;
+        }
+
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @media (max-width: 900px) {
+
+            .hero {
+                min-height: 450px;
+            }
+
+            .original-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .redesign-intro {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .kpi-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .kpi:nth-child(2) {
+                border-right: none;
+            }
+
+            .secondary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .critique-grid {
+                grid-template-columns: 1fr;
+                gap: 50px;
+            }
+
+            .decision {
+                grid-template-columns: 60px 1fr;
+            }
+
+            .decision-description {
+                grid-column: 2;
+            }
+
+            .filter-bar {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+
+
+        @media (max-width: 600px) {
+
+            .hero {
+                padding: 45px 6vw 55px;
+            }
+
+            .page {
+                width: 88vw;
+            }
+
+            .section {
+                padding: 75px 0;
+            }
+
+            .hero h1 {
+                font-size: 58px;
+            }
+
+            .kpi-row {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .kpi {
+                padding: 20px 15px;
+            }
+
+            .kpi-value {
+                font-size: 30px;
+            }
+
+            .secondary-grid {
+                gap: 35px;
+            }
+
+            footer {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+    </style>
 </head>
 
 
 <body>
 
     <!-- =====================================================
-         PAGE HEADER
+         HERO
     ====================================================== -->
 
-    <header>
+    <header class="hero">
 
-        <h1>Visualization Critique and Redesign</h1>
+        <div class="hero-top">
 
-        <p>
-            Netflix Content Dashboard
-        </p>
+            <div class="eyebrow">
+                STATS 401 · VISUALIZATION PROJECT
+            </div>
+
+            <div class="netflix-mark">
+                N
+            </div>
+
+        </div>
+
+
+        <div class="hero-title">
+
+            <h1>
+                Visualization<br>
+                <span>Critique</span><br>
+                &amp; Redesign
+            </h1>
+
+            <p class="hero-subtitle">
+                Rethinking a Netflix content dashboard through
+                visual hierarchy, comparison, and interaction.
+            </p>
+
+        </div>
+
+
+        <div class="hero-bottom">
+
+            <a href="#original">
+                Original
+            </a>
+
+            <a href="#redesign">
+                Redesign
+            </a>
+
+            <a href="#critique">
+                Critique
+            </a>
+
+        </div>
 
     </header>
 
 
-    <!-- =====================================================
-         MAIN CONTENT
-    ====================================================== -->
-
-    <main>
+    <main class="page">
 
 
         <!-- =================================================
-             PART 1 — GITHUB PAGES VISUALIZATION
+             ORIGINAL
         ================================================== -->
 
-        <section id="visualization">
+        <section
+            class="section"
+            id="original"
+        >
 
-            <h2>1. GitHub Pages Visualization</h2>
+            <div class="section-number">
+                01 / ORIGINAL
+            </div>
 
-
-            <!-- ---------------------------------------------
-                 Original Visualization
-            ---------------------------------------------- -->
-
-            <section id="original">
-
-                <h3>Original Visualization</h3>
-
-                <p>
-                    The original visualization is a Netflix content dashboard created in Tableau.
-                    It provides an overview of Netflix movies and TV shows through multiple views,
-                    including genre, age certification, geographic distribution, and content trends
-                    over time.
-                </p>
+            <h2 class="section-title">
+                Netflix Content Dashboard
+            </h2>
 
 
-                <!-- Original screenshot -->
+            <div class="original-grid">
 
-                <figure>
+                <div>
 
-                    <img
-                        src="images/dashboard.jpg"
-                        alt="Original Netflix Tableau Dashboard"
-                        class="original-dashboard"
-                    >
+                    <div class="original-image-wrap">
 
-                    <figcaption>
+                        <img
+                            src="images/dashboard.jpg"
+                            alt="Original Netflix Tableau dashboard"
+                            class="original-image"
+                        >
+
+                    </div>
+
+                    <p class="caption">
                         Figure 1. Original Netflix dashboard.
-                    </figcaption>
-
-                </figure>
-
-
-                <!-- Source -->
-
-                <p>
-                    <strong>Source:</strong>
-                    <a
-                        href="https://github.com/prathu10/Netflix_EDA_Dashboard"
-                        target="_blank"
-                    >
-                        Netflix EDA Dashboard — GitHub
-                    </a>
-                </p>
-
-            </section>
-
-
-            <!-- ---------------------------------------------
-                 Brief Introduction
-            ---------------------------------------------- -->
-
-            <section id="introduction">
-
-                <h3>Visualization and Data</h3>
-
-                <p>
-                    This dashboard visualizes a dataset of Netflix-related
-                    movies and TV shows. The dataset contains information
-                    including title, content type, release year, genres,
-                    production countries, age certification, and IMDb
-                    metadata.
-                </p>
-
-                <p>
-                    The original dashboard is designed for exploratory
-                    analysis. Users can investigate the distribution of
-                    content across genres and ratings, compare movies and
-                    TV shows, explore geographic patterns, and examine
-                    changes in the catalog over time.
-                </p>
-
-
-                <h4>Intended Audience</h4>
-
-                <p>
-                    The visualization is intended for users interested in
-                    exploring patterns in Netflix's content catalog.
-                </p>
-
-
-                <h4>Main Tasks</h4>
-
-                <ul>
-                    <li>Explore content by genre</li>
-                    <li>Compare movies and TV shows</li>
-                    <li>Examine age certifications</li>
-                    <li>Explore production countries</li>
-                    <li>Examine content over time</li>
-                </ul>
-
-            </section>
-
-
-            <!-- ---------------------------------------------
-                 Data Source
-            ---------------------------------------------- -->
-
-            <section id="data-source">
-
-                <h3>Data Source</h3>
-
-                <p>
-                    The cleaned dataset used for the redesign is based
-                    on the publicly available Netflix titles dataset.
-                    The original dashboard repository provides the
-                    cleaned data used in the Tableau visualization.
-                </p>
-
-                <p>
-                    <a
-                        href="https://github.com/prathu10/Netflix_EDA_Dashboard"
-                        target="_blank"
-                    >
-                        View the original dataset and Tableau project
-                    </a>
-                </p>
-
-            </section>
-
-
-            <!-- =================================================
-                 REDESIGNED VISUALIZATION
-            ================================================== -->
-            <section id="redesign">
-            
-                <h2>Redesigned Visualization</h2>
-            
-                <p>
-                    The redesign focuses on a central analytical question:
-                    <strong>How has Netflix's content catalog changed over time?</strong>
-                </p>
-            
-                <p>
-                    Instead of presenting several independent views with equal visual
-                    prominence, the redesign uses a time-series chart as the primary view
-                    and supporting charts for genre, age certification, and production country.
-                </p>
-            
-                <!-- Controls -->
-                <div class="controls">
-            
-                    <label for="type-filter">
-                        Content Type
-                    </label>
-            
-                    <select id="type-filter">
-                        <option value="All">All</option>
-                        <option value="Movie">Movie</option>
-                        <option value="Show">TV Show</option>
-                    </select>
-            
-                    <label for="year-start">
-                        From
-                    </label>
-            
-                    <input
-                        type="number"
-                        id="year-start"
-                        value="2000"
-                        min="1950"
-                        max="2021"
-                    >
-            
-                    <label for="year-end">
-                        To
-                    </label>
-            
-                    <input
-                        type="number"
-                        id="year-end"
-                        value="2021"
-                        min="1950"
-                        max="2021"
-                    >
-            
-                    <button id="reset-button">
-                        Reset
-                    </button>
-            
-                </div>
-            
-            
-                <!-- KPI cards -->
-            
-                <div class="kpi-container">
-            
-                    <div class="kpi-card">
-                        <h3>Total Titles</h3>
-                        <p id="total-titles">-</p>
-                    </div>
-            
-                    <div class="kpi-card">
-                        <h3>Movies</h3>
-                        <p id="total-movies">-</p>
-                    </div>
-            
-                    <div class="kpi-card">
-                        <h3>TV Shows</h3>
-                        <p id="total-shows">-</p>
-                    </div>
-            
-                    <div class="kpi-card">
-                        <h3>Average IMDb Score</h3>
-                        <p id="avg-score">-</p>
-                    </div>
-            
-                </div>
-            
-            
-                <!-- Main visualization -->
-            
-                <div class="chart-card">
-            
-                    <h3>Netflix Content Over Time</h3>
-            
-                    <p>
-                        Number of movies and TV shows by release year.
-                    </p>
-            
-                    <div id="time-chart"></div>
-            
-                </div>
-            
-            
-                <!-- Supporting visualizations -->
-            
-                <div class="chart-grid">
-            
-                    <div class="chart-card">
-            
-                        <h3>Top Genres</h3>
-            
-                        <p>
-                            Individual genres are counted separately, even when a title
-                            belongs to multiple genres.
-                        </p>
-            
-                        <div id="genre-chart"></div>
-            
-                    </div>
-            
-            
-                    <div class="chart-card">
-            
-                        <h3>Age Certification</h3>
-            
-                        <div id="rating-chart"></div>
-            
-                    </div>
-            
-            
-                    <div class="chart-card">
-            
-                        <h3>Top Production Countries</h3>
-            
-                        <div id="country-chart"></div>
-            
-                    </div>
-            
-                </div>
-            
-            
-                <div class="interaction-note">
-            
-                    <strong>Interaction:</strong>
-                    Use the content type and year filters to update all visualizations.
-                    Hover over marks to see detailed values.
-                    Click a genre to highlight its distribution over time.
-            
-                </div>
-            
-            </section>
-            
-
-                <!-- -----------------------------------------
-                     D3 Visualization
-                ------------------------------------------ -->
-
-                <div id="dashboard">
-
-                    <!-- Main temporal visualization -->
-
-                    <div class="chart-container">
-
-                        <h4>Content Over Time</h4>
-
-                        <div id="time-chart"></div>
-
-                    </div>
-
-
-                    <!-- Genre -->
-
-                    <div class="chart-container">
-
-                        <h4>Most Common Genres</h4>
-
-                        <div id="genre-chart"></div>
-
-                    </div>
-
-
-                    <!-- Ratings -->
-
-                    <div class="chart-container">
-
-                        <h4>Age Certification</h4>
-
-                        <div id="rating-chart"></div>
-
-                    </div>
-
-
-                    <!-- Countries -->
-
-                    <div class="chart-container">
-
-                        <h4>Top Production Countries</h4>
-
-                        <div id="country-chart"></div>
-
-                    </div>
-
-                </div>
-
-
-                <!-- Interaction explanation -->
-
-                <div id="interaction">
-
-                    <h4>Interaction</h4>
-
-                    <p>
-                        Users can filter the visualization by content
-                        type and year. Hovering over marks reveals exact
-                        values, while selections allow users to explore
-                        relationships between the different views.
                     </p>
 
                 </div>
 
-            </section>
+
+                <aside class="original-meta">
+
+                    <div class="meta-item">
+
+                        <span class="meta-label">
+                            Visualization
+                        </span>
+
+                        <span class="meta-value">
+                            Netflix EDA Dashboard
+                        </span>
+
+                    </div>
+
+
+                    <div class="meta-item">
+
+                        <span class="meta-label">
+                            Tool
+                        </span>
+
+                        <span class="meta-value">
+                            Tableau
+                        </span>
+
+                    </div>
+
+
+                    <div class="meta-item">
+
+                        <span class="meta-label">
+                            Data
+                        </span>
+
+                        <span class="meta-value">
+                            Netflix movies and TV shows
+                        </span>
+
+                    </div>
+
+
+                    <div class="meta-item">
+
+                        <span class="meta-label">
+                            Views
+                        </span>
+
+                        <span class="meta-value">
+                            Genre · Rating · Country · Time
+                        </span>
+
+                    </div>
+
+
+                    <div class="meta-item">
+
+                        <span class="meta-label">
+                            Source
+                        </span>
+
+                        <span class="meta-value">
+                            <a
+                                href="https://github.com/prathu10/Netflix_EDA_Dashboard"
+                                target="_blank"
+                            >
+                                GitHub repository ↗
+                            </a>
+                        </span>
+
+                    </div>
+
+                </aside>
+
+            </div>
 
         </section>
 
 
-
         <!-- =================================================
-             PART 2 — REPORT
+             REDESIGN
         ================================================== -->
 
-        <section id="report">
+        <section
+            class="section"
+            id="redesign"
+        >
 
-            <h2>2. Visualization Critique and Redesign Report</h2>
-
-
-            <!-- ---------------------------------------------
-                 Original Visualization and Context
-            ---------------------------------------------- -->
-
-            <section>
-
-                <h3>Original Visualization and Context</h3>
-
-                <p>
-                    The original visualization is a Tableau dashboard
-                    created by Prathu10. It explores Netflix movies
-                    and TV shows using dimensions including genre,
-                    age certification, content type, geography, and
-                    release year.
-                </p>
-
-                <p>
-                    The dashboard is intended primarily for exploratory
-                    analysis. Its different views allow users to examine
-                    the composition and distribution of Netflix content
-                    from several perspectives.
-                </p>
-
-            </section>
+            <div class="section-number">
+                02 / REDESIGN
+            </div>
 
 
-            <!-- ---------------------------------------------
-                 Critique
-            ---------------------------------------------- -->
+            <div class="redesign-intro">
 
-            <section>
+                <div class="redesign-question">
 
-                <h3>Critique</h3>
+                    <h3>
+                        Netflix Content<br>
+                        <span>Evolution</span>
+                    </h3>
 
-
-                <h4>Strength 1: Multiple Complementary Views</h4>
-
-                <p>
-                    The dashboard combines categorical, temporal, and
-                    geographic views. Bar charts support categorical
-                    comparison, the map provides geographic context,
-                    and the time-series visualization shows change
-                    over time.
-                </p>
+                </div>
 
 
-                <h4>Strength 2: Clear Overall Organization</h4>
+                <div class="redesign-description">
 
-                <p>
-                    The dashboard uses a consistent layout in which
-                    filters and title information are placed near the
-                    top while the main visualizations occupy the
-                    remaining space.
-                </p>
+                    The redesign centers the dashboard around
+                    one primary question: how has the Netflix
+                    catalog changed over time?
 
+                </div>
 
-                <h4>Weakness 1: Lack of a Clear Primary Task</h4>
-
-                <p>
-                    The dashboard presents many different analytical
-                    questions with similar visual prominence. Genre,
-                    ratings, geography, time, and title-level information
-                    compete for attention, making the overall analytical
-                    hierarchy less clear.
-                </p>
+            </div>
 
 
-                <h4>Weakness 2: Stacked Area Chart</h4>
+            <!-- FILTERS -->
 
-                <p>
-                    The stacked area chart makes direct comparison
-                    between movies and TV shows more difficult because
-                    only the bottom series shares a common baseline.
-                </p>
+            <div class="filter-bar">
 
+                <div class="filter-group">
 
-                <h4>Weakness 3: Ambiguous Genre Categories</h4>
+                    <span class="filter-label">
+                        Content
+                    </span>
 
-                <p>
-                    Genre combinations such as "Comedy, Drama" are
-                    represented as separate categories from "Comedy"
-                    and "Drama". This makes it difficult to interpret
-                    the visualization as a ranking of individual genres.
-                </p>
+                    <select id="type-filter">
 
+                        <option value="All">
+                            All
+                        </option>
 
-                <h4>Weakness 4: Imprecise Area Comparison</h4>
+                        <option value="Movie">
+                            Movies
+                        </option>
 
-                <p>
-                    The proportional movie-versus-TV visualization uses
-                    area as a quantitative encoding. Position or length
-                    would support more precise comparison.
-                </p>
+                        <option value="Show">
+                            TV Shows
+                        </option>
 
-            </section>
+                    </select>
 
-
-            <!-- ---------------------------------------------
-                 Redesign Rationale
-            ---------------------------------------------- -->
-
-            <section>
-
-                <h3>Redesign Rationale</h3>
+                </div>
 
 
-                <h4>Decision 1: Establish a Stronger Visual Hierarchy</h4>
+                <div class="filter-group">
 
-                <p>
-                    The redesign makes the temporal comparison the
-                    primary visualization and treats genre, ratings,
-                    and countries as supporting views. This gives the
-                    dashboard a clearer analytical focus.
-                </p>
+                    <span class="filter-label">
+                        Release years
+                    </span>
 
 
-                <h4>Decision 2: Replace the Stacked Area Chart</h4>
+                    <div class="year-range">
 
-                <p>
-                    The original stacked area chart is replaced with
-                    a two-line chart. Both series share the same baseline,
-                    making the number of movies and TV shows easier to
-                    compare across years.
-                </p>
+                        <input
+                            id="year-start"
+                            class="year-input"
+                            type="number"
+                        >
 
+                        <span class="range-separator">
+                            —
+                        </span>
 
-                <h4>Decision 3: Normalize Genre Categories</h4>
+                        <input
+                            id="year-end"
+                            class="year-input"
+                            type="number"
+                        >
 
-                <p>
-                    Multi-label genres are separated before aggregation.
-                    A title labeled "Comedy, Drama" contributes to both
-                    Comedy and Drama. This produces a more interpretable
-                    ranking of individual genres.
-                </p>
+                    </div>
 
-
-                <h4>Decision 4: Add Coordinated Interaction</h4>
-
-                <p>
-                    The redesign uses filtering and coordinated views
-                    so that users can explore how content type, year,
-                    genre, ratings, and countries relate to one another.
-                </p>
-
-            </section>
+                </div>
 
 
-            <!-- ---------------------------------------------
-                 Original vs Redesign
-            ---------------------------------------------- -->
+                <button
+                    id="reset-button"
+                    class="reset-button"
+                >
+                    Reset filters
+                </button>
 
-            <section>
-
-                <h3>Original vs. Redesign</h3>
-
-                <p>
-                    The redesign prioritizes direct comparison,
-                    interpretability, and visual hierarchy over the
-                    number of independent views shown simultaneously.
-                    The two-line time series makes temporal comparison
-                    easier, while the normalized genre chart provides
-                    a clearer interpretation of genre frequency.
-                </p>
-
-                <p>
-                    The redesign also introduces stronger connections
-                    between views through interaction. However, these
-                    improvements involve trade-offs. Fewer dimensions
-                    are emphasized simultaneously, and the new genre
-                    aggregation changes the meaning of the original
-                    genre counts.
-                </p>
-
-                <p>
-                    The dataset also represents a particular snapshot
-                    of Netflix-related metadata rather than a real-time
-                    description of Netflix's current catalog.
-                </p>
-
-            </section>
+            </div>
 
 
-            <!-- ---------------------------------------------
-                 Redesigned Figure
-            ---------------------------------------------- -->
+            <!-- KPI -->
 
-            <section>
+            <div class="kpi-row">
 
-                <h3>Redesign Figure</h3>
+                <div class="kpi">
 
-                <figure>
-
-                    <!-- Later we can put a screenshot here -->
-
-                    <img
-                        src="images/redesign_dashboard.png"
-                        alt="Redesigned Netflix visualization"
+                    <span
+                        id="total-titles"
+                        class="kpi-value"
                     >
+                        —
+                    </span>
 
-                    <figcaption>
-                        Figure 2. Redesigned Netflix content visualization
-                        created with D3.js.
-                    </figcaption>
+                    <span class="kpi-label">
+                        Total titles
+                    </span>
 
-                </figure>
-
-            </section>
+                </div>
 
 
-            <!-- ---------------------------------------------
-                 References
-            ---------------------------------------------- -->
+                <div class="kpi">
 
-            <section id="references">
+                    <span
+                        id="total-movies"
+                        class="kpi-value"
+                    >
+                        —
+                    </span>
 
-                <h3>References</h3>
+                    <span class="kpi-label">
+                        Movies
+                    </span>
 
-                <ol>
+                </div>
 
-                    <li>
-                        Prathu10.
-                        <em>Netflix EDA Dashboard</em>.
-                        GitHub.
-                        <a
-                            href="https://github.com/prathu10/Netflix_EDA_Dashboard"
-                            target="_blank"
-                        >
-                            https://github.com/prathu10/Netflix_EDA_Dashboard
-                        </a>
-                    </li>
 
-                    <li>
-                        Netflix Movies and TV Shows Dataset.
-                        Publicly available dataset.
-                    </li>
+                <div class="kpi">
 
-                    <li>
-                        D3.js.
-                        <a
-                            href="https://d3js.org/"
-                            target="_blank"
-                        >
-                            https://d3js.org/
-                        </a>
-                    </li>
+                    <span
+                        id="total-shows"
+                        class="kpi-value"
+                    >
+                        —
+                    </span>
 
-                </ol>
+                    <span class="kpi-label">
+                        TV shows
+                    </span>
 
-            </section>
+                </div>
+
+
+                <div class="kpi">
+
+                    <span
+                        id="avg-score"
+                        class="kpi-value"
+                    >
+                        —
+                    </span>
+
+                    <span class="kpi-label">
+                        Average IMDb score
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- MAIN TIME SERIES -->
+
+            <div class="main-chart">
+
+                <div class="chart-heading">
+
+                    <div>
+
+                        <h3>
+                            Content Evolution
+                        </h3>
+
+                        <p>
+                            Titles released by year and content type
+                        </p>
+
+                    </div>
+
+                    <div
+                        id="chart-period"
+                        class="chart-period"
+                    >
+                    </div>
+
+                </div>
+
+
+                <div id="time-chart"></div>
+
+            </div>
+
+
+            <!-- SECONDARY -->
+
+            <div class="secondary-grid">
+
+
+                <!-- GENRE -->
+
+                <div class="chart-panel">
+
+                    <h3 class="panel-title">
+                        Top Genres
+                    </h3>
+
+                    <p class="panel-subtitle">
+                        Multi-label genres are counted separately
+                    </p>
+
+                    <div id="genre-chart"></div>
+
+                    <div
+                        id="genre-selection"
+                        class="selection-status"
+                    ></div>
+
+                </div>
+
+
+                <!-- RATING -->
+
+                <div class="chart-panel">
+
+                    <h3 class="panel-title">
+                        Age Certification
+                    </h3>
+
+                    <p class="panel-subtitle">
+                        Distribution across the filtered catalog
+                    </p>
+
+                    <div id="rating-chart"></div>
+
+                </div>
+
+
+                <!-- COUNTRY -->
+
+                <div class="chart-panel full-width">
+
+                    <h3 class="panel-title">
+                        Production Countries
+                    </h3>
+
+                    <p class="panel-subtitle">
+                        Ranked by number of titles
+                    </p>
+
+                    <div id="country-chart"></div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             CRITIQUE
+        ================================================== -->
+
+        <section
+            class="section"
+            id="critique"
+        >
+
+            <div class="section-number">
+                03 / CRITIQUE
+            </div>
+
+            <h2 class="section-title">
+                What works.<br>
+                What gets in the way.
+            </h2>
+
+
+            <div class="critique-grid">
+
+
+                <!-- STRENGTHS -->
+
+                <div class="critique-column">
+
+                    <h3>
+                        Strengths
+                    </h3>
+
+
+                    <div class="critique-item">
+
+                        <h4>
+                            Multiple complementary views
+                        </h4>
+
+                        <p>
+                            The original dashboard combines temporal,
+                            geographic, categorical, and rating-based
+                            views. This gives users several ways to
+                            explore the catalog.
+                        </p>
+
+                    </div>
+
+
+                    <div class="critique-item">
+
+                        <h4>
+                            Strong overview of the dataset
+                        </h4>
+
+                        <p>
+                            The dashboard communicates the breadth
+                            of the Netflix catalog and allows users
+                            to move between title-level information
+                            and aggregate patterns.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- WEAKNESSES -->
+
+                <div class="critique-column">
+
+                    <h3>
+                        Weaknesses
+                    </h3>
+
+
+                    <div class="critique-item">
+
+                        <h4>
+                            Weak visual hierarchy
+                        </h4>
+
+                        <p>
+                            Several views receive similar visual
+                            prominence, making it difficult to identify
+                            the main analytical question.
+                        </p>
+
+                    </div>
+
+
+                    <div class="critique-item">
+
+                        <h4>
+                            Stacked area comparison
+                        </h4>
+
+                        <p>
+                            In the time-series view, only the lower
+                            series shares a common baseline. This makes
+                            direct comparison between movies and shows
+                            less precise.
+                        </p>
+
+                    </div>
+
+
+                    <div class="critique-item">
+
+                        <h4>
+                            Ambiguous genre categories
+                        </h4>
+
+                        <p>
+                            Combinations such as "Comedy, Drama"
+                            appear as separate categories. This makes
+                            it difficult to interpret which individual
+                            genres are most prevalent.
+                        </p>
+
+                    </div>
+
+
+                    <div class="critique-item">
+
+                        <h4>
+                            Geographic comparison
+                        </h4>
+
+                        <p>
+                            The map provides useful spatial context,
+                            but exact comparisons between countries
+                            are difficult because position and area
+                            do not provide a common quantitative scale.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             REDESIGN DECISIONS
+        ================================================== -->
+
+        <section class="section">
+
+            <div class="section-number">
+                04 / REDESIGN DECISIONS
+            </div>
+
+            <h2 class="section-title">
+                Four changes,<br>
+                one clearer story.
+            </h2>
+
+
+            <div class="decision-list">
+
+
+                <div class="decision">
+
+                    <div class="decision-number">
+                        01
+                    </div>
+
+                    <div class="decision-title">
+                        Establish hierarchy
+                    </div>
+
+                    <div class="decision-description">
+                        The time series becomes the dominant view,
+                        establishing catalog growth as the primary
+                        analytical task. Genre, certification, and
+                        country become supporting views.
+                    </div>
+
+                </div>
+
+
+                <div class="decision">
+
+                    <div class="decision-number">
+                        02
+                    </div>
+
+                    <div class="decision-title">
+                        Replace stacked area
+                    </div>
+
+                    <div class="decision-description">
+                        Movies and TV shows are shown as independent
+                        lines with a shared baseline. This improves
+                        direct comparison of trends over time.
+                    </div>
+
+                </div>
+
+
+                <div class="decision">
+
+                    <div class="decision-number">
+                        03
+                    </div>
+
+                    <div class="decision-title">
+                        Normalize genres
+                    </div>
+
+                    <div class="decision-description">
+                        Multi-label genre strings are split into their
+                        individual genres. A title such as "Comedy,
+                        Drama, Romance" contributes once to each of
+                        those three categories.
+                    </div>
+
+                </div>
+
+
+                <div class="decision">
+
+                    <div class="decision-number">
+                        04
+                    </div>
+
+                    <div class="decision-title">
+                        Improve comparison
+                    </div>
+
+                    <div class="decision-description">
+                        Production countries are ranked using horizontal
+                        bars, making quantitative differences easier to
+                        compare while preserving the original geographic
+                        question.
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             REFERENCES
+        ================================================== -->
+
+        <section class="section">
+
+            <div class="section-number">
+                05 / REFERENCES
+            </div>
+
+            <h2 class="section-title">
+                Sources
+            </h2>
+
+
+            <div class="references">
+
+                <p>
+                    Original dashboard:
+                    <a
+                        href="https://github.com/prathu10/Netflix_EDA_Dashboard"
+                        target="_blank"
+                    >
+                        Netflix EDA Dashboard
+                    </a>
+                </p>
+
+                <p>
+                    The redesign uses the provided Netflix titles
+                    dataset containing title, content type, release
+                    year, certification, runtime, IMDb score, country,
+                    and genre information.
+                </p>
+
+                <p>
+                    D3.js:
+                    <a
+                        href="https://d3js.org/"
+                        target="_blank"
+                    >
+                        D3 Data-Driven Documents
+                    </a>
+                </p>
+
+            </div>
 
         </section>
 
     </main>
 
 
-    <!-- =====================================================
-         FOOTER
-    ====================================================== -->
+    <footer class="page">
 
-    <footer>
+        <span>
+            STATS 401 · VISUALIZATION CRITIQUE AND REDESIGN
+        </span>
 
-        <p>
-            STATS 401 · Visualization Critique and Redesign
-        </p>
+        <span>
+            NETFLIX CONTENT EVOLUTION
+        </span>
 
     </footer>
 
 
-    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <div id="d3-tooltip"></div>
+
+
     <script src="script.js"></script>
 
 </body>
-
 </html>
