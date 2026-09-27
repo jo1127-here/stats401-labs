@@ -1,8 +1,8 @@
 // ============================================================
-// Netflix Visualization Critique & Redesign
+// NETFLIX VISUALIZATION CRITIQUE & REDESIGN
 // ============================================================
 
-const DATA_PATH = "data/netflix.csv";
+const DATA_PATH = "../data/netflix.csv";
 
 let allData = [];
 let filteredData = [];
@@ -17,21 +17,31 @@ d3.csv(DATA_PATH)
 
         allData = data
             .map(d => ({
-                id: d.id,
-                title: d.title,
-                type: d.type,
+                id: d.id || "",
+                title: d.title || "",
+                type: normalizeType(d.type),
                 release_year: +d.release_year,
-                age_certification: d.age_certification || "Unknown",
+
+                age_certification:
+                    d.age_certification || "Unknown",
+
                 runtime: +d.runtime || 0,
                 seasons: +d.seasons || 0,
                 imdb_score: +d.imdb_score || 0,
                 imdb_votes: +d.imdb_votes || 0,
+
                 country: d.country || "Unknown",
                 genre: d.genre || ""
             }))
-            .filter(d => !isNaN(d.release_year));
+            .filter(d =>
+                Number.isFinite(d.release_year)
+            );
 
-        console.log(`Loaded ${allData.length} Netflix titles.`);
+
+        console.log(
+            `Loaded ${allData.length} Netflix titles.`
+        );
+
 
         initializeControls();
         updateDashboard();
@@ -39,16 +49,23 @@ d3.csv(DATA_PATH)
     })
     .catch(error => {
 
-        console.error("Could not load data/netflix.csv:", error);
+        console.error(
+            "Could not load Netflix data:",
+            error
+        );
 
-        const container = document.querySelector("#time-chart");
+
+        const container =
+            document.querySelector("#time-chart");
+
 
         if (container) {
+
             container.innerHTML = `
                 <div style="
-                    color:#e50914;
-                    padding:30px;
-                    font-family:Arial,sans-serif;
+                    padding: 30px;
+                    color: #e50914;
+                    font-size: 15px;
                 ">
                     Could not load data/netflix.csv.
                     Please check the file path.
@@ -59,160 +76,297 @@ d3.csv(DATA_PATH)
 
 
 // ============================================================
-// 2. INITIALIZE CONTROLS
+// 2. NORMALIZE TYPE
+// ============================================================
+
+function normalizeType(value) {
+
+    if (!value) return "Unknown";
+
+    const text =
+        String(value)
+            .trim()
+            .toLowerCase();
+
+
+    if (
+        text === "movie" ||
+        text === "movies"
+    ) {
+        return "Movie";
+    }
+
+
+    if (
+        text === "show" ||
+        text === "tv show" ||
+        text === "tv_show" ||
+        text === "series"
+    ) {
+        return "Show";
+    }
+
+
+    return value;
+}
+
+
+// ============================================================
+// 3. INITIALIZE CONTROLS
 // ============================================================
 
 function initializeControls() {
 
-    const typeFilter = d3.select("#type-filter");
+    const typeFilter =
+        document.querySelector("#type-filter");
 
-    if (!typeFilter.empty()) {
 
-        typeFilter
-            .on("change", function () {
-                updateDashboard();
-            });
+    if (typeFilter) {
+
+        typeFilter.addEventListener(
+            "change",
+            updateDashboard
+        );
     }
 
 
-    const resetButton = d3.select("#reset-button");
+    const resetButton =
+        document.querySelector("#reset-button");
 
-    if (!resetButton.empty()) {
 
-        resetButton
-            .on("click", function () {
+    if (resetButton) {
 
-                const minYear = d3.min(allData, d => d.release_year);
-                const maxYear = d3.max(allData, d => d.release_year);
-
-                const sliders = getYearSliders();
-
-                sliders.forEach(slider => {
-
-                    if (slider.id === "year-start") {
-                        slider.value = minYear;
-                    }
-
-                    if (slider.id === "year-end") {
-                        slider.value = maxYear;
-                    }
-                });
-
-                updateYearLabels();
-
-                updateDashboard();
-            });
+        resetButton.addEventListener(
+            "click",
+            resetFilters
+        );
     }
 
 
-    // Find any range sliders currently present in the HTML.
-    const sliders = document.querySelectorAll(
-        'input[type="range"]'
-    );
+    const sliders =
+        getYearSliders();
+
 
     sliders.forEach(slider => {
 
-        slider.addEventListener("input", function () {
+        slider.addEventListener(
+            "input",
+            function () {
 
-            updateYearLabels();
-            updateDashboard();
+                enforceYearOrder(slider);
+                updateYearLabels();
+                updateDashboard();
 
-        });
+            }
+        );
 
     });
 
 
+    initializeSliderValues();
     updateYearLabels();
 }
 
 
 // ============================================================
-// 3. FIND YEAR SLIDERS
+// 4. FIND YEAR SLIDERS
 // ============================================================
 
 function getYearSliders() {
 
     return Array.from(
-        document.querySelectorAll('input[type="range"]')
+        document.querySelectorAll(
+            'input[type="range"]'
+        )
     );
-}
-
-
-function getStartYear() {
-
-    const sliders = getYearSliders();
-
-    // Prefer an explicit year-start slider
-    const start = sliders.find(
-        s => s.id === "year-start"
-    );
-
-    if (start) {
-        return +start.value;
-    }
-
-    // Otherwise use the first range slider
-    if (sliders.length >= 1) {
-        return +sliders[0].value;
-    }
-
-    // Fallback
-    return d3.min(allData, d => d.release_year);
-}
-
-
-function getEndYear() {
-
-    const sliders = getYearSliders();
-
-    // Prefer an explicit year-end slider
-    const end = sliders.find(
-        s => s.id === "year-end"
-    );
-
-    if (end) {
-        return +end.value;
-    }
-
-    // Otherwise use the second range slider
-    if (sliders.length >= 2) {
-        return +sliders[1].value;
-    }
-
-    // Fallback
-    return d3.max(allData, d => d.release_year);
 }
 
 
 // ============================================================
-// 4. UPDATE YEAR LABELS
+// 5. INITIALIZE YEAR SLIDERS
+// ============================================================
+
+function initializeSliderValues() {
+
+    if (!allData.length) return;
+
+
+    const minYear =
+        d3.min(
+            allData,
+            d => d.release_year
+        );
+
+
+    const maxYear =
+        d3.max(
+            allData,
+            d => d.release_year
+        );
+
+
+    const sliders =
+        getYearSliders();
+
+
+    if (sliders.length >= 1) {
+
+        sliders[0].min = minYear;
+        sliders[0].max = maxYear;
+
+        if (
+            !sliders[0].value ||
+            +sliders[0].value < minYear ||
+            +sliders[0].value > maxYear
+        ) {
+            sliders[0].value = minYear;
+        }
+    }
+
+
+    if (sliders.length >= 2) {
+
+        sliders[1].min = minYear;
+        sliders[1].max = maxYear;
+
+        if (
+            !sliders[1].value ||
+            +sliders[1].value < minYear ||
+            +sliders[1].value > maxYear
+        ) {
+            sliders[1].value = maxYear;
+        }
+    }
+}
+
+
+// ============================================================
+// 6. GET START YEAR
+// ============================================================
+
+function getStartYear() {
+
+    const sliders =
+        getYearSliders();
+
+
+    if (sliders.length >= 1) {
+
+        return +sliders[0].value;
+    }
+
+
+    return d3.min(
+        allData,
+        d => d.release_year
+    );
+}
+
+
+// ============================================================
+// 7. GET END YEAR
+// ============================================================
+
+function getEndYear() {
+
+    const sliders =
+        getYearSliders();
+
+
+    if (sliders.length >= 2) {
+
+        return +sliders[1].value;
+    }
+
+
+    return d3.max(
+        allData,
+        d => d.release_year
+    );
+}
+
+
+// ============================================================
+// 8. ENFORCE YEAR ORDER
+// ============================================================
+
+function enforceYearOrder(activeSlider) {
+
+    const sliders =
+        getYearSliders();
+
+
+    if (sliders.length < 2) {
+        return;
+    }
+
+
+    const startSlider =
+        sliders[0];
+
+    const endSlider =
+        sliders[1];
+
+
+    let start =
+        +startSlider.value;
+
+    let end =
+        +endSlider.value;
+
+
+    if (start > end) {
+
+        if (activeSlider === startSlider) {
+            endSlider.value = start;
+        }
+
+        else {
+            startSlider.value = end;
+        }
+    }
+}
+
+
+// ============================================================
+// 9. UPDATE YEAR LABELS
 // ============================================================
 
 function updateYearLabels() {
 
     if (!allData.length) return;
 
-    let startYear = getStartYear();
-    let endYear = getEndYear();
 
-    if (startYear > endYear) {
+    const startYear =
+        Math.min(
+            getStartYear(),
+            getEndYear()
+        );
 
-        const temp = startYear;
-        startYear = endYear;
-        endYear = temp;
-    }
+
+    const endYear =
+        Math.max(
+            getStartYear(),
+            getEndYear()
+        );
 
 
     const minLabel =
-        document.querySelector("#year-min-value");
+        document.querySelector(
+            "#year-min-value"
+        );
+
 
     const maxLabel =
-        document.querySelector("#year-max-value");
+        document.querySelector(
+            "#year-max-value"
+        );
 
 
     if (minLabel) {
         minLabel.textContent = startYear;
     }
+
 
     if (maxLabel) {
         maxLabel.textContent = endYear;
@@ -221,68 +375,109 @@ function updateYearLabels() {
 
 
 // ============================================================
-// 5. MAIN UPDATE FUNCTION
+// 10. RESET
+// ============================================================
+
+function resetFilters() {
+
+    const minYear =
+        d3.min(
+            allData,
+            d => d.release_year
+        );
+
+
+    const maxYear =
+        d3.max(
+            allData,
+            d => d.release_year
+        );
+
+
+    const sliders =
+        getYearSliders();
+
+
+    if (sliders.length >= 1) {
+        sliders[0].value = minYear;
+    }
+
+
+    if (sliders.length >= 2) {
+        sliders[1].value = maxYear;
+    }
+
+
+    const typeFilter =
+        document.querySelector(
+            "#type-filter"
+        );
+
+
+    if (typeFilter) {
+        typeFilter.value = "All";
+    }
+
+
+    updateYearLabels();
+    updateDashboard();
+}
+
+
+// ============================================================
+// 11. MAIN UPDATE
 // ============================================================
 
 function updateDashboard() {
 
-    if (!allData.length) return;
-
-
-    // --------------------------------------------------------
-    // Controls
-    // --------------------------------------------------------
-
-    let type = "All";
-
-    const typeElement =
-        document.querySelector("#type-filter");
-
-    if (typeElement) {
-        type = typeElement.value;
+    if (!allData.length) {
+        return;
     }
 
 
-    let startYear = getStartYear();
-    let endYear = getEndYear();
+    const typeFilter =
+        document.querySelector(
+            "#type-filter"
+        );
 
 
-    if (startYear > endYear) {
-
-        const temp = startYear;
-        startYear = endYear;
-        endYear = temp;
-    }
+    const selectedType =
+        typeFilter
+            ? typeFilter.value
+            : "All";
 
 
-    // --------------------------------------------------------
-    // Filter data
-    // --------------------------------------------------------
-
-    filteredData = allData.filter(d => {
-
-        const typeMatch =
-            type === "All" ||
-            type === "all" ||
-            type === "" ||
-            d.type === type;
-
-        const yearMatch =
-            d.release_year >= startYear &&
-            d.release_year <= endYear;
-
-        return typeMatch && yearMatch;
-    });
+    const startYear =
+        Math.min(
+            getStartYear(),
+            getEndYear()
+        );
 
 
-    console.log(
-        `Filtered data: ${filteredData.length} titles`
-    );
+    const endYear =
+        Math.max(
+            getStartYear(),
+            getEndYear()
+        );
 
 
-    // --------------------------------------------------------
-    // Draw visualizations
-    // --------------------------------------------------------
+    filteredData =
+        allData.filter(d => {
+
+            const typeMatch =
+                selectedType === "All" ||
+                selectedType === "" ||
+                d.type === selectedType;
+
+
+            const yearMatch =
+                d.release_year >= startYear &&
+                d.release_year <= endYear;
+
+
+            return typeMatch && yearMatch;
+        });
+
 
     drawTimeChart(
         filteredData,
@@ -290,18 +485,28 @@ function updateDashboard() {
         endYear
     );
 
-    drawGenreChart(filteredData);
 
-    drawRatingChart(filteredData);
+    drawGenreChart(
+        filteredData
+    );
 
-    drawCountryChart(filteredData);
+
+    drawRatingChart(
+        filteredData
+    );
+
+
+    drawCountryChart(
+        filteredData
+    );
+
 
     updateYearLabels();
 }
 
 
 // ============================================================
-// 6. CLEAR SVG / CONTAINER
+// 12. CLEAR CONTAINER
 // ============================================================
 
 function clearContainer(selector) {
@@ -309,511 +514,62 @@ function clearContainer(selector) {
     const container =
         d3.select(selector);
 
+
     if (container.empty()) {
+
         console.warn(
-            `Container ${selector} was not found.`
+            `Missing visualization container: ${selector}`
         );
+
         return null;
     }
 
-    container.selectAll("*").remove();
+
+    container
+        .selectAll("*")
+        .remove();
+
 
     return container;
 }
 
 
 // ============================================================
-// 7. TIME SERIES
+// 13. TIME SERIES
 // ============================================================
 
-function drawTimeChart(data, startYear, endYear) {
+function drawTimeChart(
+    data,
+    startYear,
+    endYear
+) {
 
     const container =
         clearContainer("#time-chart");
 
-    if (!container) return;
 
-
-    const width =
-        container.node().clientWidth || 900;
-
-    const height = 400;
-
-    const margin = {
-        top: 35,
-        right: 35,
-        bottom: 55,
-        left: 65
-    };
-
-
-    const svg = container
-        .append("svg")
-        .attr("width", "100%")
-        .attr("height", height)
-        .attr(
-            "viewBox",
-            `0 0 ${width} ${height}`
-        );
-
-
-    const innerWidth =
-        width -
-        margin.left -
-        margin.right;
-
-    const innerHeight =
-        height -
-        margin.top -
-        margin.bottom;
-
-
-    const chart = svg
-        .append("g")
-        .attr(
-            "transform",
-            `translate(${margin.left},${margin.top})`
-        );
-
-
-    // --------------------------------------------------------
-    // Aggregate by year
-    // --------------------------------------------------------
-
-    const years = d3.range(
-        startYear,
-        endYear + 1
-    );
-
-
-    const movieByYear =
-        d3.rollup(
-            data.filter(d => d.type === "Movie"),
-            v => v.length,
-            d => d.release_year
-        );
-
-
-    const showByYear =
-        d3.rollup(
-            data.filter(d => d.type === "Show"),
-            v => v.length,
-            d => d.release_year
-        );
-
-
-    const movieData =
-        years.map(year => ({
-            year,
-            value: movieByYear.get(year) || 0
-        }));
-
-
-    const showData =
-        years.map(year => ({
-            year,
-            value: showByYear.get(year) || 0
-        }));
-
-
-    // --------------------------------------------------------
-    // Scales
-    // --------------------------------------------------------
-
-    const x =
-        d3.scaleLinear()
-            .domain([startYear, endYear])
-            .range([0, innerWidth]);
-
-
-    const maxValue =
-        d3.max(
-            [...movieData, ...showData],
-            d => d.value
-        ) || 1;
-
-
-    const y =
-        d3.scaleLinear()
-            .domain([0, maxValue])
-            .nice()
-            .range([innerHeight, 0]);
-
-
-    // --------------------------------------------------------
-    // Grid
-    // --------------------------------------------------------
-
-    chart
-        .append("g")
-        .attr("class", "grid")
-        .call(
-            d3.axisLeft(y)
-                .tickSize(-innerWidth)
-                .tickFormat("")
-        );
-
-
-    // --------------------------------------------------------
-    // Axes
-    // --------------------------------------------------------
-
-    chart
-        .append("g")
-        .attr(
-            "transform",
-            `translate(0,${innerHeight})`
-        )
-        .call(
-            d3.axisBottom(x)
-                .ticks(Math.min(10, years.length))
-                .tickFormat(d3.format("d"))
-        );
-
-
-    chart
-        .append("g")
-        .call(
-            d3.axisLeft(y)
-                .ticks(6)
-        );
-
-
-    // --------------------------------------------------------
-    // Lines
-    // --------------------------------------------------------
-
-    const line =
-        d3.line()
-            .x(d => x(d.year))
-            .y(d => y(d.value))
-            .curve(d3.curveMonotoneX);
-
-
-    chart
-        .append("path")
-        .datum(movieData)
-        .attr("class", "netflix-line movie-line")
-        .attr("fill", "none")
-        .attr("d", line);
-
-
-    chart
-        .append("path")
-        .datum(showData)
-        .attr("class", "netflix-line show-line")
-        .attr("fill", "none")
-        .attr("d", line);
-
-
-    // --------------------------------------------------------
-    // Points
-    // --------------------------------------------------------
-
-    addPoints(
-        chart,
-        movieData,
-        x,
-        y,
-        "movie-point"
-    );
-
-    addPoints(
-        chart,
-        showData,
-        x,
-        y,
-        "show-point"
-    );
-
-
-    // --------------------------------------------------------
-    // Tooltip
-    // --------------------------------------------------------
-
-    const tooltip =
-        getTooltip();
-
-
-    const points =
-        chart.selectAll(".data-point");
-
-
-    points
-        .on("mouseenter", function(event, d) {
-
-            tooltip
-                .style("opacity", 1)
-                .html(`
-                    <strong>${d.type}</strong><br>
-                    Year: ${d.year}<br>
-                    Titles: ${d.value}
-                `);
-
-        })
-        .on("mousemove", function(event) {
-
-            tooltip
-                .style("left", `${event.pageX + 12}px`)
-                .style("top", `${event.pageY - 30}px`);
-
-        })
-        .on("mouseleave", function() {
-
-            tooltip
-                .style("opacity", 0);
-
-        });
-
-
-    // --------------------------------------------------------
-    // Legend
-    // --------------------------------------------------------
-
-    const legend =
-        d3.select("#time-legend");
-
-    if (!legend.empty()) {
-
-        legend.html(`
-            <span class="legend-item">
-                <span class="legend-dot movie-dot"></span>
-                Movies
-            </span>
-
-            <span class="legend-item">
-                <span class="legend-dot show-dot"></span>
-                TV Shows
-            </span>
-        `);
+    if (!container) {
+        return;
     }
-}
 
 
-// ============================================================
-// 8. ADD POINTS
-// ============================================================
+    const node =
+        container.node();
 
-function addPoints(
-    chart,
-    data,
-    x,
-    y,
-    className
-) {
-
-    const type =
-        className.includes("movie")
-            ? "Movie"
-            : "TV Show";
-
-
-    chart
-        .selectAll(`.${className}`)
-        .data(data)
-        .enter()
-        .append("circle")
-        .attr("class", `data-point ${className}`)
-        .attr("cx", d => x(d.year))
-        .attr("cy", d => y(d.value))
-        .attr("r", 4)
-        .attr(
-            "fill",
-            type === "Movie" ? "#e50914" : "#5bc0eb"
-        )
-        .attr("stroke", "#ffffff")
-        .attr("stroke-width", 1.5)
-        .attr("data-type", type);
-}
-
-
-// ============================================================
-// 9. GENRE CHART
-// ============================================================
-
-function drawGenreChart(data) {
-
-    const container =
-        clearContainer("#genre-chart");
-
-    if (!container) return;
-
-
-    const genreCounts = new Map();
-
-
-    data.forEach(d => {
-
-        if (!d.genre) return;
-
-        const genres =
-            d.genre
-                .split(",")
-                .map(g => g.trim())
-                .filter(Boolean);
-
-
-        genres.forEach(genre => {
-
-            genreCounts.set(
-                genre,
-                (genreCounts.get(genre) || 0) + 1
-            );
-
-        });
-
-    });
-
-
-    const genreData =
-        Array.from(
-            genreCounts,
-            ([genre, count]) => ({
-                genre,
-                count
-            })
-        )
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
-
-
-    drawHorizontalBarChart(
-        container,
-        genreData,
-        "genre",
-        "count",
-        "Genre",
-        420
-    );
-}
-
-
-// ============================================================
-// 10. AGE CERTIFICATION
-// ============================================================
-
-function drawRatingChart(data) {
-
-    const container =
-        clearContainer("#rating-chart");
-
-    if (!container) return;
-
-
-    const counts =
-        d3.rollup(
-            data,
-            v => v.length,
-            d => d.age_certification || "Unknown"
-        );
-
-
-    const ratingData =
-        Array.from(
-            counts,
-            ([rating, count]) => ({
-                rating,
-                count
-            })
-        )
-        .sort((a, b) => b.count - a.count);
-
-
-    drawHorizontalBarChart(
-        container,
-        ratingData,
-        "rating",
-        "count",
-        "Certification",
-        360
-    );
-}
-
-
-// ============================================================
-// 11. COUNTRY
-// ============================================================
-
-function drawCountryChart(data) {
-
-    const container =
-        clearContainer("#country-chart");
-
-    if (!container) return;
-
-
-    const countryCounts = new Map();
-
-
-    data.forEach(d => {
-
-        if (!d.country) return;
-
-
-        const countries =
-            d.country
-                .split(",")
-                .map(c => c.trim())
-                .filter(Boolean);
-
-
-        countries.forEach(country => {
-
-            countryCounts.set(
-                country,
-                (countryCounts.get(country) || 0) + 1
-            );
-
-        });
-
-    });
-
-
-    const countryData =
-        Array.from(
-            countryCounts,
-            ([country, count]) => ({
-                country,
-                count
-            })
-        )
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
-
-
-    drawHorizontalBarChart(
-        container,
-        countryData,
-        "country",
-        "count",
-        "Country",
-        420
-    );
-}
-
-
-// ============================================================
-// 12. GENERIC HORIZONTAL BAR CHART
-// ============================================================
-
-function drawHorizontalBarChart(
-    container,
-    data,
-    categoryKey,
-    valueKey,
-    label,
-    height
-) {
 
     const width =
-        container.node().clientWidth || 500;
+        node.clientWidth || 900;
+
+
+    const height =
+        400;
 
 
     const margin = {
-        top: 15,
-        right: 30,
-        bottom: 30,
-        left: 115
+        top: 25,
+        right: 35,
+        bottom: 48,
+        left: 55
     };
 
 
@@ -848,44 +604,779 @@ function drawHorizontalBarChart(
             );
 
 
+    // --------------------------------------------------------
+    // Data aggregation
+    // --------------------------------------------------------
+
+    const years =
+        d3.range(
+            startYear,
+            endYear + 1
+        );
+
+
+    const movieCounts =
+        d3.rollup(
+            data.filter(
+                d => d.type === "Movie"
+            ),
+            values => values.length,
+            d => d.release_year
+        );
+
+
+    const showCounts =
+        d3.rollup(
+            data.filter(
+                d => d.type === "Show"
+            ),
+            values => values.length,
+            d => d.release_year
+        );
+
+
+    const movieData =
+        years.map(year => ({
+            year,
+            value:
+                movieCounts.get(year) || 0,
+            type: "Movie"
+        }));
+
+
+    const showData =
+        years.map(year => ({
+            year,
+            value:
+                showCounts.get(year) || 0,
+            type: "TV Show"
+        }));
+
+
+    const combined =
+        movieData.concat(showData);
+
+
+    const maxValue =
+        d3.max(
+            combined,
+            d => d.value
+        ) || 1;
+
+
+    // --------------------------------------------------------
+    // Scales
+    // --------------------------------------------------------
+
+    const x =
+        d3.scaleLinear()
+            .domain([
+                startYear,
+                endYear
+            ])
+            .range([
+                0,
+                innerWidth
+            ]);
+
+
+    const y =
+        d3.scaleLinear()
+            .domain([
+                0,
+                maxValue
+            ])
+            .nice()
+            .range([
+                innerHeight,
+                0
+            ]);
+
+
+    // --------------------------------------------------------
+    // Grid
+    // --------------------------------------------------------
+
+    chart
+        .append("g")
+        .attr("class", "grid")
+        .call(
+            d3.axisLeft(y)
+                .ticks(6)
+                .tickSize(-innerWidth)
+                .tickFormat("")
+        );
+
+
+    // --------------------------------------------------------
+    // Axes
+    // --------------------------------------------------------
+
+    chart
+        .append("g")
+        .attr(
+            "transform",
+            `translate(0,${innerHeight})`
+        )
+        .call(
+            d3.axisBottom(x)
+                .ticks(
+                    Math.min(
+                        10,
+                        Math.max(
+                            2,
+                            years.length
+                        )
+                    )
+                )
+                .tickFormat(
+                    d3.format("d")
+                )
+        );
+
+
+    chart
+        .append("g")
+        .call(
+            d3.axisLeft(y)
+                .ticks(6)
+        );
+
+
+    // --------------------------------------------------------
+    // Line generator
+    // --------------------------------------------------------
+
+    const line =
+        d3.line()
+            .x(d => x(d.year))
+            .y(d => y(d.value))
+            .curve(
+                d3.curveMonotoneX
+            );
+
+
+    // --------------------------------------------------------
+    // Movie line
+    // --------------------------------------------------------
+
+    const moviePath =
+        chart
+            .append("path")
+            .datum(movieData)
+            .attr(
+                "class",
+                "netflix-line movie-line"
+            )
+            .attr(
+                "d",
+                line
+            )
+            .attr(
+                "fill",
+                "none"
+            )
+            .attr(
+                "stroke",
+                "#e50914"
+            );
+
+
+    // --------------------------------------------------------
+    // Show line
+    // --------------------------------------------------------
+
+    const showPath =
+        chart
+            .append("path")
+            .datum(showData)
+            .attr(
+                "class",
+                "netflix-line show-line"
+            )
+            .attr(
+                "d",
+                line
+            )
+            .attr(
+                "fill",
+                "none"
+            )
+            .attr(
+                "stroke",
+                "#5bc0eb"
+            );
+
+
+    // --------------------------------------------------------
+    // Line animation
+    // --------------------------------------------------------
+
+    animatePath(moviePath);
+    animatePath(showPath);
+
+
+    // --------------------------------------------------------
+    // Points
+    // --------------------------------------------------------
+
+    addTimePoints(
+        chart,
+        movieData,
+        x,
+        y,
+        "#e50914"
+    );
+
+
+    addTimePoints(
+        chart,
+        showData,
+        x,
+        y,
+        "#5bc0eb"
+    );
+
+
+    // --------------------------------------------------------
+    // Legend
+    // --------------------------------------------------------
+
+    const legend =
+        d3.select(
+            "#time-legend"
+        );
+
+
+    if (!legend.empty()) {
+
+        legend.html(`
+            <span class="legend-item">
+                <span
+                    class="legend-dot movie-dot"
+                ></span>
+                Movies
+            </span>
+
+            <span class="legend-item">
+                <span
+                    class="legend-dot show-dot"
+                ></span>
+                TV Shows
+            </span>
+        `);
+    }
+}
+
+
+// ============================================================
+// 14. ANIMATE LINE
+// ============================================================
+
+function animatePath(path) {
+
+    const node =
+        path.node();
+
+
+    if (!node) {
+        return;
+    }
+
+
+    const length =
+        node.getTotalLength();
+
+
+    path
+        .attr(
+            "stroke-dasharray",
+            `${length} ${length}`
+        )
+        .attr(
+            "stroke-dashoffset",
+            length
+        )
+        .transition()
+        .duration(900)
+        .ease(
+            d3.easeCubicOut
+        )
+        .attr(
+            "stroke-dashoffset",
+            0
+        );
+}
+
+
+// ============================================================
+// 15. TIME-SERIES POINTS
+// ============================================================
+
+function addTimePoints(
+    chart,
+    data,
+    x,
+    y,
+    color
+) {
+
+    const tooltip =
+        getTooltip();
+
+
+    chart
+        .selectAll(
+            `.point-${color.replace("#", "")}`
+        )
+        .data(data)
+        .enter()
+        .append("circle")
+        .attr(
+            "class",
+            "data-point"
+        )
+        .attr(
+            "cx",
+            d => x(d.year)
+        )
+        .attr(
+            "cy",
+            d => y(d.value)
+        )
+        .attr(
+            "r",
+            4
+        )
+        .attr(
+            "fill",
+            color
+        )
+        .attr(
+            "stroke",
+            "#111111"
+        )
+        .attr(
+            "stroke-width",
+            1.5
+        )
+        .style(
+            "cursor",
+            "pointer"
+        )
+        .on(
+            "mouseenter",
+            function(event, d) {
+
+                d3.select(this)
+                    .transition()
+                    .duration(100)
+                    .attr("r", 6);
+
+
+                tooltip
+                    .style(
+                        "opacity",
+                        1
+                    )
+                    .html(`
+                        <strong>
+                            ${d.type}
+                        </strong>
+                        <br>
+                        Year: ${d.year}
+                        <br>
+                        Titles:
+                        ${d.value.toLocaleString()}
+                    `);
+            }
+        )
+        .on(
+            "mousemove",
+            function(event) {
+
+                tooltip
+                    .style(
+                        "left",
+                        `${event.pageX + 14}px`
+                    )
+                    .style(
+                        "top",
+                        `${event.pageY - 35}px`
+                    );
+            }
+        )
+        .on(
+            "mouseleave",
+            function() {
+
+                d3.select(this)
+                    .transition()
+                    .duration(100)
+                    .attr("r", 4);
+
+
+                tooltip
+                    .style(
+                        "opacity",
+                        0
+                    );
+            }
+        );
+}
+
+
+// ============================================================
+// 16. GENRE CHART
+// ============================================================
+
+function drawGenreChart(data) {
+
+    const container =
+        clearContainer(
+            "#genre-chart"
+        );
+
+
+    if (!container) {
+        return;
+    }
+
+
+    const counts =
+        new Map();
+
+
+    data.forEach(d => {
+
+        if (!d.genre) {
+            return;
+        }
+
+
+        const genres =
+            d.genre
+                .split(",")
+                .map(
+                    genre =>
+                        genre.trim()
+                )
+                .filter(Boolean);
+
+
+        genres.forEach(genre => {
+
+            counts.set(
+                genre,
+                (
+                    counts.get(genre) || 0
+                ) + 1
+            );
+        });
+
+    });
+
+
+    const genreData =
+        Array.from(
+            counts,
+            ([genre, count]) => ({
+                genre,
+                count
+            })
+        )
+        .sort(
+            (a, b) =>
+                b.count - a.count
+        )
+        .slice(0, 10);
+
+
+    drawHorizontalBars(
+        container,
+        genreData,
+        "genre",
+        "count",
+        390
+    );
+}
+
+
+// ============================================================
+// 17. CERTIFICATION CHART
+// ============================================================
+
+function drawRatingChart(data) {
+
+    const container =
+        clearContainer(
+            "#rating-chart"
+        );
+
+
+    if (!container) {
+        return;
+    }
+
+
+    const counts =
+        d3.rollup(
+            data,
+            values => values.length,
+            d =>
+                d.age_certification ||
+                "Unknown"
+        );
+
+
+    const ratingData =
+        Array.from(
+            counts,
+            ([rating, count]) => ({
+                rating,
+                count
+            })
+        )
+        .sort(
+            (a, b) =>
+                b.count - a.count
+        );
+
+
+    drawHorizontalBars(
+        container,
+        ratingData,
+        "rating",
+        "count",
+        350
+    );
+}
+
+
+// ============================================================
+// 18. COUNTRY CHART
+// ============================================================
+
+function drawCountryChart(data) {
+
+    const container =
+        clearContainer(
+            "#country-chart"
+        );
+
+
+    if (!container) {
+        return;
+    }
+
+
+    const counts =
+        new Map();
+
+
+    data.forEach(d => {
+
+        if (!d.country) {
+            return;
+        }
+
+
+        const countries =
+            d.country
+                .split(",")
+                .map(
+                    country =>
+                        country.trim()
+                )
+                .filter(Boolean);
+
+
+        countries.forEach(country => {
+
+            counts.set(
+                country,
+                (
+                    counts.get(country) || 0
+                ) + 1
+            );
+
+        });
+
+    });
+
+
+    const countryData =
+        Array.from(
+            counts,
+            ([country, count]) => ({
+                country,
+                count
+            })
+        )
+        .sort(
+            (a, b) =>
+                b.count - a.count
+        )
+        .slice(0, 10);
+
+
+    drawHorizontalBars(
+        container,
+        countryData,
+        "country",
+        "count",
+        390
+    );
+}
+
+
+// ============================================================
+// 19. GENERIC HORIZONTAL BAR CHART
+// ============================================================
+
+function drawHorizontalBars(
+    container,
+    data,
+    categoryKey,
+    valueKey,
+    height
+) {
+
+    if (!data.length) {
+
+        container
+            .append("div")
+            .style(
+                "padding",
+                "40px 10px"
+            )
+            .style(
+                "color",
+                "rgba(255,255,255,0.5)"
+            )
+            .text(
+                "No data available for this selection."
+            );
+
+        return;
+    }
+
+
+    const node =
+        container.node();
+
+
+    const width =
+        node.clientWidth || 500;
+
+
+    const margin = {
+        top: 10,
+        right: 35,
+        bottom: 25,
+        left: 105
+    };
+
+
+    const svg =
+        container
+            .append("svg")
+            .attr(
+                "width",
+                "100%"
+            )
+            .attr(
+                "height",
+                height
+            )
+            .attr(
+                "viewBox",
+                `0 0 ${width} ${height}`
+            );
+
+
+    const innerWidth =
+        width -
+        margin.left -
+        margin.right;
+
+
+    const innerHeight =
+        height -
+        margin.top -
+        margin.bottom;
+
+
+    const chart =
+        svg.append("g")
+            .attr(
+                "transform",
+                `translate(${margin.left},${margin.top})`
+            );
+
+
+    // --------------------------------------------------------
+    // Scales
+    // --------------------------------------------------------
+
     const y =
         d3.scaleBand()
             .domain(
-                data.map(d => d[categoryKey])
+                data.map(
+                    d => d[categoryKey]
+                )
             )
-            .range([0, innerHeight])
+            .range([
+                0,
+                innerHeight
+            ])
             .padding(0.22);
+
+
+    const maxValue =
+        d3.max(
+            data,
+            d => d[valueKey]
+        ) || 1;
 
 
     const x =
         d3.scaleLinear()
             .domain([
                 0,
-                d3.max(
-                    data,
-                    d => d[valueKey]
-                ) || 1
+                maxValue
             ])
             .nice()
-            .range([0, innerWidth]);
+            .range([
+                0,
+                innerWidth
+            ]);
 
 
+    // --------------------------------------------------------
     // Grid
+    // --------------------------------------------------------
+
     chart
         .append("g")
-        .attr("class", "grid")
+        .attr(
+            "class",
+            "grid"
+        )
         .call(
             d3.axisBottom(x)
-                .tickSize(innerHeight)
+                .ticks(4)
+                .tickSize(
+                    innerHeight
+                )
                 .tickFormat("")
-        )
-        .attr(
-            "transform",
-            `translate(0,0)`
         );
 
 
+    // --------------------------------------------------------
     // Y axis
+    // --------------------------------------------------------
+
     chart
         .append("g")
         .call(
@@ -893,70 +1384,134 @@ function drawHorizontalBarChart(
         );
 
 
+    // --------------------------------------------------------
     // Bars
+    // --------------------------------------------------------
+
+    const tooltip =
+        getTooltip();
+
+
     chart
         .selectAll(".bar")
         .data(data)
         .enter()
         .append("rect")
-        .attr("class", "bar")
-        .attr("fill", "#e50914")
-        .attr("x", 0)
+        .attr(
+            "class",
+            "bar"
+        )
+        .attr(
+            "x",
+            0
+        )
         .attr(
             "y",
-            d => y(d[categoryKey])
-        )
-        .attr("height", y.bandwidth())
-        .attr("width", 0)
-        .on("mouseenter", function(event, d) {
-
-            d3.select(this)
-                .classed("bar-hover", true);
-
-            const tooltip =
-                getTooltip();
-
-            tooltip
-                .style("opacity", 1)
-                .html(`
-                    <strong>${d[categoryKey]}</strong><br>
-                    Titles: ${d[valueKey].toLocaleString()}
-                `);
-
-        })
-        .on("mousemove", function(event) {
-
-            getTooltip()
-                .style(
-                    "left",
-                    `${event.pageX + 12}px`
+            d =>
+                y(
+                    d[categoryKey]
                 )
-                .style(
-                    "top",
-                    `${event.pageY - 30}px`
-                );
-
-        })
-        .on("mouseleave", function() {
-
-            d3.select(this)
-                .classed("bar-hover", false);
-
-            getTooltip()
-                .style("opacity", 0);
-
-        })
-        .transition()
-        .duration(700)
+        )
+        .attr(
+            "height",
+            y.bandwidth()
+        )
         .attr(
             "width",
-            d => x(d[valueKey])
+            0
+        )
+        .attr(
+            "fill",
+            "#e50914"
+        )
+        .attr(
+            "rx",
+            3
+        )
+        .on(
+            "mouseenter",
+            function(event, d) {
+
+                d3.select(this)
+                    .attr(
+                        "fill",
+                        "#ff5360"
+                    )
+                    .attr(
+                        "opacity",
+                        1
+                    );
+
+
+                tooltip
+                    .style(
+                        "opacity",
+                        1
+                    )
+                    .html(`
+                        <strong>
+                            ${d[categoryKey]}
+                        </strong>
+                        <br>
+                        Titles:
+                        ${d[valueKey].toLocaleString()}
+                    `);
+            }
+        )
+        .on(
+            "mousemove",
+            function(event) {
+
+                tooltip
+                    .style(
+                        "left",
+                        `${event.pageX + 14}px`
+                    )
+                    .style(
+                        "top",
+                        `${event.pageY - 35}px`
+                    );
+            }
+        )
+        .on(
+            "mouseleave",
+            function() {
+
+                d3.select(this)
+                    .attr(
+                        "fill",
+                        "#e50914"
+                    )
+                    .attr(
+                        "opacity",
+                        0.82
+                    );
+
+
+                tooltip
+                    .style(
+                        "opacity",
+                        0
+                    );
+            }
+        )
+        .transition()
+        .duration(650)
+        .ease(
+            d3.easeCubicOut
+        )
+        .attr(
+            "width",
+            d =>
+                x(
+                    d[valueKey]
+                )
         );
 }
 
 
 // ============================================================
-// 13. TOOLTIP
+// 20. TOOLTIP
 // ============================================================
 
 function getTooltip() {
@@ -970,8 +1525,10 @@ function getTooltip() {
         tooltip =
             d3.select("body")
                 .append("div")
-                .attr("id", "tooltip")
-                .attr("class", "tooltip");
+                .attr(
+                    "id",
+                    "tooltip"
+                );
     }
 
 
@@ -980,16 +1537,33 @@ function getTooltip() {
 
 
 // ============================================================
-// 14. WINDOW RESIZE
+// 21. RESPONSIVE REDRAW
 // ============================================================
+
+let resizeTimer = null;
+
 
 window.addEventListener(
     "resize",
     function() {
 
-        if (allData.length) {
-            updateDashboard();
-        }
+        clearTimeout(
+            resizeTimer
+        );
 
+
+        resizeTimer =
+            setTimeout(
+                function() {
+
+                    if (
+                        allData.length
+                    ) {
+                        updateDashboard();
+                    }
+
+                },
+                200
+            );
     }
 );
