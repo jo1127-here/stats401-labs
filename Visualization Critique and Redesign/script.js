@@ -2492,9 +2492,14 @@ function getTooltip() {
     if (tooltip.empty()) {
         tooltip = d3.select("body")
             .append("div")
-            .attr("id", "tooltip")
-            .attr("class", "tooltip");
+            .attr("id", "tooltip");
     }
+
+    tooltip
+        .attr("class", "tooltip")
+        .style("position", "fixed")
+        .style("z-index", "99999")
+        .style("pointer-events", "none");
 
     return tooltip;
 }
