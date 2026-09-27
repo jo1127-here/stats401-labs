@@ -468,6 +468,49 @@ function updateDashboard() {
         });
 
 
+    // ============================================================
+// UPDATE KPI
+// ============================================================
+
+    const totalTitles = filteredData.length;
+    
+    const movieCount =
+        filteredData.filter(
+            d => d.type === "Movie"
+        ).length;
+    
+    const showCount =
+        filteredData.filter(
+            d => d.type === "Show"
+        ).length;
+    
+    const validScores =
+        filteredData
+            .map(d => d.imdb_score)
+            .filter(
+                d => Number.isFinite(d) && d > 0
+            );
+    
+    const avgScore =
+        validScores.length
+            ? d3.mean(validScores)
+            : null;
+    
+    d3.select("#kpi-total")
+        .text(totalTitles.toLocaleString());
+    
+    d3.select("#kpi-movies")
+        .text(movieCount.toLocaleString());
+    
+    d3.select("#kpi-shows")
+        .text(showCount.toLocaleString());
+    
+    d3.select("#kpi-score")
+        .text(
+            avgScore !== null
+                ? avgScore.toFixed(1)
+                : "—"
+        );
 
 
         // ========================================================
