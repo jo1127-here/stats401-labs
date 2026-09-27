@@ -2,7 +2,7 @@
 // NETFLIX VISUALIZATION CRITIQUE & REDESIGN
 // ============================================================
 
-const DATA_PATH = "Visualization Critique and Redesign/data/netflix.csv";
+const DATA_PATH = "data/netflix.csv";
 
 let allData = [];
 let filteredData = [];
