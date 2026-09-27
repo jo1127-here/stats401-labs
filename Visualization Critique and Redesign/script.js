@@ -479,6 +479,48 @@ function updateDashboard() {
         });
 
 
+
+
+        // ========================================================
+    // UPDATE SUMMARY CARDS
+    // ========================================================
+
+    const totalTitles = filteredData.length;
+
+    const movieCount = filteredData.filter(
+        d => d.type === "Movie"
+    ).length;
+
+    const tvShowCount = filteredData.filter(
+        d => d.type === "Show"
+    ).length;
+
+    const scores = filteredData
+        .map(d => d.imdb_score)
+        .filter(d => Number.isFinite(d) && d > 0);
+
+    const avgScore = scores.length
+        ? d3.mean(scores)
+        : null;
+
+    // These IDs should match the IDs in your HTML
+    d3.select("#total-titles")
+        .text(totalTitles.toLocaleString());
+
+    d3.select("#movie-count")
+        .text(movieCount.toLocaleString());
+
+    d3.select("#tv-count")
+        .text(tvShowCount.toLocaleString());
+
+    d3.select("#avg-score")
+        .text(
+            avgScore !== null
+                ? avgScore.toFixed(1)
+                : "—"
+        );
+
+    
     drawTimeChart(
         filteredData,
         startYear,
