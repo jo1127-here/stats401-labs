@@ -6,6 +6,8 @@ const DATA_PATH = "../data/netflix.csv";
 
 let allData = [];
 let filteredData = [];
+let selectedYear = null;
+let selectedCategory = null;
 
 
 // ============================================================
@@ -318,10 +320,11 @@ function enforceYearOrder(activeSlider) {
     if (start > end) {
 
         if (activeSlider === startSlider) {
-            endSlider.value = start;
-        }
 
-        else {
+            endSlider.value = start;
+
+        } else {
+
             startSlider.value = end;
         }
     }
@@ -334,42 +337,35 @@ function enforceYearOrder(activeSlider) {
 
 function updateYearLabels() {
 
-    if (!allData.length) return;
+    const sliders =
+        getYearSliders();
 
 
-    const startYear =
-        Math.min(
-            getStartYear(),
-            getEndYear()
-        );
-
-
-    const endYear =
-        Math.max(
-            getStartYear(),
-            getEndYear()
-        );
-
-
-    const minLabel =
-        document.querySelector(
-            "#year-min-value"
-        );
-
-
-    const maxLabel =
-        document.querySelector(
-            "#year-max-value"
-        );
-
-
-    if (minLabel) {
-        minLabel.textContent = startYear;
+    if (sliders.length < 2) {
+        return;
     }
 
 
-    if (maxLabel) {
-        maxLabel.textContent = endYear;
+    const start =
+        document.querySelector(
+            "#start-year-value"
+        );
+
+    const end =
+        document.querySelector(
+            "#end-year-value"
+        );
+
+
+    if (start) {
+        start.textContent =
+            sliders[0].value;
+    }
+
+
+    if (end) {
+        end.textContent =
+            sliders[1].value;
     }
 }
 
@@ -419,6 +415,7 @@ function resetFilters() {
     }
 
 
+    clearSelection();
     updateYearLabels();
     updateDashboard();
 }
@@ -433,6 +430,9 @@ function updateDashboard() {
     if (!allData.length) {
         return;
     }
+
+
+    clearSelection();
 
 
     const typeFilter =
@@ -525,17 +525,14 @@ function clearContainer(selector) {
     }
 
 
-    container
-        .selectAll("*")
-        .remove();
-
+    container.selectAll("*").remove();
 
     return container;
 }
 
 
 // ============================================================
-// 13. TIME SERIES
+// 13. TIME SERIES CHART
 // ============================================================
 
 function drawTimeChart(
@@ -545,10 +542,32 @@ function drawTimeChart(
 ) {
 
     const container =
-        clearContainer("#time-chart");
+        clearContainer(
+            "#time-chart"
+        );
 
 
     if (!container) {
+        return;
+    }
+
+
+    if (!data.length) {
+
+        container
+            .append("div")
+            .style(
+                "padding",
+                "40px 10px"
+            )
+            .style(
+                "color",
+                "rgba(255,255,255,0.5)"
+            )
+            .text(
+                "No data available for this selection."
+            );
+
         return;
     }
 
@@ -558,30 +577,19 @@ function drawTimeChart(
 
 
     const width =
-        node.clientWidth || 900;
+        node.clientWidth || 800;
 
 
     const height =
-        400;
+        390;
 
 
     const margin = {
-        top: 25,
-        right: 35,
-        bottom: 48,
+        top: 20,
+        right: 30,
+        bottom: 45,
         left: 55
     };
-
-
-    const svg =
-        container
-            .append("svg")
-            .attr("width", "100%")
-            .attr("height", height)
-            .attr(
-                "viewBox",
-                `0 0 ${width} ${height}`
-            );
 
 
     const innerWidth =
@@ -596,26 +604,33 @@ function drawTimeChart(
         margin.bottom;
 
 
+    const svg =
+        container
+            .append("svg")
+            .attr(
+                "width",
+                "100%"
+            )
+            .attr(
+                "height",
+                height
+            )
+            .attr(
+                "viewBox",
+                `0 0 ${width} ${height}`
+            );
+
+
     const chart =
-        svg.append("g")
+        svg
+            .append("g")
             .attr(
                 "transform",
                 `translate(${margin.left},${margin.top})`
             );
 
 
-    // --------------------------------------------------------
-    // Data aggregation
-    // --------------------------------------------------------
-
-    const years =
-        d3.range(
-            startYear,
-            endYear + 1
-        );
-
-
-    const movieCounts =
+    const movieData =
         d3.rollup(
             data.filter(
                 d => d.type === "Movie"
@@ -625,7 +640,7 @@ function drawTimeChart(
         );
 
 
-    const showCounts =
+    const showData =
         d3.rollup(
             data.filter(
                 d => d.type === "Show"
@@ -635,26 +650,57 @@ function drawTimeChart(
         );
 
 
-    const movieData =
+    const years =
+        d3.range(
+            startYear,
+            endYear + 1
+        );
+
+
+    const movieSeries =
         years.map(year => ({
             year,
             value:
-                movieCounts.get(year) || 0,
-            type: "Movie"
+                movieData.get(year) || 0
         }));
 
 
-    const showData =
+    const showSeries =
         years.map(year => ({
             year,
             value:
-                showCounts.get(year) || 0,
-            type: "TV Show"
+                showData.get(year) || 0
         }));
+
+
+    const movieDataFinal =
+        movieSeries.filter(
+            d => d.value > 0
+        );
+
+
+    const showDataFinal =
+        showSeries.filter(
+            d => d.value > 0
+        );
+
+
+    const movieDataToUse =
+        movieDataFinal.length
+            ? movieDataFinal
+            : movieSeries;
+
+
+    const showDataToUse =
+        showDataFinal.length
+            ? showDataFinal
+            : showSeries;
 
 
     const combined =
-        movieData.concat(showData);
+        movieDataToUse.concat(
+            showDataToUse
+        );
 
 
     const maxValue =
@@ -663,10 +709,6 @@ function drawTimeChart(
             d => d.value
         ) || 1;
 
-
-    // --------------------------------------------------------
-    // Scales
-    // --------------------------------------------------------
 
     const x =
         d3.scaleLinear()
@@ -693,24 +735,21 @@ function drawTimeChart(
             ]);
 
 
-    // --------------------------------------------------------
-    // Grid
-    // --------------------------------------------------------
-
     chart
         .append("g")
-        .attr("class", "grid")
+        .attr(
+            "class",
+            "grid"
+        )
         .call(
             d3.axisLeft(y)
                 .ticks(6)
-                .tickSize(-innerWidth)
+                .tickSize(
+                    -innerWidth
+                )
                 .tickFormat("")
         );
 
-
-    // --------------------------------------------------------
-    // Axes
-    // --------------------------------------------------------
 
     chart
         .append("g")
@@ -743,10 +782,6 @@ function drawTimeChart(
         );
 
 
-    // --------------------------------------------------------
-    // Line generator
-    // --------------------------------------------------------
-
     const line =
         d3.line()
             .x(d => x(d.year))
@@ -756,14 +791,12 @@ function drawTimeChart(
             );
 
 
-    // --------------------------------------------------------
-    // Movie line
-    // --------------------------------------------------------
-
     const moviePath =
         chart
             .append("path")
-            .datum(movieData)
+            .datum(
+                movieDataToUse
+            )
             .attr(
                 "class",
                 "netflix-line movie-line"
@@ -782,14 +815,12 @@ function drawTimeChart(
             );
 
 
-    // --------------------------------------------------------
-    // Show line
-    // --------------------------------------------------------
-
     const showPath =
         chart
             .append("path")
-            .datum(showData)
+            .datum(
+                showDataToUse
+            )
             .attr(
                 "class",
                 "netflix-line show-line"
@@ -808,21 +839,13 @@ function drawTimeChart(
             );
 
 
-    // --------------------------------------------------------
-    // Line animation
-    // --------------------------------------------------------
-
     animatePath(moviePath);
     animatePath(showPath);
 
 
-    // --------------------------------------------------------
-    // Points
-    // --------------------------------------------------------
-
     addTimePoints(
         chart,
-        movieData,
+        movieDataToUse,
         x,
         y,
         "#e50914"
@@ -831,16 +854,12 @@ function drawTimeChart(
 
     addTimePoints(
         chart,
-        showData,
+        showDataToUse,
         x,
         y,
         "#5bc0eb"
     );
 
-
-    // --------------------------------------------------------
-    // Legend
-    // --------------------------------------------------------
 
     const legend =
         d3.select(
@@ -934,7 +953,11 @@ function addTimePoints(
         .append("circle")
         .attr(
             "class",
-            "data-point"
+            `data-point ${
+                color === "#e50914"
+                    ? "movie-point"
+                    : "show-point"
+            }`
         )
         .attr(
             "cx",
@@ -971,7 +994,10 @@ function addTimePoints(
                 d3.select(this)
                     .transition()
                     .duration(100)
-                    .attr("r", 6);
+                    .attr(
+                        "r",
+                        6
+                    );
 
 
                 tooltip
@@ -1008,12 +1034,17 @@ function addTimePoints(
         )
         .on(
             "mouseleave",
-            function() {
+            function(event, d) {
 
                 d3.select(this)
                     .transition()
                     .duration(100)
-                    .attr("r", 4);
+                    .attr(
+                        "r",
+                        selectedYear === d.year
+                            ? 7
+                            : 4
+                    );
 
 
                 tooltip
@@ -1022,12 +1053,188 @@ function addTimePoints(
                         0
                     );
             }
+        )
+        .on(
+            "click",
+            function(event, d) {
+
+                event.stopPropagation();
+
+                setSelectedYear(
+                    d.year
+                );
+            }
         );
 }
 
 
 // ============================================================
-// 16. GENRE CHART
+// 16. SELECTION / LINKED INTERACTION
+// ============================================================
+
+function setSelectedYear(year) {
+
+    selectedYear =
+        selectedYear === year
+            ? null
+            : year;
+
+
+    d3.selectAll(
+        ".data-point"
+    )
+        .classed(
+            "selected-point",
+            d =>
+                selectedYear !== null &&
+                d.year === selectedYear
+        )
+        .classed(
+            "dimmed-point",
+            d =>
+                selectedYear !== null &&
+                d.year !== selectedYear
+        );
+
+
+    d3.selectAll(
+        ".year-marker"
+    ).remove();
+
+
+    if (selectedYear === null) {
+        return;
+    }
+
+
+    const chart =
+        d3.select(
+            "#time-chart svg g"
+        );
+
+
+    if (chart.empty()) {
+        return;
+    }
+
+
+    const selected =
+        chart
+            .selectAll(
+                ".data-point"
+            )
+            .filter(
+                d =>
+                    d.year === selectedYear
+            );
+
+
+    if (!selected.empty()) {
+
+        const x =
+            +selected.attr("cx");
+
+
+        const svgHeight =
+            +d3
+                .select(
+                    "#time-chart svg"
+                )
+                .attr("height") || 400;
+
+
+        chart
+            .append("line")
+            .attr(
+                "class",
+                "year-marker"
+            )
+            .attr(
+                "x1",
+                x
+            )
+            .attr(
+                "x2",
+                x
+            )
+            .attr(
+                "y1",
+                0
+            )
+            .attr(
+                "y2",
+                Math.max(
+                    0,
+                    svgHeight - 55
+                )
+            )
+            .attr(
+                "stroke",
+                "rgba(255,255,255,0.28)"
+            )
+            .attr(
+                "stroke-width",
+                1
+            )
+            .attr(
+                "stroke-dasharray",
+                "4 4"
+            )
+            .lower();
+    }
+}
+
+
+function clearSelection() {
+
+    selectedYear = null;
+    selectedCategory = null;
+
+
+    d3.selectAll(
+        ".data-point"
+    )
+        .classed(
+            "selected-point",
+            false
+        )
+        .classed(
+            "dimmed-point",
+            false
+        );
+
+
+    d3.selectAll(
+        ".bar"
+    )
+        .classed(
+            "selected-bar",
+            false
+        )
+        .classed(
+            "dimmed-bar",
+            false
+        );
+
+
+    d3.selectAll(
+        ".year-marker"
+    ).remove();
+}
+
+
+// Clicking empty chart space clears the current selection.
+d3.select("body")
+    .on(
+        "click.chartSelection",
+        function() {
+            clearSelection();
+        }
+    );
+
+
+// ============================================================
+// 17. GENRE CHART
 // ============================================================
 
 function drawGenreChart(data) {
@@ -1072,6 +1279,7 @@ function drawGenreChart(data) {
                     counts.get(genre) || 0
                 ) + 1
             );
+
         });
 
     });
@@ -1089,7 +1297,10 @@ function drawGenreChart(data) {
             (a, b) =>
                 b.count - a.count
         )
-        .slice(0, 10);
+        .slice(
+            0,
+            10
+        );
 
 
     drawHorizontalBars(
@@ -1103,7 +1314,7 @@ function drawGenreChart(data) {
 
 
 // ============================================================
-// 17. CERTIFICATION CHART
+// 18. CERTIFICATION CHART
 // ============================================================
 
 function drawRatingChart(data) {
@@ -1154,7 +1365,7 @@ function drawRatingChart(data) {
 
 
 // ============================================================
-// 18. COUNTRY CHART
+// 19. COUNTRY CHART
 // ============================================================
 
 function drawCountryChart(data) {
@@ -1217,7 +1428,10 @@ function drawCountryChart(data) {
             (a, b) =>
                 b.count - a.count
         )
-        .slice(0, 10);
+        .slice(
+            0,
+            10
+        );
 
 
     drawHorizontalBars(
@@ -1231,7 +1445,7 @@ function drawCountryChart(data) {
 
 
 // ============================================================
-// 19. GENERIC HORIZONTAL BAR CHART
+// 20. GENERIC HORIZONTAL BAR CHART
 // ============================================================
 
 function drawHorizontalBars(
@@ -1308,22 +1522,20 @@ function drawHorizontalBars(
 
 
     const chart =
-        svg.append("g")
+        svg
+            .append("g")
             .attr(
                 "transform",
                 `translate(${margin.left},${margin.top})`
             );
 
 
-    // --------------------------------------------------------
-    // Scales
-    // --------------------------------------------------------
-
     const y =
         d3.scaleBand()
             .domain(
                 data.map(
-                    d => d[categoryKey]
+                    d =>
+                        d[categoryKey]
                 )
             )
             .range([
@@ -1353,10 +1565,6 @@ function drawHorizontalBars(
             ]);
 
 
-    // --------------------------------------------------------
-    // Grid
-    // --------------------------------------------------------
-
     chart
         .append("g")
         .attr(
@@ -1373,20 +1581,12 @@ function drawHorizontalBars(
         );
 
 
-    // --------------------------------------------------------
-    // Y axis
-    // --------------------------------------------------------
-
     chart
         .append("g")
         .call(
             d3.axisLeft(y)
         );
 
-
-    // --------------------------------------------------------
-    // Bars
-    // --------------------------------------------------------
 
     const tooltip =
         getTooltip();
@@ -1475,7 +1675,7 @@ function drawHorizontalBars(
         )
         .on(
             "mouseleave",
-            function() {
+            function(event, d) {
 
                 d3.select(this)
                     .attr(
@@ -1484,7 +1684,9 @@ function drawHorizontalBars(
                     )
                     .attr(
                         "opacity",
-                        0.82
+                        selectedCategory === d[categoryKey]
+                            ? 1
+                            : 0.82
                     );
 
 
@@ -1492,6 +1694,38 @@ function drawHorizontalBars(
                     .style(
                         "opacity",
                         0
+                    );
+            }
+        )
+        .on(
+            "click",
+            function(event, d) {
+
+                event.stopPropagation();
+
+
+                selectedCategory =
+                    selectedCategory ===
+                    d[categoryKey]
+                        ? null
+                        : d[categoryKey];
+
+
+                d3.select(this.parentNode)
+                    .selectAll(".bar")
+                    .classed(
+                        "selected-bar",
+                        b =>
+                            selectedCategory !== null &&
+                            b[categoryKey] ===
+                                selectedCategory
+                    )
+                    .classed(
+                        "dimmed-bar",
+                        b =>
+                            selectedCategory !== null &&
+                            b[categoryKey] !==
+                                selectedCategory
                     );
             }
         )
@@ -1511,13 +1745,15 @@ function drawHorizontalBars(
 
 
 // ============================================================
-// 20. TOOLTIP
+// 21. TOOLTIP
 // ============================================================
 
 function getTooltip() {
 
     let tooltip =
-        d3.select("#tooltip");
+        d3.select(
+            "#tooltip"
+        );
 
 
     if (tooltip.empty()) {
@@ -1537,7 +1773,7 @@ function getTooltip() {
 
 
 // ============================================================
-// 21. RESPONSIVE REDRAW
+// 22. RESPONSIVE REDRAW
 // ============================================================
 
 let resizeTimer = null;
