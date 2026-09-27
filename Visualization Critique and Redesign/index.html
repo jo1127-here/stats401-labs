@@ -80,7 +80,7 @@
                 <figure class="original-figure">
 
                     <img
-                        src="images/original_dashboard.png"
+                        src="images/dashboard.jpg"
                         alt="Original Netflix Tableau dashboard"
                     >
 
@@ -111,6 +111,17 @@
                         individual titles and broader catalog-level patterns.
                     </p>
 
+                    <p>
+                     The underlying dataset contains Netflix titles together with
+                        attributes such as title, content type, release year, age
+                        certification, runtime, seasons, country, genre, IMDb score, and
+                        IMDb vote count. The original dashboard is designed for a broad
+                        audience interested in understanding the composition and evolution
+                        of Netflix's catalog. Typical tasks include identifying trends in
+                        content production, comparing Movies and TV Shows, examining
+                        popular genres and certifications, and exploring geographic
+                        differences.
+    
 
                     <div class="source-block">
 
@@ -161,14 +172,17 @@
                 <h3>Original Visualization and Context</h3>
 
                 <p>
-                    The original dashboard brings together several
-                    complementary views of Netflix content. The user can
-                    inspect title-level information while also seeing
-                    distributions by genre, age certification, content
-                    type, geography, and year. This makes the dashboard
-                    useful as a general exploratory overview rather than
-                    as a visualization focused on a single analytical
-                    question.
+                    The original visualization is a multi-view dashboard based on a
+                    Netflix content dataset. It presents information about titles,
+                    release years, content types, genres, ratings, countries, and
+                    IMDb-related metadata. Its intended audience is a general audience
+                    interested in exploring Netflix's catalog rather than a specialized
+                    analytical audience. The dashboard supports several exploratory
+                    tasks, including comparing Movies and TV Shows, identifying
+                    temporal trends, examining genre distributions, and exploring the
+                    geographic composition of the catalog. Its broad coverage makes it
+                    useful as an exploratory overview, but it also creates challenges
+                    for users who want to answer one specific question efficiently.
                 </p>
 
 
@@ -303,6 +317,21 @@
                                 therefore emphasizes line and bar charts
                                 for quantitative comparisons.
                             </p>
+
+
+                            </p>
+                                The redesign makes three major changes. First, it establishes
+                                catalog evolution over time as the primary analytical task and
+                                places a two-line time series at the center of the visualization.
+                                This gives users a shared baseline and makes differences between
+                                Movies and TV Shows easier to compare. Second, the genre field is
+                                parsed into individual genre labels before aggregation. A title
+                                containing multiple genres therefore contributes to each relevant
+                                genre, producing a more interpretable ranking. Third, the
+                                supporting views use horizontal bars for certifications and
+                                production countries. Position along a common scale allows users
+                                to compare categories more directly than area-based encodings.
+                            <p>
                         </div>
 
                     </div>
@@ -906,6 +935,20 @@
 
                 </div>
 
+
+                <p>
+                        Compared with the original dashboard, the redesign prioritizes
+                    analytical clarity over the number of views shown simultaneously.
+                    The original is stronger as a broad exploratory dashboard because
+                    it exposes many dimensions at once. The redesign instead provides
+                    a clearer visual hierarchy and makes temporal comparison the main
+                    task. The line chart improves comparison of content types, while
+                    the normalized genre and country aggregations reduce ambiguity in
+                    categorical comparisons. Interactive filtering also allows users
+                    to focus on smaller subsets of the catalog without introducing
+                    additional charts.
+                <p>
+
             </div>
 
 
@@ -914,16 +957,16 @@
                 <h3>Improvements and Trade-offs</h3>
 
                 <p>
-                    The redesign makes quantitative comparisons easier by
-                    using common baselines and aligned positions. It also
-                    gives the dashboard a clearer visual hierarchy and
-                    provides coordinated interaction across views.
-                    However, the redesign sacrifices some of the breadth of
-                    the original dashboard. The geographic map, title-level
-                    metadata, and some of the original exploratory details
-                    are not retained as primary views. The result is
-                    therefore more focused, but less comprehensive as a
-                    general-purpose catalog browser.
+                     The redesigned
+                        visualization intentionally removes some of the title-level detail
+                        and geographic emphasis present in the original. It also remains
+                        dependent on the structure and completeness of the underlying
+                        dataset. In particular, country and genre fields may contain
+                        multiple labels per title, so their counts represent category
+                        occurrences rather than mutually exclusive titles. The redesign
+                        therefore improves the clarity of the selected analytical tasks,
+                        but it is not intended to replace every exploratory function of
+                        the original dashboard.
                 </p>
 
             </div>
