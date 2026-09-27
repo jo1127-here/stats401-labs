@@ -486,16 +486,34 @@ input[type="range"]::-moz-range-thumb {
    ============================================================ */
 
 .data-point {
-    stroke: #111111 !important;
+    stroke: rgba(255, 255, 255, 0.9) !important;
     stroke-width: 1.5px !important;
+    opacity: 0.92;
+    cursor: pointer;
+    transition:
+        opacity 0.15s ease,
+        filter 0.15s ease;
 }
 
-.movie-point {
+.data-point.movie-point {
     fill: #e50914 !important;
 }
 
-.show-point {
+.data-point.show-point {
     fill: #5bc0eb !important;
+}
+
+.data-point.selected-point {
+    opacity: 1 !important;
+    stroke: #ffffff !important;
+    stroke-width: 3px !important;
+    filter: drop-shadow(
+        0 0 5px rgba(255, 255, 255, 0.55)
+    );
+}
+
+.data-point.dimmed-point {
+    opacity: 0.18 !important;
 }
 
 
@@ -513,7 +531,8 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .bar:hover,
-.bar-hover {
+.bar-hover,
+.bar.selected-bar {
     fill: #ff5360 !important;
     opacity: 1;
     filter: brightness(1.15);
@@ -534,7 +553,8 @@ input[type="range"]::-moz-range-thumb {
     border-radius: 8px;
     background: rgba(20, 20, 20, 0.96);
     color: #ffffff;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    box-shadow:
+        0 8px 25px rgba(0, 0, 0, 0.3);
     font-size: 0.78rem;
     line-height: 1.5;
     opacity: 0;
@@ -607,41 +627,37 @@ input[type="range"]::-moz-range-thumb {
 
     .year-control {
         width: 100%;
+        min-width: 0;
     }
 
     #type-filter {
         width: 100%;
     }
 
-    #reset-button {
-        width: 100%;
-    }
-
-    #time-legend {
-        justify-content: flex-start;
-    }
-}
-
-
-@media (max-width: 520px) {
-
-    .page {
-        width: calc(100% - 22px);
-    }
-
-    .report-header h1 {
-        font-size: 2rem;
-    }
-
-    .visualization-shell {
-        padding: 15px;
-    }
-
     .viz-panel {
-        padding: 14px;
+        padding: 16px;
     }
 
     #time-chart {
         min-height: 320px;
     }
+}
+
+
+/* ============================================================
+   SELECTION STATES
+   ============================================================ */
+
+.bar.dimmed-bar {
+    opacity: 0.2 !important;
+}
+
+.bar.selected-bar {
+    opacity: 1 !important;
+    stroke: #ffffff;
+    stroke-width: 1.5px;
+}
+
+.year-marker {
+    pointer-events: none;
 }
