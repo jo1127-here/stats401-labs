@@ -176,11 +176,10 @@ function initializeControls() {
 
 function getYearSliders() {
 
-    return Array.from(
-        document.querySelectorAll(
-            'input[type="range"]'
-        )
-    );
+    return [
+        document.querySelector("#year-start"),
+        document.querySelector("#year-end")
+    ].filter(Boolean);
 }
 
 
@@ -817,19 +816,19 @@ function drawTimeChart(
         );
 
 
-    const movieSeries =
+   const movieSeries =
         years.map(year => ({
             year,
-            value:
-                movieData.get(year) || 0
+            value: movieData.get(year) || 0,
+            type: "Movie"
         }));
-
-
+    
+    
     const showSeries =
         years.map(year => ({
             year,
-            value:
-                showData.get(year) || 0
+            value: showData.get(year) || 0,
+            type: "TV Show"
         }));
 
 
@@ -1612,9 +1611,9 @@ function drawCountryChart(data) {
 
     const height = 390;
 
-    // -----------------------------------------
-    // Count countries from filtered data
-    // -----------------------------------------
+    // ========================================================
+    // COUNT COUNTRIES
+    // ========================================================
 
     const counts = new Map();
 
@@ -1634,13 +1633,12 @@ function drawCountryChart(data) {
                 );
 
             });
-
     });
 
 
-    // -----------------------------------------
-    // Create SVG
-    // -----------------------------------------
+    // ========================================================
+    // SVG
+    // ========================================================
 
     const svg =
         container
@@ -1653,27 +1651,9 @@ function drawCountryChart(data) {
             );
 
 
-    // -----------------------------------------
-    // Projection
-    // -----------------------------------------
-
-    const projection =
-        d3.geoNaturalEarth1()
-            .fitSize(
-                [width, height],
-                {
-                    type: "Sphere"
-                }
-            );
-
-    const path =
-        d3.geoPath()
-            .projection(projection);
-
-
-    // -----------------------------------------
-    // Load world map
-    // -----------------------------------------
+    // ========================================================
+    // LOAD WORLD MAP
+    // ========================================================
 
     d3.json(
         "https://unpkg.com/world-atlas@2/countries-110m.json"
@@ -1687,9 +1667,22 @@ function drawCountryChart(data) {
             );
 
 
-        // -------------------------------------
-        // Color scale
-        // -------------------------------------
+        // Fit map to actual countries
+        const projection =
+            d3.geoNaturalEarth1()
+                .fitSize(
+                    [width, height],
+                    countries
+                );
+
+        const path =
+            d3.geoPath()
+                .projection(projection);
+
+
+        // ====================================================
+        // COLOR
+        // ====================================================
 
         const maxCount =
             d3.max(
@@ -1704,9 +1697,42 @@ function drawCountryChart(data) {
                 );
 
 
-        // -------------------------------------
-        // Draw countries
-        // -------------------------------------
+        // ====================================================
+        // COUNTRY NAME MATCHING
+        // ====================================================
+
+        const countryNameMap = {
+
+            "United States of America":
+                "United States",
+
+            "South Korea":
+                "South Korea",
+
+            "Republic of Korea":
+                "South Korea",
+
+            "Czechia":
+                "Czech Republic",
+
+            "Russian Federation":
+                "Russia",
+
+            "Türkiye":
+                "Turkey",
+
+            "United Kingdom":
+                "United Kingdom",
+
+            "Viet Nam":
+                "Vietnam"
+
+        };
+
+
+        // ====================================================
+        // DRAW MAP
+        // ====================================================
 
         svg
             .append("g")
@@ -1714,17 +1740,27 @@ function drawCountryChart(data) {
             .data(countries.features)
             .enter()
             .append("path")
-            .attr("class", "country-map")
-            .attr("d", path)
+            .attr(
+                "class",
+                "country-map"
+            )
+            .attr(
+                "d",
+                path
+            )
             .attr(
                 "fill",
                 d => {
 
-                    const name =
+                    const mapName =
                         d.properties.name;
 
+                    const dataName =
+                        countryNameMap[mapName] ||
+                        mapName;
+
                     const value =
-                        counts.get(name) || 0;
+                        counts.get(dataName) || 0;
 
                     return value > 0
                         ? colorScale(value)
@@ -1739,71 +1775,223 @@ function drawCountryChart(data) {
                 "stroke-width",
                 0.5
             )
-            .on("mouseenter", function(event, d) {
+            .style(
+                "cursor",
+                "pointer"
+            )
 
-                const name =
-                    d.properties.name;
+            // =================================================
+            // HOVER
+            // =================================================
 
-                const value =
-                    counts.get(name) || 0;
+            .on(
+                "mouseenter",
+                function(event, d) {
 
-                d3.select(this)
-                    .attr(
-                        "stroke",
-                        "#ffffff"
+                    const mapName =
+                        d.properties.name;
+
+                    const dataName =
+                        countryNameMap[mapName] ||
+                        mapName;
+
+                    const value =
+                        counts.get(dataName) || 0;
+
+                    d3.select(this)
+                        .attr(
+                            "stroke",
+                            "#ffffff"
+                        )
+                        .attr(
+                            "stroke-width",
+                            1.5
+                        )
+                        .attr(
+                            "filter",
+                            "url(#time-glow)"
+                        );
+
+                    getTooltip()
+                        .style(
+                            "opacity",
+                            1
+                        )
+                        .html(`
+                            <strong>
+                                ${mapName}
+                            </strong>
+                            <br>
+                            Titles:
+                            ${value.toLocaleString()}
+                        `);
+                }
+            )
+
+            .on(
+                "mousemove",
+                function(event) {
+
+                    getTooltip()
+                        .style(
+                            "left",
+                            `${event.pageX + 14}px`
+                        )
+                        .style(
+                            "top",
+                            `${event.pageY - 35}px`
+                        );
+                }
+            )
+
+            // =================================================
+            // MOUSE LEAVE
+            // =================================================
+
+            .on(
+                "mouseleave",
+                function(event, d) {
+
+                    const mapName =
+                        d.properties.name;
+
+                    const dataName =
+                        countryNameMap[mapName] ||
+                        mapName;
+
+                    const isSelected =
+                        selectedCategory === dataName;
+
+                    d3.select(this)
+                        .attr(
+                            "stroke",
+                            isSelected
+                                ? "#ffffff"
+                                : "rgba(255,255,255,0.18)"
+                        )
+                        .attr(
+                            "stroke-width",
+                            isSelected
+                                ? 1.8
+                                : 0.5
+                        )
+                        .attr(
+                            "filter",
+                            isSelected
+                                ? "url(#time-glow)"
+                                : null
+                        );
+
+                    getTooltip()
+                        .style(
+                            "opacity",
+                            0
+                        );
+                }
+            )
+
+            // =================================================
+            // CLICK SELECTION
+            // =================================================
+
+            .on(
+                "click",
+                function(event, d) {
+
+                    event.stopPropagation();
+
+                    const mapName =
+                        d.properties.name;
+
+                    const dataName =
+                        countryNameMap[mapName] ||
+                        mapName;
+
+                    selectedCategory =
+                        selectedCategory === dataName
+                            ? null
+                            : dataName;
+
+
+                    // Reset all countries
+                    d3.selectAll(
+                        ".country-map"
                     )
-                    .attr(
-                        "stroke-width",
-                        1.5
-                    );
+                        .attr(
+                            "stroke",
+                            "rgba(255,255,255,0.18)"
+                        )
+                        .attr(
+                            "stroke-width",
+                            0.5
+                        )
+                        .attr(
+                            "filter",
+                            null
+                        )
+                        .attr(
+                            "opacity",
+                            1
+                        );
 
 
-                const tooltip =
-                    getTooltip();
+                    // Highlight selected country
+                    if (selectedCategory !== null) {
 
-                tooltip
-                    .style("opacity", 1)
-                    .html(`
-                        <strong>${name}</strong>
-                        <br>
-                        Titles:
-                        ${value.toLocaleString()}
-                    `);
+                        d3.selectAll(
+                            ".country-map"
+                        )
+                        .filter(function(country) {
 
-            })
-            .on("mousemove", function(event) {
+                            const countryName =
+                                countryNameMap[
+                                    country.properties.name
+                                ] ||
+                                country.properties.name;
 
-                getTooltip()
-                    .style(
-                        "left",
-                        `${event.pageX + 14}px`
-                    )
-                    .style(
-                        "top",
-                        `${event.pageY - 35}px`
-                    );
+                            return (
+                                countryName ===
+                                selectedCategory
+                            );
+                        })
+                        .attr(
+                            "stroke",
+                            "#ffffff"
+                        )
+                        .attr(
+                            "stroke-width",
+                            2
+                        )
+                        .attr(
+                            "filter",
+                            "url(#time-glow)"
+                        );
 
-            })
-            .on("mouseleave", function() {
 
-                d3.select(this)
-                    .attr(
-                        "stroke",
-                        "rgba(255,255,255,0.18)"
-                    )
-                    .attr(
-                        "stroke-width",
-                        0.5
-                    );
+                        // Dim other countries
+                        d3.selectAll(
+                            ".country-map"
+                        )
+                        .filter(function(country) {
 
-                getTooltip()
-                    .style(
-                        "opacity",
-                        0
-                    );
+                            const countryName =
+                                countryNameMap[
+                                    country.properties.name
+                                ] ||
+                                country.properties.name;
 
-            });
-
+                            return (
+                                countryName !==
+                                selectedCategory
+                            );
+                        })
+                        .attr(
+                            "opacity",
+                            0.35
+                        );
+                    }
+                }
+            );
     })
     .catch(error => {
 
@@ -1812,9 +2000,21 @@ function drawCountryChart(data) {
             error
         );
 
+        container
+            .append("div")
+            .style(
+                "padding",
+                "30px"
+            )
+            .style(
+                "color",
+                "#e50914"
+            )
+            .text(
+                "Could not load world map."
+            );
     });
 }
-
 // ============================================================
 // 20. GENERIC HORIZONTAL BAR CHART
 // ============================================================
