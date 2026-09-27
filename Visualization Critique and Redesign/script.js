@@ -532,6 +532,133 @@ function clearContainer(selector) {
 
 
 // ============================================================
+// 12b. FANCY SVG DEFS (gradients / glow filters)
+//      — purely visual, added once per chart
+// ============================================================
+
+function addFancyDefs(svg, prefix) {
+
+    const defs =
+        svg.append("defs");
+
+
+    // Soft glow used on hover for points and bars
+    const glow =
+        defs.append("filter")
+            .attr("id", `${prefix}-glow`)
+            .attr("x", "-75%")
+            .attr("y", "-75%")
+            .attr("width", "250%")
+            .attr("height", "250%");
+
+    glow.append("feGaussianBlur")
+        .attr("stdDeviation", 4)
+        .attr("result", "blur");
+
+    const glowMerge =
+        glow.append("feMerge");
+
+    glowMerge.append("feMergeNode")
+        .attr("in", "blur");
+
+    glowMerge.append("feMergeNode")
+        .attr("in", "SourceGraphic");
+
+
+    // Drop-shadow used under the lines so they lift off the panel
+    const shadow =
+        defs.append("filter")
+            .attr("id", `${prefix}-line-shadow`)
+            .attr("x", "-20%")
+            .attr("y", "-20%")
+            .attr("width", "140%")
+            .attr("height", "140%");
+
+    shadow.append("feDropShadow")
+        .attr("dx", 0)
+        .attr("dy", 2)
+        .attr("stdDeviation", 3)
+        .attr("flood-color", "#000000")
+        .attr("flood-opacity", 0.35);
+
+
+    // Area fill under the "Movie" line
+    const movieArea =
+        defs.append("linearGradient")
+            .attr("id", `${prefix}-movie-area`)
+            .attr("x1", "0")
+            .attr("x2", "0")
+            .attr("y1", "0")
+            .attr("y2", "1");
+
+    movieArea.append("stop")
+        .attr("offset", "0%")
+        .attr("stop-color", "#e50914")
+        .attr("stop-opacity", 0.35);
+
+    movieArea.append("stop")
+        .attr("offset", "100%")
+        .attr("stop-color", "#e50914")
+        .attr("stop-opacity", 0);
+
+
+    // Area fill under the "Show" line
+    const showArea =
+        defs.append("linearGradient")
+            .attr("id", `${prefix}-show-area`)
+            .attr("x1", "0")
+            .attr("x2", "0")
+            .attr("y1", "0")
+            .attr("y2", "1");
+
+    showArea.append("stop")
+        .attr("offset", "0%")
+        .attr("stop-color", "#5bc0eb")
+        .attr("stop-opacity", 0.32);
+
+    showArea.append("stop")
+        .attr("offset", "100%")
+        .attr("stop-color", "#5bc0eb")
+        .attr("stop-opacity", 0);
+
+
+    // Bar fill gradient (left → right)
+    const barGradient =
+        defs.append("linearGradient")
+            .attr("id", `${prefix}-bar-gradient`)
+            .attr("x1", "0")
+            .attr("x2", "1")
+            .attr("y1", "0")
+            .attr("y2", "0");
+
+    barGradient.append("stop")
+        .attr("offset", "0%")
+        .attr("stop-color", "#ff5360");
+
+    barGradient.append("stop")
+        .attr("offset", "100%")
+        .attr("stop-color", "#b20710");
+
+
+    const barGradientHover =
+        defs.append("linearGradient")
+            .attr("id", `${prefix}-bar-gradient-hover`)
+            .attr("x1", "0")
+            .attr("x2", "1")
+            .attr("y1", "0")
+            .attr("y2", "0");
+
+    barGradientHover.append("stop")
+        .attr("offset", "0%")
+        .attr("stop-color", "#ff7a82");
+
+    barGradientHover.append("stop")
+        .attr("offset", "100%")
+        .attr("stop-color", "#e50914");
+}
+
+
+// ============================================================
 // 13. TIME SERIES CHART
 // ============================================================
 
@@ -619,6 +746,9 @@ function drawTimeChart(
                 "viewBox",
                 `0 0 ${width} ${height}`
             );
+
+
+    addFancyDefs(svg, "time");
 
 
     const chart =
@@ -791,6 +921,44 @@ function drawTimeChart(
             );
 
 
+    const area =
+        d3.area()
+            .x(d => x(d.year))
+            .y0(innerHeight)
+            .y1(d => y(d.value))
+            .curve(
+                d3.curveMonotoneX
+            );
+
+
+    // Soft gradient fill under each line — adds depth without
+    // touching layout, controls, or anything outside the chart.
+    chart
+        .append("path")
+        .datum(movieDataToUse)
+        .attr("class", "netflix-area movie-area")
+        .attr("d", area)
+        .attr("fill", "url(#time-movie-area)")
+        .attr("stroke", "none")
+        .style("opacity", 0)
+        .transition()
+        .duration(700)
+        .style("opacity", 1);
+
+
+    chart
+        .append("path")
+        .datum(showDataToUse)
+        .attr("class", "netflix-area show-area")
+        .attr("d", area)
+        .attr("fill", "url(#time-show-area)")
+        .attr("stroke", "none")
+        .style("opacity", 0)
+        .transition()
+        .duration(700)
+        .style("opacity", 1);
+
+
     const moviePath =
         chart
             .append("path")
@@ -812,6 +980,10 @@ function drawTimeChart(
             .attr(
                 "stroke",
                 "#e50914"
+            )
+            .attr(
+                "filter",
+                "url(#time-line-shadow)"
             );
 
 
@@ -836,6 +1008,10 @@ function drawTimeChart(
             .attr(
                 "stroke",
                 "#5bc0eb"
+            )
+            .attr(
+                "filter",
+                "url(#time-line-shadow)"
             );
 
 
@@ -917,7 +1093,7 @@ function animatePath(path) {
             length
         )
         .transition()
-        .duration(900)
+        .duration(1100)
         .ease(
             d3.easeCubicOut
         )
@@ -993,10 +1169,14 @@ function addTimePoints(
 
                 d3.select(this)
                     .transition()
-                    .duration(100)
+                    .duration(120)
                     .attr(
                         "r",
-                        6
+                        7
+                    )
+                    .attr(
+                        "filter",
+                        "url(#time-glow)"
                     );
 
 
@@ -1038,12 +1218,18 @@ function addTimePoints(
 
                 d3.select(this)
                     .transition()
-                    .duration(100)
+                    .duration(120)
                     .attr(
                         "r",
                         selectedYear === d.year
                             ? 7
                             : 4
+                    )
+                    .attr(
+                        "filter",
+                        selectedYear === d.year
+                            ? "url(#time-glow)"
+                            : null
                     );
 
 
@@ -1094,6 +1280,14 @@ function setSelectedYear(year) {
             d =>
                 selectedYear !== null &&
                 d.year !== selectedYear
+        )
+        .attr(
+            "filter",
+            d =>
+                selectedYear !== null &&
+                d.year === selectedYear
+                    ? "url(#time-glow)"
+                    : null
         );
 
 
@@ -1201,6 +1395,10 @@ function clearSelection() {
         .classed(
             "dimmed-point",
             false
+        )
+        .attr(
+            "filter",
+            null
         );
 
 
@@ -1308,7 +1506,8 @@ function drawGenreChart(data) {
         genreData,
         "genre",
         "count",
-        390
+        390,
+        "genre"
     );
 }
 
@@ -1359,7 +1558,8 @@ function drawRatingChart(data) {
         ratingData,
         "rating",
         "count",
-        350
+        350,
+        "rating"
     );
 }
 
@@ -1439,7 +1639,8 @@ function drawCountryChart(data) {
         countryData,
         "country",
         "count",
-        390
+        390,
+        "country"
     );
 }
 
@@ -1453,7 +1654,8 @@ function drawHorizontalBars(
     data,
     categoryKey,
     valueKey,
-    height
+    height,
+    prefix
 ) {
 
     if (!data.length) {
@@ -1507,6 +1709,13 @@ function drawHorizontalBars(
                 "viewBox",
                 `0 0 ${width} ${height}`
             );
+
+
+    const gradientPrefix =
+        prefix || "bars";
+
+
+    addFancyDefs(svg, gradientPrefix);
 
 
     const innerWidth =
@@ -1622,11 +1831,11 @@ function drawHorizontalBars(
         )
         .attr(
             "fill",
-            "#e50914"
+            `url(#${gradientPrefix}-bar-gradient)`
         )
         .attr(
             "rx",
-            3
+            5
         )
         .on(
             "mouseenter",
@@ -1635,7 +1844,11 @@ function drawHorizontalBars(
                 d3.select(this)
                     .attr(
                         "fill",
-                        "#ff5360"
+                        `url(#${gradientPrefix}-bar-gradient-hover)`
+                    )
+                    .attr(
+                        "filter",
+                        `url(#${gradientPrefix}-glow)`
                     )
                     .attr(
                         "opacity",
@@ -1677,16 +1890,25 @@ function drawHorizontalBars(
             "mouseleave",
             function(event, d) {
 
+                const isSelected =
+                    selectedCategory === d[categoryKey];
+
                 d3.select(this)
                     .attr(
                         "fill",
-                        "#e50914"
+                        `url(#${gradientPrefix}-bar-gradient)`
+                    )
+                    .attr(
+                        "filter",
+                        isSelected
+                            ? `url(#${gradientPrefix}-glow)`
+                            : null
                     )
                     .attr(
                         "opacity",
-                        selectedCategory === d[categoryKey]
+                        isSelected
                             ? 1
-                            : 0.82
+                            : 0.9
                     );
 
 
@@ -1726,11 +1948,19 @@ function drawHorizontalBars(
                             selectedCategory !== null &&
                             b[categoryKey] !==
                                 selectedCategory
+                    )
+                    .attr(
+                        "filter",
+                        b =>
+                            selectedCategory !== null &&
+                            b[categoryKey] === selectedCategory
+                                ? `url(#${gradientPrefix}-glow)`
+                                : null
                     );
             }
         )
         .transition()
-        .duration(650)
+        .duration(750)
         .ease(
             d3.easeCubicOut
         )
