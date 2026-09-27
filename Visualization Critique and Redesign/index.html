@@ -56,10 +56,10 @@
                 <h3>Original Visualization</h3>
 
                 <p>
-                    The original visualization is a Tableau dashboard
-                    that explores Netflix movies and TV shows across
-                    genre, age certification, content type, geography,
-                    and release year.
+                    The original visualization is a Netflix content dashboard created in Tableau.
+                    It provides an overview of Netflix movies and TV shows through multiple views,
+                    including genre, age certification, geographic distribution, and content trends
+                    over time.
                 </p>
 
 
@@ -68,8 +68,9 @@
                 <figure>
 
                     <img
-                        src="images/original_dashboard.png"
-                        alt="Original Netflix Tableau dashboard"
+                        src="images/dashboard.jpg"
+                        alt="Original Netflix Tableau Dashboard"
+                        class="original-dashboard"
                     >
 
                     <figcaption>
@@ -170,57 +171,156 @@
             <!-- =================================================
                  REDESIGNED VISUALIZATION
             ================================================== -->
-
             <section id="redesign">
-
-                <h3>Redesigned Visualization</h3>
-
+            
+                <h2>Redesigned Visualization</h2>
+            
                 <p>
-                    The redesign focuses on a central question:
-                    <strong>
-                        How has the Netflix content catalog changed over time?
-                    </strong>
+                    The redesign focuses on a central analytical question:
+                    <strong>How has Netflix's content catalog changed over time?</strong>
                 </p>
-
+            
                 <p>
-                    The redesign uses D3.js and reorganizes the original
-                    dashboard around temporal comparison, genre
-                    distribution, ratings, and production countries.
+                    Instead of presenting several independent views with equal visual
+                    prominence, the redesign uses a time-series chart as the primary view
+                    and supporting charts for genre, age certification, and production country.
                 </p>
-
-
-                <!-- -----------------------------------------
-                     Controls
-                ------------------------------------------ -->
-
-                <div id="controls">
-
+            
+                <!-- Controls -->
+                <div class="controls">
+            
                     <label for="type-filter">
-                        Content Type:
+                        Content Type
                     </label>
-
+            
                     <select id="type-filter">
                         <option value="All">All</option>
                         <option value="Movie">Movie</option>
-                        <option value="TV Show">TV Show</option>
+                        <option value="Show">TV Show</option>
                     </select>
-
-
-                    <label for="year-filter">
-                        Year:
+            
+                    <label for="year-start">
+                        From
                     </label>
-
-                    <select id="year-filter">
-                        <option value="All">All Years</option>
-                    </select>
-
-
+            
+                    <input
+                        type="number"
+                        id="year-start"
+                        value="2000"
+                        min="1950"
+                        max="2021"
+                    >
+            
+                    <label for="year-end">
+                        To
+                    </label>
+            
+                    <input
+                        type="number"
+                        id="year-end"
+                        value="2021"
+                        min="1950"
+                        max="2021"
+                    >
+            
                     <button id="reset-button">
                         Reset
                     </button>
-
+            
                 </div>
-
+            
+            
+                <!-- KPI cards -->
+            
+                <div class="kpi-container">
+            
+                    <div class="kpi-card">
+                        <h3>Total Titles</h3>
+                        <p id="total-titles">-</p>
+                    </div>
+            
+                    <div class="kpi-card">
+                        <h3>Movies</h3>
+                        <p id="total-movies">-</p>
+                    </div>
+            
+                    <div class="kpi-card">
+                        <h3>TV Shows</h3>
+                        <p id="total-shows">-</p>
+                    </div>
+            
+                    <div class="kpi-card">
+                        <h3>Average IMDb Score</h3>
+                        <p id="avg-score">-</p>
+                    </div>
+            
+                </div>
+            
+            
+                <!-- Main visualization -->
+            
+                <div class="chart-card">
+            
+                    <h3>Netflix Content Over Time</h3>
+            
+                    <p>
+                        Number of movies and TV shows by release year.
+                    </p>
+            
+                    <div id="time-chart"></div>
+            
+                </div>
+            
+            
+                <!-- Supporting visualizations -->
+            
+                <div class="chart-grid">
+            
+                    <div class="chart-card">
+            
+                        <h3>Top Genres</h3>
+            
+                        <p>
+                            Individual genres are counted separately, even when a title
+                            belongs to multiple genres.
+                        </p>
+            
+                        <div id="genre-chart"></div>
+            
+                    </div>
+            
+            
+                    <div class="chart-card">
+            
+                        <h3>Age Certification</h3>
+            
+                        <div id="rating-chart"></div>
+            
+                    </div>
+            
+            
+                    <div class="chart-card">
+            
+                        <h3>Top Production Countries</h3>
+            
+                        <div id="country-chart"></div>
+            
+                    </div>
+            
+                </div>
+            
+            
+                <div class="interaction-note">
+            
+                    <strong>Interaction:</strong>
+                    Use the content type and year filters to update all visualizations.
+                    Hover over marks to see detailed values.
+                    Click a genre to highlight its distribution over time.
+            
+                </div>
+            
+            </section>
+            
 
                 <!-- -----------------------------------------
                      D3 Visualization
