@@ -337,35 +337,24 @@ function enforceYearOrder(activeSlider) {
 
 function updateYearLabels() {
 
-    const sliders =
-        getYearSliders();
-
+    const sliders = getYearSliders();
 
     if (sliders.length < 2) {
         return;
     }
 
-
     const start =
-        document.querySelector(
-            "#start-year-value"
-        );
+        document.querySelector("#year-min-value");
 
     const end =
-        document.querySelector(
-            "#end-year-value"
-        );
-
+        document.querySelector("#year-max-value");
 
     if (start) {
-        start.textContent =
-            sliders[0].value;
+        start.textContent = sliders[0].value;
     }
 
-
     if (end) {
-        end.textContent =
-            sliders[1].value;
+        end.textContent = sliders[1].value;
     }
 }
 
