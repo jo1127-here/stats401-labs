@@ -1597,6 +1597,10 @@ function drawRatingChart(data) {
 // 19. COUNTRY CHART
 // ============================================================
 
+// ============================================================
+// 19. COUNTRY MAP
+// ============================================================
+
 function drawCountryChart(data) {
 
     const container =
@@ -1604,15 +1608,95 @@ function drawCountryChart(data) {
 
     if (!container) return;
 
-    const node = container.node();
+    const node =
+        container.node();
 
     const width =
         node.clientWidth || 700;
 
     const height = 390;
 
+
     // ========================================================
-    // COUNT COUNTRIES
+    // 1. COUNTRY CODE → MAP NAME
+    // ========================================================
+
+    const countryCodeMap = {
+
+        "US": "United States of America",
+        "ID": "Indonesia",
+        "KR": "South Korea",
+        "IT": "Italy",
+        "GB": "United Kingdom",
+
+        "CA": "Canada",
+        "FR": "France",
+        "DE": "Germany",
+        "ES": "Spain",
+        "IN": "India",
+        "JP": "Japan",
+        "CN": "China",
+        "AU": "Australia",
+        "BR": "Brazil",
+        "MX": "Mexico",
+
+        "AR": "Argentina",
+        "CL": "Chile",
+        "CO": "Colombia",
+
+        "NL": "Netherlands",
+        "BE": "Belgium",
+        "SE": "Sweden",
+        "NO": "Norway",
+        "DK": "Denmark",
+        "FI": "Finland",
+
+        "PL": "Poland",
+        "RU": "Russia",
+        "TR": "Turkey",
+        "IE": "Ireland",
+        "NZ": "New Zealand",
+
+        "ZA": "South Africa",
+        "AT": "Austria",
+        "CH": "Switzerland",
+        "PT": "Portugal",
+        "GR": "Greece",
+        "CZ": "Czechia",
+        "HU": "Hungary",
+        "RO": "Romania",
+        "UA": "Ukraine",
+
+        "IL": "Israel",
+        "AE": "United Arab Emirates",
+        "SA": "Saudi Arabia",
+
+        "TH": "Thailand",
+        "PH": "Philippines",
+        "MY": "Malaysia",
+        "SG": "Singapore",
+        "VN": "Vietnam",
+
+        "HK": "Hong Kong",
+        "TW": "Taiwan"
+    };
+
+
+    // Reverse lookup:
+    // "United States of America" → "US"
+
+    const nameToCode =
+        new Map(
+            Object.entries(countryCodeMap)
+                .map(
+                    ([code, name]) =>
+                        [name, code]
+                )
+        );
+
+
+    // ========================================================
+    // 2. COUNT COUNTRIES
     // ========================================================
 
     const counts = new Map();
@@ -1623,13 +1707,16 @@ function drawCountryChart(data) {
 
         d.country
             .split(",")
-            .map(country => country.trim())
+            .map(
+                country =>
+                    country.trim()
+            )
             .filter(Boolean)
-            .forEach(country => {
+            .forEach(code => {
 
                 counts.set(
-                    country,
-                    (counts.get(country) || 0) + 1
+                    code,
+                    (counts.get(code) || 0) + 1
                 );
 
             });
@@ -1637,22 +1724,35 @@ function drawCountryChart(data) {
 
 
     // ========================================================
-    // SVG
+    // 3. SVG
     // ========================================================
 
     const svg =
         container
             .append("svg")
-            .attr("width", "100%")
-            .attr("height", height)
+            .attr(
+                "width",
+                "100%"
+            )
+            .attr(
+                "height",
+                height
+            )
             .attr(
                 "viewBox",
                 `0 0 ${width} ${height}`
             );
 
 
+    // Add country-specific glow filter
+    addFancyDefs(
+        svg,
+        "country"
+    );
+
+
     // ========================================================
-    // LOAD WORLD MAP
+    // 4. LOAD WORLD MAP
     // ========================================================
 
     d3.json(
@@ -1667,77 +1767,67 @@ function drawCountryChart(data) {
             );
 
 
-        // Fit map to actual countries
+        // ====================================================
+        // 5. PROJECTION
+        // ====================================================
+
         const projection =
             d3.geoNaturalEarth1()
                 .fitSize(
-                    [width, height],
+                    [
+                        width,
+                        height
+                    ],
                     countries
                 );
 
+
         const path =
             d3.geoPath()
-                .projection(projection);
+                .projection(
+                    projection
+                );
 
 
         // ====================================================
-        // COLOR
+        // 6. COLOR SCALE
         // ====================================================
 
         const maxCount =
             d3.max(
-                Array.from(counts.values())
+                Array.from(
+                    counts.values()
+                )
             ) || 1;
+
 
         const colorScale =
             d3.scaleSequential()
-                .domain([0, maxCount])
+                .domain([
+                    0,
+                    maxCount
+                ])
                 .interpolator(
                     d3.interpolateReds
                 );
 
 
         // ====================================================
-        // COUNTRY NAME MATCHING
-        // ====================================================
-
-        const countryNameMap = {
-
-            "United States of America":
-                "United States",
-
-            "South Korea":
-                "South Korea",
-
-            "Republic of Korea":
-                "South Korea",
-
-            "Czechia":
-                "Czech Republic",
-
-            "Russian Federation":
-                "Russia",
-
-            "Türkiye":
-                "Turkey",
-
-            "United Kingdom":
-                "United Kingdom",
-
-            "Viet Nam":
-                "Vietnam"
-
-        };
-
-
-        // ====================================================
-        // DRAW MAP
+        // 7. DRAW COUNTRIES
         // ====================================================
 
         svg
             .append("g")
-            .selectAll("path")
-            .data(countries.features)
+            .attr(
+                "class",
+                "countries"
+            )
+            .selectAll(
+                ".country-map"
+            )
+            .data(
+                countries.features
+            )
             .enter()
             .append("path")
             .attr(
@@ -1755,12 +1845,15 @@ function drawCountryChart(data) {
                     const mapName =
                         d.properties.name;
 
-                    const dataName =
-                        countryNameMap[mapName] ||
-                        mapName;
+                    const code =
+                        nameToCode.get(
+                            mapName
+                        );
 
                     const value =
-                        counts.get(dataName) || 0;
+                        code
+                            ? counts.get(code) || 0
+                            : 0;
 
                     return value > 0
                         ? colorScale(value)
@@ -1775,13 +1868,18 @@ function drawCountryChart(data) {
                 "stroke-width",
                 0.5
             )
+            .attr(
+                "opacity",
+                1
+            )
             .style(
                 "cursor",
                 "pointer"
             )
 
+
             // =================================================
-            // HOVER
+            // 8. HOVER
             // =================================================
 
             .on(
@@ -1791,12 +1889,16 @@ function drawCountryChart(data) {
                     const mapName =
                         d.properties.name;
 
-                    const dataName =
-                        countryNameMap[mapName] ||
-                        mapName;
+                    const code =
+                        nameToCode.get(
+                            mapName
+                        );
 
                     const value =
-                        counts.get(dataName) || 0;
+                        code
+                            ? counts.get(code) || 0
+                            : 0;
+
 
                     d3.select(this)
                         .attr(
@@ -1809,8 +1911,9 @@ function drawCountryChart(data) {
                         )
                         .attr(
                             "filter",
-                            "url(#time-glow)"
+                            "url(#country-glow)"
                         );
+
 
                     getTooltip()
                         .style(
@@ -1828,6 +1931,11 @@ function drawCountryChart(data) {
                 }
             )
 
+
+            // =================================================
+            // 9. MOUSE MOVE
+            // =================================================
+
             .on(
                 "mousemove",
                 function(event) {
@@ -1844,8 +1952,9 @@ function drawCountryChart(data) {
                 }
             )
 
+
             // =================================================
-            // MOUSE LEAVE
+            // 10. MOUSE LEAVE
             // =================================================
 
             .on(
@@ -1855,12 +1964,14 @@ function drawCountryChart(data) {
                     const mapName =
                         d.properties.name;
 
-                    const dataName =
-                        countryNameMap[mapName] ||
-                        mapName;
+                    const code =
+                        nameToCode.get(
+                            mapName
+                        );
 
                     const isSelected =
-                        selectedCategory === dataName;
+                        selectedCategory === code;
+
 
                     d3.select(this)
                         .attr(
@@ -1872,15 +1983,16 @@ function drawCountryChart(data) {
                         .attr(
                             "stroke-width",
                             isSelected
-                                ? 1.8
+                                ? 2
                                 : 0.5
                         )
                         .attr(
                             "filter",
                             isSelected
-                                ? "url(#time-glow)"
+                                ? "url(#country-glow)"
                                 : null
                         );
+
 
                     getTooltip()
                         .style(
@@ -1890,8 +2002,9 @@ function drawCountryChart(data) {
                 }
             )
 
+
             // =================================================
-            // CLICK SELECTION
+            // 11. CLICK
             // =================================================
 
             .on(
@@ -1900,20 +2013,31 @@ function drawCountryChart(data) {
 
                     event.stopPropagation();
 
+
                     const mapName =
                         d.properties.name;
 
-                    const dataName =
-                        countryNameMap[mapName] ||
-                        mapName;
+                    const code =
+                        nameToCode.get(
+                            mapName
+                        );
+
+
+                    if (!code) {
+                        return;
+                    }
+
+
+                    // Toggle selection
 
                     selectedCategory =
-                        selectedCategory === dataName
+                        selectedCategory === code
                             ? null
-                            : dataName;
+                            : code;
 
 
                     // Reset all countries
+
                     d3.selectAll(
                         ".country-map"
                     )
@@ -1936,24 +2060,31 @@ function drawCountryChart(data) {
 
 
                     // Highlight selected country
-                    if (selectedCategory !== null) {
+
+                    if (
+                        selectedCategory !== null
+                    ) {
 
                         d3.selectAll(
                             ".country-map"
                         )
-                        .filter(function(country) {
+                        .filter(
+                            function(country) {
 
-                            const countryName =
-                                countryNameMap[
-                                    country.properties.name
-                                ] ||
-                                country.properties.name;
+                                const countryName =
+                                    country.properties.name;
 
-                            return (
-                                countryName ===
-                                selectedCategory
-                            );
-                        })
+                                const countryCode =
+                                    nameToCode.get(
+                                        countryName
+                                    );
+
+                                return (
+                                    countryCode ===
+                                    selectedCategory
+                                );
+                            }
+                        )
                         .attr(
                             "stroke",
                             "#ffffff"
@@ -1964,27 +2095,32 @@ function drawCountryChart(data) {
                         )
                         .attr(
                             "filter",
-                            "url(#time-glow)"
+                            "url(#country-glow)"
                         );
 
 
                         // Dim other countries
+
                         d3.selectAll(
                             ".country-map"
                         )
-                        .filter(function(country) {
+                        .filter(
+                            function(country) {
 
-                            const countryName =
-                                countryNameMap[
-                                    country.properties.name
-                                ] ||
-                                country.properties.name;
+                                const countryName =
+                                    country.properties.name;
 
-                            return (
-                                countryName !==
-                                selectedCategory
-                            );
-                        })
+                                const countryCode =
+                                    nameToCode.get(
+                                        countryName
+                                    );
+
+                                return (
+                                    countryCode !==
+                                    selectedCategory
+                                );
+                            }
+                        )
                         .attr(
                             "opacity",
                             0.35
@@ -1992,6 +2128,7 @@ function drawCountryChart(data) {
                     }
                 }
             );
+
     })
     .catch(error => {
 
@@ -1999,6 +2136,7 @@ function drawCountryChart(data) {
             "Could not load world map:",
             error
         );
+
 
         container
             .append("div")
