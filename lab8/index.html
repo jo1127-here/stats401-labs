@@ -508,113 +508,129 @@
     </section>
 
 
-<section id="findings">
-  <h2>5. Semantic Findings</h2>
-  <p>
-    These findings use the Semantic Embedding Map, the Topic × Course Subject
-    Matrix, and the underlying course descriptions. A Topic is a cluster of
-    similar descriptions; a Course Subject is the Bulletin's formal category.
-  </p>
-
-  <h3>What are the major semantic topics?</h3>
-  <p>
-    The model identifies eight topics. Topic 1 is the largest (143 passages)
-    and is concentrated in Mathematics, Computer Science, Physics, and
-    Statistics. Topic 0 (112) contains many Public Policy, Economics, and
-    Environment courses. Topic 6 (109) is especially common in Media and Arts
-    and includes courses about visual and media practices. Topic 3 (54) is
-    strongly associated with Biology and health-related courses. These
-    descriptions are interpretations of the course content; the visualization
-    itself labels the clusters Topic 0–7.
-  </p>
-
-  <h3>Which topics cross Course Subjects?</h3>
-  <p>
-    Topic 1 appears in Mathematics (32 passages), Computer Science (27),
-    Physics (18), and Statistics (13), showing that quantitative content
-    crosses formal subject boundaries. Topic 3 appears in Biology (31),
-    Environment (7), and Global Health (6). Topic 4 also spans History (28),
-    Literature (19), and Political Science (19).
-  </p>
-
-  <h3>Which Course Subjects are semantically diverse?</h3>
-  <p>
-    History spans six topics: most of its passages fall in Topics 4 and 2,
-    but others appear in Topics 0, 3, 6, and 7. Cultural Anthropology spans
-    five topics, with substantial groups in Topics 4 and 6. Philosophy has
-    passages in seven of the eight topics, although Topic 7 dominates.
-    Counting occupied topics reveals breadth; the matrix cell counts also
-    show whether that breadth is balanced or driven by just a few courses.
-  </p>
-
-  <h3>Which passages connect different subjects?</h3>
-  <p>
-    <em>Cell and Molecular Biology</em> (BIOL 201) and
-    <em>Biological Basis of Disease</em> (GLHLTH 305) both fall in Topic 3.
-    Their descriptions connect biological mechanisms with health and disease
-    despite belonging to different Course Subjects. Likewise,
-    <em>Ancient Chinese History and Philosophy</em> (HIST 101/PHIL 102)
-    and <em>From Empire to Nation</em> (GCHINA 201) both fall in Topic 2,
-    linking historical study with China-focused coursework. Shared Topic
-    membership suggests a relationship; it does not mean the descriptions
-    are identical.
-  </p>
-
-  <h3>Which passages are unusual within their subject?</h3>
-  <p>
-    <em>Pandemics in World History from the Black Death to COVID-19</em>
-    (HIST 212) is assigned to Topic 3, whereas most History passages are in
-    Topics 4 and 2. Its emphasis on pandemics helps explain why the model
-    places it with biology and health-related descriptions. This is an
-    interdisciplinary course, rather than necessarily a clustering error.
-  </p>
-
-  <h3>What does searching for “credit” reveal?</h3>
-  <p>
-    Searching the underlying description text finds “credit” in 76 passages
-    across all eight topics. It therefore does not occupy one semantic
-    region: the term is used in descriptions of otherwise different courses.
-    In this course-description corpus, “graduation” has no matches, while
-    “registration” and “academic integrity” each occur in one passage.
-    These results describe the selected corpus, not the entire Bulletin.
-  </p>
-</section>
-
-<section id="design-description">
-  <h2>6. Design Description</h2>
-  <p>
-    I extracted course descriptions from the Duke Kunshan University Bulletin
-    and treated each description as one passage. The extraction retained
-    metadata such as Course Subject, course code, title, credits, and page
-    number. After cleaning the text, I encoded each passage with the
-    SentenceTransformer model <code>all-MiniLM-L6-v2</code>. This produces a
-    numerical embedding that represents the passage's language and content.
-    I then used UMAP with cosine distance, 15 neighbors, and
-    <code>min_dist = 0.15</code> to project the embeddings into two dimensions.
-    Nearby points on the map can indicate related descriptions, although the
-    two axes do not have independent substantive meanings.
-  </p>
-  <p>
-    I applied KMeans to the original embeddings, using eight clusters rather
-    than clustering the two-dimensional map. The current pipeline assigns
-    these clusters the neutral labels Topic 0 through Topic 7; the thematic
-    descriptions in the findings are interpretations based on course examples
-    and subject counts.
-  </p>
-  <p>
-    In the embedding map, each circle is a course passage. Position represents
-    its UMAP coordinates, color identifies its Topic, and circle size reflects
-    word count. The Topic × Course Subject Matrix places Topics in columns
-    and formal Course Subjects in rows; darker cells contain more passages.
-    Consistent Topic colors connect the two views. Search and dropdown filters
-    help locate passages, while clicking a map point opens its description
-    and highlights the corresponding matrix cell. Clicking a matrix cell
-    highlights its passages on the map. Together, these interactions let
-    readers move between individual courses and the broader distribution
-    of topics.
-  </p>
-</section>
-
+<!-- 5. Semantic Findings -->
+    <section class="section">
+    
+        <div class="section-title">
+            <h2>5. Semantic Findings</h2>
+            <p>Patterns observed in the embedding map and Topic × Course Subject Matrix.</p>
+        </div>
+    
+        <div class="card findings">
+    
+            <p>
+                <strong>Major semantic topics.</strong>
+                The eight clusters cover different kinds of course content.
+                Topic 1 is the largest (143 passages), with many Mathematics,
+                Computer Science, Physics, and Statistics courses. Topic 0
+                includes many Public Policy, Economics, and Environment courses.
+                Topic 3 concentrates on biology and health, while Topic 6
+                contains many Media and Arts courses. These are interpretations
+                of the course descriptions; the visualization labels the
+                clusters Topic 0–7.
+            </p>
+    
+            <p>
+                <strong>Topics across Course Subjects.</strong>
+                Topic 1 appears in Mathematics (32 passages), Computer Science
+                (27), Physics (18), and Statistics (13). Topic 3 appears in
+                Biology (31), Environment (7), and Global Health (6).
+                The matrix makes these shared topics visible across formal
+                subject categories.
+            </p>
+    
+            <p>
+                <strong>Semantically diverse subjects.</strong>
+                History contains passages in six topics, mainly Topics 4 and 2.
+                Cultural Anthropology spans five topics, while Philosophy
+                appears in seven, although most of its passages belong to
+                Topic 7. Thus, a subject can cover several kinds of content
+                even when one topic dominates its courses.
+            </p>
+    
+            <p>
+                <strong>Similar passages from different subjects.</strong>
+                <em>Cell and Molecular Biology</em> (BIOL 201) and
+                <em>Biological Basis of Disease</em> (GLHLTH 305) both belong
+                to Topic 3. Their descriptions connect biological mechanisms
+                with health and disease despite having different Course Subjects.
+            </p>
+    
+            <p>
+                <strong>An unusual passage.</strong>
+                <em>Pandemics in World History from the Black Death to COVID-19</em>
+                (HIST 212) is assigned to Topic 3, whereas most History
+                passages belong to Topics 4 and 2. Its focus on pandemics
+                connects it with the map's biology and health-related courses.
+            </p>
+    
+            <p>
+                <strong>Search finding.</strong>
+                The word “credit” occurs in 76 description passages distributed
+                across all eight topics, rather than in one semantic region.
+                “Graduation” has no matches in this course-description corpus;
+                “registration” and “academic integrity” each appear in one
+                passage. These searches do not cover other Bulletin sections.
+            </p>
+    
+        </div>
+    
+    </section>
+    
+    
+    <!-- 6. Design Description -->
+    <section class="section">
+    
+        <div class="section-title">
+            <h2>6. Design Description</h2>
+            <p>Data processing, visual encodings, and coordinated interaction.</p>
+        </div>
+    
+        <div class="card design-description">
+    
+            <p>
+                I extracted course descriptions from the Duke Kunshan University
+                Bulletin and treated each description as one passage. The
+                extraction retained metadata including Course Subject, course
+                code, title, credits, and page number. After cleaning the text,
+                I used the SentenceTransformer model
+                <code>all-MiniLM-L6-v2</code> to produce an embedding for each
+                passage. UMAP projected these embeddings into two dimensions
+                using cosine distance, 15 neighbors, and
+                <code>min_dist = 0.15</code>. Points close together on the map
+                may have related content, but the axes do not represent named
+                academic dimensions.
+            </p>
+    
+            <p>
+                I applied KMeans to the original embeddings to generate eight
+                clusters. The current pipeline labels them Topic 0 through
+                Topic 7. The subject patterns and course descriptions help
+                interpret what each cluster contains, but those interpretations
+                are separate from the assigned numeric labels.
+            </p>
+    
+            <p>
+                Each circle in the embedding map represents one course
+                description. Its position comes from UMAP, its color identifies
+                its Topic, and its size reflects word count. In the Topic ×
+                Course Subject Matrix, rows represent formal Course Subjects,
+                columns represent Topics, and darker cells contain more
+                passages. Topic colors remain consistent across both views.
+            </p>
+    
+            <p>
+                Search and dropdown filters help locate relevant courses.
+                Clicking a map point reveals the passage and highlights its
+                matrix cell; clicking a matrix cell highlights the corresponding
+                passages on the map. These linked actions connect individual
+                descriptions with the overall distribution of topics across
+                Course Subjects.
+            </p>
+    
+        </div>
+    
+    </section>
     <!-- =========================================
          Back Home
          ========================================= -->
