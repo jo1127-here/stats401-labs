@@ -1,54 +1,54 @@
-subject,Topic 0,Topic 1,Topic 2,Topic 3,Topic 4,Topic 5,Topic 6,Topic 7
-ARHU,0,0,0,0,0,2,0,0
-ARTS,0,4,0,0,0,5,0,1
-BEHAVSCI,1,0,1,0,0,0,9,0
-BIOL,1,0,1,32,0,0,0,0
-CAPSTONE,0,0,1,0,0,0,0,1
-CHEM,0,0,10,5,0,0,0,1
-CHINESE,0,5,0,0,0,1,0,8
-CHSC,0,6,0,0,0,0,0,1
-COMPDSGN,0,0,1,0,0,0,0,0
-COMPSCI,0,0,26,0,0,0,1,0
-CULANTH,3,3,0,0,8,6,1,0
-CULMOVE,3,2,0,0,3,0,2,0
-EAP,0,0,0,0,0,1,0,6
-ECON,1,0,3,0,1,0,24,0
-ENVIR,0,2,2,9,0,1,10,0
-ETHLDR,6,0,0,1,2,0,3,0
-FRENCH,0,0,0,0,0,0,0,2
-GCHINA,0,9,0,0,0,0,0,1
-GCULS,7,3,0,0,4,4,0,0
-GERMAN,0,0,0,0,0,0,0,2
-GLHLTH,2,0,0,9,1,2,4,0
-GLOCHALL,1,0,0,0,0,0,0,0
-HIST,3,23,0,1,23,7,2,0
-INFOSCI,0,0,7,0,0,12,0,0
-INSTGOV,0,0,0,1,0,0,0,0
-INTGSCI,0,0,2,0,0,0,0,0
-ITALIAN,0,0,0,0,0,0,0,2
-JAPANESE,0,0,0,0,0,0,0,4
-KOREAN,0,0,0,0,0,0,0,2
-LEAST,0,0,0,0,0,0,0,1
-LIT,1,7,0,0,19,12,0,2
-MATH,0,0,32,0,0,0,0,0
-MATSCI,0,0,10,0,0,0,0,0
-MEDIA,0,2,0,0,0,4,0,0
-MEDIART,1,2,1,0,0,45,0,6
-MILITSCI,0,1,0,0,0,0,0,1
-MUSIC,0,0,0,0,0,0,0,3
-NEUROSCI,0,0,1,0,0,0,5,0
-PHIL,17,3,3,0,2,1,1,1
-PHYS,0,0,19,0,0,0,0,1
-PHYSEDU,0,2,0,0,0,0,0,30
-POLECON,0,3,0,0,1,0,4,0
-POLSCI,3,4,0,0,23,0,8,0
-PSYCH,2,0,1,0,1,0,5,0
-PUBPOL,2,1,0,0,11,1,23,0
-RELIG,15,2,0,0,0,1,0,0
-RINDSTU,1,0,0,0,0,0,0,0
-SOCIOL,3,2,0,0,7,0,2,0
-SOSC,1,0,0,0,4,1,9,0
-SPANISH,0,0,0,0,0,0,0,3
-STATS,0,0,12,0,0,0,3,0
-USTUD,1,0,0,0,1,1,0,1
-WOC,1,4,0,0,0,6,1,12
+subject_name,subject,Topic 0,Topic 1,Topic 2,Topic 3,Topic 4,Topic 5,Topic 6,Topic 7
+Arts,ARTS,0,0,4,0,0,1,5,0
+Arts and Humanities,ARHU,0,0,0,0,0,0,2,0
+Behavior Science,BEHAVSCI,5,3,0,0,0,0,0,3
+Biology,BIOL,1,1,0,31,0,0,0,1
+Capstone,CAPSTONE,0,0,0,0,0,2,0,0
+Chemistry,CHEM,0,10,0,5,0,1,0,0
+Chinese,CHINESE,0,0,7,0,0,6,1,0
+Chinese Society and Culture,CHSC,0,0,6,0,0,1,0,0
+Computer Design,COMPDSGN,0,1,0,0,0,0,0,0
+Computer Science,COMPSCI,0,27,0,0,0,0,0,0
+Cultural Anthropology,CULANTH,2,0,3,0,7,0,6,3
+Cultures and Movements,CULMOVE,2,0,1,0,5,0,0,2
+Economics,ECON,23,6,0,0,0,0,0,0
+English for Academic Purposes,EAP,0,0,0,0,0,6,1,0
+Environment,ENVIR,13,2,2,7,0,0,0,0
+Ethics and Leadership,ETHLDR,4,0,0,0,1,0,0,7
+French,FRENCH,0,0,0,0,0,2,0,0
+German,GERMAN,0,0,0,0,0,2,0,0
+Global Challenges,GLOCHALL,0,0,0,0,0,1,0,0
+Global China Studies,GCHINA,0,0,10,0,0,0,0,0
+Global Cultural Studies,GCULS,0,0,3,0,4,0,3,8
+Global Health,GLHLTH,8,0,0,6,0,0,2,2
+History,HIST,3,0,19,1,28,0,7,1
+Information Science,INFOSCI,0,7,0,0,0,0,12,0
+Institutions and Governance,INSTGOV,0,1,0,0,0,0,0,0
+Integrated Science,INTGSCI,0,2,0,0,0,0,0,0
+Italian,ITALIAN,0,0,0,0,0,2,0,0
+Japanese,JAPANESE,0,0,0,0,0,4,0,0
+Korean,KOREAN,0,0,0,0,0,2,0,0
+LEAST,LEAST,0,0,0,0,0,1,0,0
+Literature,LIT,0,0,9,0,19,1,11,1
+Material Science,MATSCI,0,9,0,1,0,0,0,0
+Mathematics,MATH,0,32,0,0,0,0,0,0
+Media,MEDIA,0,0,2,0,0,0,4,0
+Media and Arts,MEDIART,0,1,4,0,0,5,44,1
+Military Science,MILITSCI,0,0,0,0,0,2,0,0
+Music,MUSIC,0,0,0,0,0,3,0,0
+Neuroscience,NEUROSCI,0,1,0,2,0,0,0,3
+Philosophy,PHIL,1,3,3,0,2,1,1,17
+Physical Education,PHYSEDU,0,0,0,0,0,32,0,0
+Physics,PHYS,0,18,0,1,0,1,0,0
+Political Economy,POLECON,5,0,3,0,0,0,0,0
+Political Science,POLSCI,9,0,4,0,19,0,0,6
+Psychology,PSYCH,0,3,0,0,0,0,0,6
+Public Policy,PUBPOL,25,0,1,0,7,0,1,4
+Religious Studies,RELIG,0,0,2,0,0,0,1,15
+Research Independent Study,RINDSTU,1,0,0,0,0,0,0,0
+Social Science,SOSC,5,3,0,0,3,0,1,3
+Sociology,SOCIOL,2,0,2,0,3,0,0,7
+Spanish,SPANISH,0,0,0,0,0,3,0,0
+Statistics,STATS,2,13,0,0,0,0,0,0
+US Studies,USTUD,0,0,0,0,2,0,0,2
+Written and Oral Communication,WOC,1,0,4,0,0,12,7,0
