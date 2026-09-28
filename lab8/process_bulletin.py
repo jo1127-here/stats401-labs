@@ -175,12 +175,12 @@ COURSE_CODE_PATTERN = re.compile(
     ^
     \s*
     (?P<code>
-        [A-Z]{2,8}
+        [A-Z]{2,12}
         \s*
         \d{3}
         (?:
             \s*/\s*
-            [A-Z]{2,8}
+            [A-Z]{2,12}
             \s*
             \d{3}
         )*
@@ -242,7 +242,7 @@ def get_subject(course_code):
         return "UNKNOWN"
 
     match = re.match(
-        r"^([A-Z]{2,8})\s*\d{3}",
+        r"^([A-Z]{2,12})\s*\d{3}",
         course_code.upper()
     )
 
@@ -250,6 +250,24 @@ def get_subject(course_code):
         return match.group(1)
 
     return "UNKNOWN"
+
+
+# The PDF has headings such as "Courses with Course Subject: Arts (ARTS)".
+# Keep the printed name as metadata; course codes alone contain only ARTS.
+SUBJECT_HEADING_PATTERN = re.compile(
+    r"^Courses with Course Subject:\s*(.+?)\s*\(([A-Z]{2,12})\)\s*$",
+    flags=re.IGNORECASE,
+)
+
+
+def find_subject_headings(page_lines):
+    """Map subject codes to the full subject names printed in the bulletin."""
+    names = {}
+    for item in page_lines:
+        match = SUBJECT_HEADING_PATTERN.match(item["text"].strip())
+        if match:
+            names[match.group(2).upper()] = match.group(1).strip()
+    return names
 
 
 # ============================================================
@@ -526,7 +544,7 @@ def extract_course_descriptions(pdf_path):
         # headings such as "ARTS 201" or "COMPSCI 101".
 
         has_course_heading = re.search(
-            r"^\s*[A-Z]{2,8}\s*\d{3}\b",
+            r"^\s*[A-Z]{2,12}\s*\d{3}\b",
             text,
             flags=re.MULTILINE
         )
@@ -610,6 +628,10 @@ def extract_course_descriptions(pdf_path):
             break
 
     doc.close()
+
+    # Resolve full names from the actual Course Subject headings.
+    subject_names = find_subject_headings(page_lines)
+    print(f"Course Subject headings found: {len(subject_names)}")
 
     # --------------------------------------------------------
     # Detect headings
@@ -803,7 +825,7 @@ def extract_course_descriptions(pdf_path):
 
             text = line_item["text"].strip()
 
-            if not text:
+            if not text or SUBJECT_HEADING_PATTERN.match(text):
                 continue
 
             description_lines.append(
@@ -959,8 +981,9 @@ def extract_course_descriptions(pdf_path):
                 ),
                 "chapter": "Course Catalog",
                 "section": "Course Descriptions",
-                "subsection": title,
+                "subsection": subject_names.get(subject, subject),
                 "subject": subject,
+                "subject_name": subject_names.get(subject, subject),
                 "course_code": code,
                 "course_title": title,
                 "credits": credits,
@@ -1650,6 +1673,7 @@ def save_embedding_data(
         "section",
         "subsection",
         "subject",
+        "subject_name",
         "course_code",
         "course_title",
         "credits",
@@ -1689,6 +1713,7 @@ def create_matrix(df):
     matrix = (
         df.groupby(
             [
+                "subject_name",
                 "subject",
                 "cluster_name",
             ]
