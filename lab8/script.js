@@ -233,15 +233,7 @@ function showMapDetails(d) {
             ${escapeHTML(d.chapter || "N/A")}
         </div>
 
-        <div class="stat">
-            <strong>Section</strong>
-            ${escapeHTML(d.section || "N/A")}
-        </div>
-
-        <div class="stat">
-            <strong>Course Subject</strong>
-            ${escapeHTML(subjectLabel(d.subject))}
-        </div>
+        
 
         <div class="stat">
             <strong>Page</strong>
