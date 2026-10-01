@@ -1,19 +1,231 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <title>Lab 9</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Lab 9 | Geospatial Visualization</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <script
+        defer
+        src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js">
+    </script>
+
+    <script defer src="script.js"></script>
 </head>
 
 <body>
+    <main>
+        <nav>
+            <a href="../index.html">← All labs</a>
+            <span>STATS 401 · LAB 09</span>
+        </nav>
 
-    <h1>Lab 9</h1>
+        <header>
+            <p class="eyebrow">GEOSPATIAL VISUALIZATION</p>
 
-    <p>Lab 9 will be added here.</p>
+            <h1>Mapping the Global Economy</h1>
 
-    <a href="../index.html">Back to Home</a>
+            <p class="intro">
+                One dataset. Two perspectives. Explore how color
+                and area change our perception of 2025 nominal GDP.
+            </p>
+        </header>
 
+        <!-- 1. Dataset description -->
+        <section>
+            <h2>01 / Dataset Description</h2>
+
+            <p>
+                The provided dataset contains the 50 largest economies
+                by 2025 nominal GDP, measured in billions of current
+                U.S. dollars. The data are based on the IMF World
+                Economic Outlook, October 2025. Values may include
+                estimates and can be revised.
+            </p>
+
+            <p>
+                GDP records are joined to geographic boundaries using
+                ISO-3 identifiers. Countries outside the provided
+                dataset are treated as missing data, not zero GDP.
+            </p>
+
+            <p id="status" role="status">
+                Loading geographic boundaries and GDP…
+            </p>
+        </section>
+
+        <!-- Shared controls -->
+        <div class="toolbar">
+            <label for="country">
+                Find an economy
+
+                <select id="country">
+                    <option value="">Select a country</option>
+                </select>
+            </label>
+
+            <label for="scale">
+                Color scale
+
+                <select id="scale">
+                    <option value="log">Logarithmic</option>
+                    <option value="linear">Linear</option>
+                </select>
+            </label>
+
+            <button id="reset" type="button">
+                Reset selection &amp; zoom
+            </button>
+        </div>
+
+        <div id="details" aria-live="polite">
+            Hover over a country, or click to keep it selected.
+        </div>
+
+        <!-- 2. Choropleth -->
+        <section class="panel">
+            <div class="panel-head">
+                <div>
+                    <h2>02 / GDP Choropleth</h2>
+
+                    <p>
+                        Color represents GDP.
+                        Geographic boundaries are preserved.
+                    </p>
+                </div>
+
+                <button id="reset-map" type="button">
+                    Reset map zoom
+                </button>
+            </div>
+
+            <svg
+                id="choropleth"
+                viewBox="0 0 1000 540"
+                aria-label="World GDP choropleth">
+            </svg>
+
+            <svg
+                id="legend"
+                viewBox="0 0 1000 78"
+                aria-label="GDP color legend">
+            </svg>
+
+            <p class="caption">
+                Scroll to zoom; drag to pan.
+                Gray = outside the provided dataset.
+            </p>
+        </section>
+
+        <!-- 3. Cartogram -->
+        <section class="panel">
+            <h2>03 / GDP Cartogram</h2>
+
+            <p>
+                Dorling cartogram:
+                <strong>circle area represents GDP</strong>.
+                Circle centers start near geographic locations
+                and shift to reduce overlap. Country shapes and
+                borders are replaced by circles.
+            </p>
+
+            <svg
+                id="cartogram"
+                viewBox="0 0 1000 640"
+                aria-label="GDP Dorling cartogram">
+            </svg>
+
+            <svg
+                id="area-legend"
+                viewBox="0 0 1000 110"
+                aria-label="GDP circle area legend">
+            </svg>
+
+            <p class="caption">
+                Only economies with provided GDP are included.
+                Circle area uses raw GDP regardless of the
+                color-scale setting.
+            </p>
+        </section>
+
+        <!-- 4. Design comparison: 150–250 words -->
+        <section>
+            <h2>04 / Design and Comparison</h2>
+
+            <p>
+                The choropleth preserves country boundaries, relative
+                locations, and geographic adjacency within an Equal
+                Earth projection. Large territories such as Russia
+                and Canada remain visually prominent because they
+                occupy substantial map space, while high-GDP economies
+                receive stronger colors. A logarithmic color scale
+                distributes the highly skewed GDP values across the
+                palette, making differences among smaller economies
+                easier to see. The linear option exposes how strongly
+                the largest economies dominate the range.
+            </p>
+
+            <p>
+                The Dorling cartogram replaces boundaries with circles
+                whose areas are proportional to GDP. The United States
+                and China become prominent economic masses, while
+                geographically large economies with smaller GDP lose
+                relative prominence. Compact economies such as Japan
+                and Germany gain visual importance compared with their
+                geographic footprints. Circle positions approximate
+                geography, but displacement changes distances and
+                adjacency; original shapes and borders disappear.
+            </p>
+
+            <p>
+                The choropleth best supports locating economies and
+                identifying regional patterns. The cartogram better
+                supports comparing economic magnitude and recognizing
+                concentration among the included economies. Moving
+                from color to area makes economic size occupy visible
+                space rather than merely changing its shade. However,
+                circle-area comparisons remain less precise than
+                reading numerical values, and displaced countries can
+                be difficult to identify. Linked highlighting, country
+                selection, and shared tooltips preserve correspondence
+                across the views. Gray countries on the choropleth and
+                omitted circles indicate missing coverage, not zero
+                economic output.
+            </p>
+        </section>
+
+        <footer>
+            Sources:
+            instructor-provided GDP CSV ·
+
+            <a
+                href="https://www.imf.org/en/Publications/WEO/weo-database/2025/October"
+                target="_blank"
+                rel="noopener noreferrer">
+                IMF WEO, October 2025
+            </a>
+            ·
+
+            <a
+                href="https://github.com/datasets/geo-countries"
+                target="_blank"
+                rel="noopener noreferrer">
+                World boundaries
+            </a>
+            ·
+
+            <a
+                href="https://d3js.org/"
+                target="_blank"
+                rel="noopener noreferrer">
+                D3
+            </a>
+        </footer>
+    </main>
+
+    <div id="tooltip" role="tooltip" hidden></div>
 </body>
-
 </html>
