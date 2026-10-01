@@ -1,0 +1,7 @@
+{
+  "gdp_rows": 50,
+  "matched_economies": 50,
+  "unmatched": [],
+  "boundaries": 258,
+  "boundary_source": "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson"
+}
