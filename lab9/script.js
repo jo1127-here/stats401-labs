@@ -1,6 +1,6 @@
 const WIDTH = 1000, HEIGHT = 540;
-const GDP_PATH = 'data/lab9_gdp_2025_top50.csv';
-const GEO_PATH = 'data/world.geojson';
+const GDP_PATH = "../data/lab9_gdp_2025_top50.csv";
+const GEO_PATH = "data/world.geojson";
 const money = value => `$${d3.format(',.1f')(value)} billion`;
 let pinned = '', hovered = '', statsById, color, values, countryPaths, circles, labels, mapSvg, zoom;
 const tooltip = document.querySelector('#tooltip');
