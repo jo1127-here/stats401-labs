@@ -1,19 +1,519 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <title>Lab 10</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Reuse the existing Lab 9 files and data paths -->
+  <base href="../lab9/">
+
+  <title>Lab 10 | Voice Interaction</title>
+  <link rel="stylesheet" href="style.css">
+
+  <script defer
+    src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js">
+  </script>
+  <script defer src="script.js"></script>
+
+  <style>
+    .voice-panel {
+      padding: 24px;
+      margin: 24px 0;
+      border: 1px solid #cbd5d1;
+      border-radius: 12px;
+      background: #f3f7f5;
+    }
+
+    .voice-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    #command-form {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    #command-input {
+      padding: 10px;
+      border: 1px solid #aabcb4;
+      border-radius: 6px;
+      font: inherit;
+      width: min(300px, 100%);
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .feedback {
+      padding: 14px;
+      background: white;
+      border-radius: 8px;
+      margin-top: 16px;
+    }
+
+    .feedback p {
+      margin: 6px 0;
+    }
+  </style>
 </head>
 
 <body>
+<main>
+  <nav>
+    <a href="../index.html">← All labs</a>
+    <span>STATS 401 · LAB 10</span>
+  </nav>
 
-    <h1>Lab 10</h1>
+  <header>
+    <p class="eyebrow">NOVEL INTERACTION</p>
+    <h1>Explore GDP with Your Voice</h1>
+    <p class="intro">
+      An extension of my Lab 9 choropleth and Dorling cartogram.
+      Use voice commands to highlight economies, change the
+      color scale, and reset the visualization.
+    </p>
+  </header>
 
-    <p>Lab 10 will be added here.</p>
+  <section>
+    <h2>01 / Dataset</h2>
+    <p>
+      This visualization reuses the instructor-provided dataset
+      of the 50 largest economies by 2025 nominal GDP, measured
+      in billions of current U.S. dollars. Countries outside
+      the dataset are shown as missing data, not zero GDP.
+    </p>
+    <p id="status" role="status">
+      Loading geographic boundaries and GDP…
+    </p>
+  </section>
 
-    <a href="../index.html">Back to Home</a>
+  <section class="voice-panel">
+    <h2>02 / Voice Control</h2>
 
+    <p>
+      Click <strong>Start Voice Control</strong>, allow microphone
+      access, and speak one English command. Click Start again
+      for your next command.
+    </p>
+
+    <ul>
+      <li><strong>“Highlight China”</strong> — highlight China in both views.</li>
+      <li><strong>“Highlight Japan”</strong> — display Japan’s GDP and rank.</li>
+      <li><strong>“Linear scale”</strong> — use a linear color scale.</li>
+      <li><strong>“Log scale”</strong> — use a logarithmic color scale.</li>
+      <li><strong>“Reset”</strong> — clear selection and reset map zoom.</li>
+    </ul>
+
+    <p>
+      “Select” and “Show” also work before a country name.
+      Use names from the country dropdown; “USA” and “UK”
+      are supported aliases.
+    </p>
+
+    <div class="voice-buttons">
+      <button id="voice-start" type="button" disabled>
+        Start Voice Control
+      </button>
+      <button id="voice-stop" type="button" disabled>
+        Stop Listening
+      </button>
+    </div>
+
+    <div class="feedback">
+      <p id="voice-status" role="status" aria-live="polite">
+        Waiting for visualization…
+      </p>
+      <p id="voice-heard">Heard: —</p>
+      <p id="voice-action" aria-live="polite">Action: —</p>
+    </div>
+
+    <form id="command-form">
+      <label for="command-input">
+        Type a command instead
+        <input
+          id="command-input"
+          placeholder="Highlight China"
+          autocomplete="off"
+          required>
+      </label>
+      <button id="command-run" type="submit" disabled>
+        Run Command
+      </button>
+    </form>
+
+    <p class="caption">
+      The microphone activates only after you click Start.
+      This page does not store audio. Your browser’s speech
+      recognition service may process audio remotely.
+      If voice recognition is unavailable, use typed commands
+      or the conventional controls below.
+    </p>
+  </section>
+
+  <!-- Original Lab 9 controls -->
+  <div class="toolbar">
+    <label for="country">
+      Find an economy
+      <select id="country">
+        <option value="">Select a country</option>
+      </select>
+    </label>
+
+    <label for="scale">
+      Color scale
+      <select id="scale">
+        <option value="log">Logarithmic</option>
+        <option value="linear">Linear</option>
+      </select>
+    </label>
+
+    <button id="reset" type="button">
+      Reset selection &amp; zoom
+    </button>
+  </div>
+
+  <div id="details" aria-live="polite">
+    Hover over a country, or click to keep it selected.
+  </div>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>03 / GDP Choropleth</h2>
+        <p>
+          Color represents GDP; country boundaries are preserved.
+        </p>
+      </div>
+
+      <button id="reset-map" type="button">
+        Reset map zoom
+      </button>
+    </div>
+
+    <svg
+      id="choropleth"
+      viewBox="0 0 1000 540"
+      aria-label="World GDP choropleth">
+    </svg>
+
+    <svg
+      id="legend"
+      viewBox="0 0 1000 78"
+      aria-label="GDP color legend">
+    </svg>
+
+    <p class="caption">
+      Scroll to zoom; drag to pan.
+      Gray indicates countries outside the provided dataset.
+    </p>
+  </section>
+
+  <section class="panel">
+    <h2>04 / GDP Dorling Cartogram</h2>
+    <p>
+      Circle area represents GDP. Circle positions approximate
+      geography and shift to reduce overlap.
+      Voice selection highlights the same economy in both views.
+    </p>
+
+    <svg
+      id="cartogram"
+      viewBox="0 0 1000 640"
+      aria-label="GDP Dorling cartogram">
+    </svg>
+
+    <svg
+      id="area-legend"
+      viewBox="0 0 1000 110"
+      aria-label="GDP circle area legend">
+    </svg>
+
+    <p class="caption">
+      Circle area uses raw GDP regardless of the color-scale setting.
+    </p>
+  </section>
+
+  <section>
+    <h2>05 / Design Reflection</h2>
+    <p>
+      I extended my Lab 9 GDP choropleth and Dorling cartogram
+      with voice interaction using the Web Speech API. Users
+      can say “Highlight China” or “Highlight Japan” to select
+      an economy across both views and display its GDP and
+      rank. They can also change the color scale or reset
+      the visualization. These commands support locating
+      named economies and exploring differences in economic
+      magnitude. Voice is appropriate because country names
+      provide clear targets, especially for countries that
+      are difficult to click on a world map. The interface
+      displays the recognized transcript and resulting action.
+      Listening starts only after an explicit button click
+      and can be stopped. Mouse, keyboard, dropdown, button,
+      and typed-command controls remain available as fallbacks.
+      Live microphone recognition still requires testing on
+      the user’s device. Potential limitations include accents,
+      background noise, country-name transcription errors,
+      browser compatibility, and network-dependent recognition.
+      Unknown commands leave the visualization unchanged and
+      display instructions for trying again.
+    </p>
+  </section>
+
+  <footer>
+    Data and visualization reused from Lab 9 ·
+    Built with D3 and the Web Speech API
+  </footer>
+</main>
+
+<div id="tooltip" role="tooltip" hidden></div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const startButton = document.querySelector("#voice-start");
+  const stopButton = document.querySelector("#voice-stop");
+  const runButton = document.querySelector("#command-run");
+
+  const voiceStatus = document.querySelector("#voice-status");
+  const heard = document.querySelector("#voice-heard");
+  const action = document.querySelector("#voice-action");
+
+  let ready = false;
+  let listening = false;
+  let recognition = null;
+
+  function normalize(text) {
+    return text
+      .toLowerCase()
+      .replace(/[.,!?]/g, "")
+      .trim()
+      .replace(/\s+/g, " ");
+  }
+
+  function handleCommand(text, source = "Heard") {
+    heard.textContent = `${source}: ${text}`;
+
+    if (!ready) {
+      action.textContent = "Action: Please wait for the data to load.";
+      return;
+    }
+
+    const command = normalize(text);
+
+    if (/^(reset|reset visualization|reset selection)$/.test(command)) {
+      document.querySelector("#reset").click();
+      action.textContent = "Action: Selection and map zoom reset.";
+      return;
+    }
+
+    if (/^(linear|linear scale)$/.test(command)) {
+      setColorScale("linear");
+      return;
+    }
+
+    if (/^(log|log scale|logarithmic|logarithmic scale)$/.test(command)) {
+      setColorScale("log");
+      return;
+    }
+
+    const match = command.match(/^(highlight|select|show) (.+)$/);
+
+    if (match) {
+      const aliases = {
+        "usa": "USA",
+        "us": "USA",
+        "united states of america": "USA",
+        "uk": "GBR",
+        "britain": "GBR",
+        "south korea": "KOR"
+      };
+
+      const target = match[2];
+
+      const row = values.find(d =>
+        normalize(d.country) === target ||
+        d.iso3.toLowerCase() === target ||
+        d.iso3 === aliases[target]
+      );
+
+      if (row) {
+        // Reuse Lab 9's linked highlighting function.
+        pinned = row.iso3;
+        hovered = "";
+        tooltip.hidden = true;
+
+        document.querySelector("#country").value = row.iso3;
+        highlight();
+
+        action.textContent =
+          `Action: Highlighting ${row.country} in both views.`;
+        return;
+      }
+    }
+
+    action.textContent =
+      'Action: Command not recognized. Try “Highlight China”, ' +
+      '“Linear scale”, “Log scale”, or “Reset”. ' +
+      "Use a country listed in the dropdown.";
+  }
+
+  function setColorScale(scale) {
+    document.querySelector("#scale").value = scale;
+    updateColor();
+
+    action.textContent =
+      `Action: ${scale === "log" ? "Logarithmic" : "Linear"} color scale.`;
+  }
+
+  document.querySelector("#command-form")
+    .addEventListener("submit", event => {
+      event.preventDefault();
+
+      handleCommand(
+        document.querySelector("#command-input").value,
+        "Typed"
+      );
+    });
+
+  function setIdle() {
+    listening = false;
+    startButton.disabled = false;
+    stopButton.disabled = true;
+  }
+
+  function setupSpeech() {
+    const SpeechRecognition =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      voiceStatus.textContent =
+        "Voice recognition is unavailable in this browser. " +
+        "Use typed commands or the conventional controls.";
+      return;
+    }
+
+    recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    startButton.disabled = false;
+    voiceStatus.textContent = "Voice control inactive.";
+
+    startButton.addEventListener("click", () => {
+      if (listening) return;
+
+      listening = true;
+      startButton.disabled = true;
+      stopButton.disabled = false;
+      voiceStatus.textContent = "Starting microphone…";
+
+      try {
+        recognition.start();
+      } catch (error) {
+        setIdle();
+        voiceStatus.textContent =
+          `Unable to start: ${error.message}. Use fallback controls.`;
+      }
+    });
+
+    stopButton.addEventListener("click", () => {
+      recognition.abort();
+      voiceStatus.textContent = "Listening cancelled.";
+    });
+
+    recognition.onstart = () => {
+      voiceStatus.textContent = "Listening… Speak one command.";
+    };
+
+    recognition.onresult = event => {
+      const transcript = event.results[0][0].transcript;
+      handleCommand(transcript);
+      voiceStatus.textContent = "Command received.";
+    };
+
+    recognition.onnomatch = () => {
+      voiceStatus.textContent =
+        "No speech match. Try again or use fallback controls.";
+    };
+
+    recognition.onerror = event => {
+      const messages = {
+        "not-allowed":
+          "Microphone permission denied. Use fallback controls.",
+        "service-not-allowed":
+          "Speech recognition service unavailable. Use fallback controls.",
+        "audio-capture":
+          "No microphone available. Use fallback controls.",
+        "no-speech":
+          "No speech detected. Click Start and try again.",
+        "network":
+          "Speech service network error. Use fallback controls.",
+        "aborted":
+          "Listening cancelled."
+      };
+
+      voiceStatus.textContent =
+        messages[event.error] ||
+        `Speech error: ${event.error}. Use fallback controls.`;
+    };
+
+    recognition.onend = () => {
+      setIdle();
+
+      if (
+        voiceStatus.textContent === "Listening… Speak one command." ||
+        voiceStatus.textContent === "Starting microphone…"
+      ) {
+        voiceStatus.textContent =
+          "Listening ended. Click Start to try again.";
+      }
+    };
+
+    window.addEventListener("pagehide", () => {
+      recognition.abort();
+    });
+  }
+
+  // Lab 9 loads data asynchronously. Enable commands after it finishes.
+  const dataStatus = document.querySelector("#status");
+
+  function checkReady() {
+    if (ready) return;
+
+    if (dataStatus.textContent.startsWith("Join verified:")) {
+      ready = true;
+      runButton.disabled = false;
+      observer.disconnect();
+      setupSpeech();
+    } else if (
+      dataStatus.textContent.startsWith("Unable to load assignment data:")
+    ) {
+      voiceStatus.textContent =
+        "Visualization data could not load. Check the Lab 9 files.";
+      observer.disconnect();
+    }
+  }
+
+  const observer = new MutationObserver(checkReady);
+
+  observer.observe(dataStatus, {
+    childList: true,
+    characterData: true,
+    subtree: true
+  });
+
+  checkReady();
+});
+</script>
 </body>
-
 </html>
