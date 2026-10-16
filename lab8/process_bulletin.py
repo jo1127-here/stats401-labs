@@ -211,7 +211,11 @@ if __name__=='__main__':
  # BEGIN TWO_SECTION_FILTER
  TARGET_SECTIONS = {
      "Majors (listed in alphabetical order)",
-     "Course Descriptions"
+     "Course Descriptions",
+     "Degree Requirements",
+     "Common Core Courses",
+     "Registration",
+     "Grading and Grade Requirements"
  }
  rows = [
      r for r in rows
@@ -225,18 +229,6 @@ if __name__=='__main__':
  print("SECTIONS:", sorted(set(r["section"] for r in rows)))
  # END TWO_SECTION_FILTER
 
- TARGET_SECTIONS = {
-     'Majors (listed in alphabetical order)',
-     'Course Descriptions'
- }
- rows = [
-     r for r in rows
-     if r.get('section') in TARGET_SECTIONS
- ]
- if not rows:
-     raise RuntimeError('No passages matched the two target sections.')
- print('FILTERED CORPUS:', len(rows), 'passages')
- print('SECTIONS:', sorted(set(r['section'] for r in rows)))
 
  cache=OUT/'minilm_embeddings.npy'
  fingerprint=hashlib.sha256(json.dumps([r['text'] for r in rows]).encode()).hexdigest()
