@@ -1,0 +1,6 @@
+
+# Lab 8 generated local files
+lab8/__pycache__/
+lab8/full_corpus/embedding_input_sha256.txt
+lab8/full_corpus/minilm_embeddings.npy
+lab8/full_corpus/passages.json
