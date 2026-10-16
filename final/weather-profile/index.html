@@ -1036,29 +1036,23 @@ $("export").addEventListener("click", () => {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
-[
-  ["airportFile", false],
-  ["carrierFile", true]
-].forEach(([id, isCarrier]) => {
-  $(id).addEventListener("change", async event => {
-    const file = event.target.files[0];
-    if (!file) return;
+$("flightFile").addEventListener("change", async event => {
+  const file = event.target.files[0];
+  if (!file) return;
 
-    $("status").textContent = `Reading ${file.name}…`;
-    $("error").textContent = "";
+  $("status").textContent = `Reading ${file.name}…`;
+  $("error").textContent = "";
 
-    try {
-      const rows = parseCSV(await file.text(), isCarrier);
+  try {
+    const rows = parseCSV(await file.text());
 
-      if (isCarrier) carrierData = rows;
-      else airportData = rows;
+    flightData = rows;
+    populateControls();
 
-      populateControls();
-    } catch (error) {
-      $("error").textContent = error.message;
-      updateSelection();
-    }
-  });
+  } catch (error) {
+    $("error").textContent = error.message;
+    $("status").textContent = "Failed to load CSV.";
+  }
 });
 
 let resizeTimer;
