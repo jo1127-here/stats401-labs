@@ -208,6 +208,36 @@ def assemble(template=None):
 
 if __name__=='__main__':
  rows,meta=extract()
+ # BEGIN TWO_SECTION_FILTER
+ TARGET_SECTIONS = {
+     "Majors (listed in alphabetical order)",
+     "Course Descriptions"
+ }
+ rows = [
+     r for r in rows
+     if r.get("section", "").strip() in TARGET_SECTIONS
+ ]
+ if not rows:
+     raise RuntimeError("No passages matched target sections")
+ meta["cleaned_passages"] = len(rows)
+ meta["formal_sections"] = len(set(r["section"] for r in rows))
+ print("FILTERED:", len(rows), "passages")
+ print("SECTIONS:", sorted(set(r["section"] for r in rows)))
+ # END TWO_SECTION_FILTER
+
+ TARGET_SECTIONS = {
+     'Majors (listed in alphabetical order)',
+     'Course Descriptions'
+ }
+ rows = [
+     r for r in rows
+     if r.get('section') in TARGET_SECTIONS
+ ]
+ if not rows:
+     raise RuntimeError('No passages matched the two target sections.')
+ print('FILTERED CORPUS:', len(rows), 'passages')
+ print('SECTIONS:', sorted(set(r['section'] for r in rows)))
+
  cache=OUT/'minilm_embeddings.npy'
  fingerprint=hashlib.sha256(json.dumps([r['text'] for r in rows]).encode()).hexdigest()
  stamp=OUT/'embedding_input_sha256.txt'
