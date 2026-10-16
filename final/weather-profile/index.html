@@ -175,27 +175,25 @@
 <main>
   <h1>Weather and Flight Disruption Profiles</h1>
 
-  <p class="description">
-    Each line represents one airport–month.
-    Brush weather or flight axes to highlight the same monthly records
+    <p class="description">
+    Each line represents one carrier–airport–month.
+    Weather data is matched by airport and month.
+    Brush weather or flight axes to highlight the same records
     in both views.
   </p>
-
+  
   <div class="uploads">
     <label>
-      Airport–month CSV
-      <input id="airportFile" type="file" accept=".csv">
-    </label>
-
-    <label>
-      Optional carrier–airport–month CSV
-      <input id="carrierFile" type="file" accept=".csv">
+      Upload Flight + Weather CSV
+      <input id="flightFile" type="file" accept=".csv">
     </label>
   </div>
-
+  
   <p class="note">
-    Uploaded CSV files are processed locally in your browser.
-    The carrier CSV does not need to be hosted on GitHub.
+    Upload one combined Flight + Weather CSV.
+    The file is processed locally in your browser
+    and does not need to be hosted on GitHub.
+  </p>
   </p>
 
   <div id="error" role="alert"></div>
