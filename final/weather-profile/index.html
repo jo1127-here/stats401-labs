@@ -5,353 +5,179 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Weather and Flight Disruption Profiles</title>
 <script src="https://d3js.org/d3.v7.min.js"></script>
-
 <style>
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    background: white;
-    color: #213044;
-    font-family: system-ui, sans-serif;
-    font-size: 14px;
-  }
-
-  main {
-    max-width: 1400px;
-    margin: auto;
-    padding: 28px;
-  }
-
-  h1 { margin: 0 0 10px; font-size: 28px; }
-  h2 { margin: 0 0 8px; font-size: 18px; }
-
-  .description, .note {
-    color: #647184;
-    line-height: 1.6;
-  }
-
-  .note { font-size: 12px; }
-
-  .uploads, .controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-    margin: 20px 0;
-  }
-
-  .controls {
-    padding: 18px 0;
-    border-top: 1px solid #dde4ed;
-    border-bottom: 1px solid #dde4ed;
-    align-items: end;
-  }
-
-  label {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  input, select, button {
-    padding: 8px;
-    border: 1px solid #c7d1df;
-    border-radius: 5px;
-    background: white;
-    color: #213044;
-    font: inherit;
-  }
-
-  select { max-width: 240px; }
-  input[type="number"] { width: 110px; }
-  button { cursor: pointer; }
-  button:hover { background: #edf3fa; }
-
-  .panel {
-    margin: 20px 0;
-    padding: 18px;
-    border: 1px solid #dde4ed;
-    border-radius: 8px;
-  }
-
-  .scroll { overflow-x: auto; }
-
-  .plot {
-    position: relative;
-    min-width: 850px;
-    height: 350px;
-  }
-
-  canvas, svg {
-    position: absolute;
-    left: 0;
-    top: 0;
-  }
-
-  .axis text { fill: #647184; font-size: 11px; }
-  .axis path, .axis line { stroke: #c9d3df; }
-
-  .axis-title {
-    fill: #213044;
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .axis-unit { fill: #647184; font-size: 11px; }
-
-  .selection {
-    fill: #2878b8;
-    fill-opacity: 0.2;
-    stroke: #2878b8;
-  }
-
-  .legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    margin: 12px 0;
-  }
-
-  .dot {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    margin-right: 6px;
-    border-radius: 50%;
-  }
-
-  #status { margin: 12px 0; color: #526276; }
-  #error { color: #ad3030; white-space: pre-wrap; }
-
-  #brushes {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .chip {
-    padding: 5px 8px;
-    background: #edf4fb;
-    border-radius: 4px;
-    font-size: 12px;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-variant-numeric: tabular-nums;
-  }
-
-  th, td {
-    padding: 10px;
-    text-align: left;
-    border-bottom: 1px solid #e5eaf1;
-    white-space: nowrap;
-  }
-
-  th { color: #647184; font-size: 12px; }
-
-  .records { max-height: 300px; overflow: auto; }
-
-  #tooltip {
-    position: fixed;
-    display: none;
-    pointer-events: none;
-    z-index: 10;
-    max-width: 330px;
-    padding: 12px;
-    background: white;
-    border: 1px solid #c7d1df;
-    border-radius: 5px;
-    box-shadow: 0 4px 18px #0002;
-    line-height: 1.6;
-  }
+*{box-sizing:border-box}
+body{margin:0;background:white;color:#243244;font:14px system-ui,sans-serif}
+main{max-width:1450px;margin:auto;padding:28px}
+h1{margin:0 0 10px;font-size:28px}
+h2{margin:0 0 8px;font-size:19px}
+p{line-height:1.6}
+.note{color:#637184;font-size:12px}
+.controls{display:flex;flex-wrap:wrap;gap:14px;align-items:end;
+padding:18px 0;margin:18px 0;border-top:1px solid #dde4ec;
+border-bottom:1px solid #dde4ec}
+label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600}
+input,select,button{padding:8px;border:1px solid #c7d1df;border-radius:4px;
+background:white;color:inherit;font:inherit}
+select{max-width:260px}
+input[type=number]{width:110px}
+button{cursor:pointer}
+button:hover{background:#f1f5f9}
+.panel{margin:20px 0;padding:18px;border:1px solid #dde4ec;border-radius:7px}
+.scroll{overflow-x:auto}
+.plot{position:relative;height:365px;min-width:1050px}
+.plot canvas,.plot svg{position:absolute;top:0;left:0}
+.axis text{fill:#59697b;font-size:11px}
+.axis path,.axis line{stroke:#c7d1df}
+.axis-title{font-size:12px;font-weight:600;fill:#243244}
+.axis-unit{font-size:11px;fill:#637184}
+.selection{fill:#2878b8;fill-opacity:.2;stroke:#2878b8}
+.legend{display:flex;flex-wrap:wrap;gap:20px;margin:12px 0}
+.dot{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:50%}
+#error{color:#b3261e;white-space:pre-wrap;margin:10px 0}
+#status{margin:12px 0;color:#526276}
+#brushes{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:5px 8px;background:#edf4fb;border-radius:4px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:10px;text-align:left;border-bottom:1px solid #e5eaf1;white-space:nowrap}
+th{font-size:12px;color:#637184}
+.records{max-height:350px;overflow:auto}
+#tooltip{display:none;position:fixed;z-index:20;pointer-events:none;
+max-width:340px;padding:12px;background:white;border:1px solid #c7d1df;
+border-radius:5px;box-shadow:0 4px 18px #0002;line-height:1.6}
 </style>
 </head>
-
 <body>
 <main>
-  <h1>Weather and Flight Disruption Profiles</h1>
+<h1>Weather and Flight Disruption Profiles</h1>
+<p>
+Explore monthly weather and flight disruptions in two linked views.
+Brush any axis to select the same records in both charts.
+</p>
 
-    <p class="description">
-    Each line represents one carrier–airport–month.
-    Weather data is matched by airport and month.
-    Brush weather or flight axes to highlight the same records
-    in both views.
-  </p>
-  
-  <div class="uploads">
-    <label>
-      Upload Flight + Weather CSV
-      <input id="flightFile" type="file" accept=".csv">
-    </label>
-  </div>
-  
-  <p class="note">
-    Upload one combined Flight + Weather CSV.
-    The file is processed locally in your browser
-    and does not need to be hosted on GitHub.
-  </p>
-  </p>
+<label>
+Upload Flight + Weather CSV — optional
+<input id="flightFile" type="file" accept=".csv,text/csv">
+</label>
+<p id="loadInfo" class="note">Loading Airport data…</p>
+<p class="note">
+Airport data loads automatically. Upload Flight data to enable individual
+airline comparisons. “All airlines” always uses the Airport summary data.
+</p>
 
-  <div id="error" role="alert"></div>
+<div id="error" role="alert"></div>
 
-  <div class="controls">
-    <label>
-      Airport
-      <select id="airport">
-        <option value="all">All airports</option>
-      </select>
-    </label>
+<div class="controls">
+<label>Airport
+<select id="airport"><option value="">All airports</option></select>
+</label>
 
-    <label>
-      Airline
-      <select id="carrier">
-        <option value="all">All airlines</option>
-      </select>
-    </label>
+<label>Airline
+<select id="carrier" disabled>
+<option value="">All airlines · Airport summary</option>
+</select>
+</label>
 
-    <label>
-      From
-      <input id="from" type="month">
-    </label>
+<label>From<input id="from" type="month"></label>
+<label>Through<input id="to" type="month"></label>
 
-    <label>
-      Through
-      <input id="to" type="month">
-    </label>
+<label>Calendar month
+<select id="month"><option value="">All months</option></select>
+</label>
 
-    <label>
-      Calendar month
-      <select id="month">
-        <option value="all">All months</option>
-      </select>
-    </label>
+<label>Minimum reported flights
+<input id="minFlights" type="number" min="0" value="0">
+</label>
 
-    <label>
-      Minimum reported flights
-      <input id="minFlights" type="number" min="0" value="0">
-    </label>
+<label>Split periods at year
+<input id="splitYear" type="number" value="2023" step="1">
+</label>
 
-    <label>
-      Split periods at year
-      <input id="splitYear" type="number" value="2023" step="1">
-    </label>
+<label>Weather axis 5
+<select id="extra">
+<option value="noaa_DYTS">Thunderstorm days</option>
+<option value="noaa_DYFG">Fog days</option>
+<option value="noaa_WSF2">Maximum 2-minute wind</option>
+</select>
+</label>
 
-    <label>
-      Weather axis 5
-      <select id="extra">
-        <option value="noaa_DYTS">Thunderstorm days</option>
-        <option value="noaa_DYFG">Fog days</option>
-        <option value="noaa_WSF2">Maximum 2-minute wind</option>
-      </select>
-    </label>
+<button id="reset">Clear brushes</button>
+<button id="export" disabled>Export selection</button>
+</div>
 
-    <button id="reset">Clear brushes</button>
-    <button id="export">Export selection</button>
-  </div>
+<div id="status" aria-live="polite">Loading Airport data…</div>
 
-  <div id="status" aria-live="polite">Loading airport CSV…</div>
+<div class="legend">
+<span><i class="dot" style="background:#2474b5"></i>
+<span id="earlyLabel">Before 2023</span></span>
+<span><i class="dot" style="background:#b34887"></i>
+<span id="lateLabel">2023 onward</span></span>
+<span><i class="dot" style="background:#d5dde7"></i>Outside selection</span>
+</div>
 
-  <div class="legend">
-    <span>
-      <i class="dot" style="background:#2474b5"></i>
-      <span id="earlyLabel">Before 2023</span>
-    </span>
+<div id="brushes"></div>
 
-    <span>
-      <i class="dot" style="background:#b34887"></i>
-      <span id="lateLabel">2023 onward</span>
-    </span>
+<section class="panel">
+<h2>1 · Weather Profiles</h2>
+<p id="coverage" class="note"></p>
+<div class="scroll"><div id="weatherPlot" class="plot"></div></div>
+</section>
 
-    <span>
-      <i class="dot" style="background:#d5dde7"></i>
-      Outside brush selection
-    </span>
-  </div>
+<section class="panel">
+<h2>2 · Flight Disruption Profiles</h2>
+<p class="note">
+Delay rate, cancellation rate and mean delay are read from your CSV.
+Weather delay count uses weather_ct.
+</p>
+<div class="scroll"><div id="flightPlot" class="plot"></div></div>
+</section>
 
-  <div id="brushes"></div>
+<section class="panel">
+<h2>3 · Selected vs Other Records</h2>
+<p class="note">
+Other records are outside the brushes but within the current filters.
+Group rates use summed counts rather than an unweighted average of rates.
+</p>
+<div class="scroll">
+<table>
+<thead><tr>
+<th>Metric</th><th>Selected</th><th>Other</th><th>Difference</th>
+</tr></thead>
+<tbody id="summary"></tbody>
+</table>
+</div>
+</section>
 
-  <section class="panel">
-    <h2>1 · Weather Profiles</h2>
-    <p id="coverage" class="note"></p>
-    <div class="scroll">
-      <div id="weatherPlot" class="plot"></div>
-    </div>
-  </section>
+<section class="panel">
+<h2>Selected Monthly Records</h2>
+<div class="records">
+<table>
+<thead><tr>
+<th>Airport</th><th>Month</th><th>Airline</th><th>Flights</th>
+<th>Precipitation (mm)</th><th>Delay rate</th>
+<th>Cancellation rate</th><th>Mean delay (min)</th>
+</tr></thead>
+<tbody id="records"></tbody>
+</table>
+</div>
+<p id="recordNote" class="note"></p>
+</section>
 
-  <section class="panel">
-    <h2>2 · Flight Disruption Profiles</h2>
-    <p class="note">
-      Rates use reported flights as the denominator.
-      Mean delay includes delayed arrivals only.
-    </p>
-    <div class="scroll">
-      <div id="flightPlot" class="plot"></div>
-    </div>
-  </section>
-
-  <section class="panel">
-    <h2>3 · Selected vs Other Months</h2>
-    <p class="note">
-      Other months are the records outside the brush selection within
-      the current filters. Rates are calculated from summed counts.
-    </p>
-
-    <div class="scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>Metric</th>
-            <th>Selected</th>
-            <th>Other</th>
-            <th>Difference</th>
-          </tr>
-        </thead>
-        <tbody id="summary"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="panel">
-    <h2>Selected Monthly Records</h2>
-
-    <div class="records">
-      <table>
-        <thead>
-          <tr>
-            <th>Airport / Month</th>
-            <th>Flights</th>
-            <th>Precipitation (mm)</th>
-            <th>Delay rate</th>
-            <th>Cancellation rate</th>
-            <th>Mean delay (min)</th>
-          </tr>
-        </thead>
-        <tbody id="records"></tbody>
-      </table>
-    </div>
-
-    <p id="recordNote" class="note"></p>
-  </section>
-
-  <p class="note">
-    Monthly associations do not establish causal weather effects.
-    Weather-attributed delay is a reported category, not all weather impact.
-    Missing values remain missing, and lines break at missing axes.
-    Each axis has its own scale; line slopes are not correlations.
-    Pandemic years may differ operationally. For partial years, compare
-    the same calendar months.
-  </p>
+<p class="note">
+Each line represents one airport–month, or one carrier–airport–month
+when an airline is selected. Weather is already matched by airport and month.
+Missing values remain missing. Each axis has its own scale; line slopes
+are not correlations. Monthly associations do not establish causal effects.
+</p>
 </main>
-
 <div id="tooltip"></div>
 
 <script>
+"use strict";
+
 const $ = id => document.getElementById(id);
-const DEFAULT_AIRPORT_CSV = "./data/airport_weather_monthly.csv";
+const AIRPORT_URL = "./data/airport_weather_monthly.csv";
+const MEAN = "mean_delay_minutes_per_delayed_arrival";
 
 const WEATHER_BASE = [
   ["noaa_PRCP", "Precipitation", "mm"],
@@ -360,7 +186,7 @@ const WEATHER_BASE = [
   ["noaa_SNOW", "Snowfall", "mm"]
 ];
 
-const EXTRA_AXES = {
+const EXTRA = {
   noaa_DYTS: ["Thunderstorm days", "days"],
   noaa_DYFG: ["Fog days", "days"],
   noaa_WSF2: ["Maximum 2-min wind", "m/s"]
@@ -369,231 +195,246 @@ const EXTRA_AXES = {
 const FLIGHT_AXES = [
   ["arr_flights", "Reported flights", "count"],
   ["delay_rate", "Delay rate", "%"],
-  ["mean_delay", "Mean delay", "min"],
+  [MEAN, "Mean delay", "min"],
   ["cancellation_rate", "Cancellation rate", "%"],
-  ["weather_rate", "Weather-attributed rate", "%"]
+  ["weather_ct", "Weather delay count", "count"]
 ];
 
 const NUMERIC_FIELDS = [
-  "year", "month", "arr_flights", "arr_del15",
-  "arr_cancelled", "arr_delay", "weather_ct",
-  ...WEATHER_BASE.map(d => d[0]),
-  ...Object.keys(EXTRA_AXES)
+  "year", "month", "arr_flights", "arr_del15", "arr_cancelled",
+  "arr_delay", "weather_ct", "delay_rate", "cancellation_rate", MEAN,
+  ...WEATHER_BASE.map(d => d[0]), ...Object.keys(EXTRA)
 ];
 
 let airportData = [];
-let carrierData = [];
+let flightData = [];
+let airportColumns = [];
+let flightColumns = [];
 let filtered = [];
 let selected = [];
 let plots = [];
 let brushes = new Map();
+let airportLoaded = false;
+let flightLoaded = false;
+let flightName = "";
+let uploadVersion = 0;
 
-function formatValue(value, rate = false) {
-  if (!Number.isFinite(value)) return "—";
-  return rate
-    ? d3.format(".1%")(value)
-    : d3.format(",.1f")(value);
+function number(value) {
+  const s = String(value ?? "").trim();
+  return s !== "" && Number.isFinite(Number(s)) ? Number(s) : NaN;
 }
 
-function parseCSV(text, isCarrier = false) {
-  const rows = d3.csvParse(text);
+function fmt(value, rate = false) {
+  if (!Number.isFinite(value)) return "—";
+  return rate ? d3.format(".1%")(value) : d3.format(",.1f")(value);
+}
+
+function weatherAxes() {
+  const key = $("extra").value;
+  return [...WEATHER_BASE, [key, ...EXTRA[key]]];
+}
+
+function airlineMode() {
+  return $("carrier").value !== "";
+}
+
+function currentSource() {
+  return airlineMode()
+    ? flightData.filter(d => d.carrier === $("carrier").value)
+    : airportData;
+}
+
+function tr(values) {
+  const row = document.createElement("tr");
+  for (const value of values) {
+    const cell = document.createElement("td");
+    cell.textContent = value;
+    row.append(cell);
+  }
+  return row;
+}
+
+function parseCSV(text, carrierMode) {
+  const rows = d3.csvParse(text.replace(/^\uFEFF/, ""));
 
   const required = [
-    "airport", "year", "month", "arr_flights",
-    "arr_del15", "arr_cancelled", "arr_delay", "weather_ct"
+    "airport", "year", "month", "arr_flights", "arr_del15",
+    "arr_cancelled", "arr_delay", "weather_ct", "delay_rate",
+    "cancellation_rate", MEAN, ...WEATHER_BASE.map(d => d[0])
   ];
-
-  if (isCarrier) required.push("carrier");
+  if (carrierMode) required.push("carrier");
 
   const missing = required.filter(k => !rows.columns.includes(k));
-
   if (missing.length) {
-    throw new Error("Missing columns: " + missing.join(", "));
+    throw new Error("Missing CSV columns: " + missing.join(", "));
   }
+  if (!carrierMode && rows.columns.includes("carrier")) {
+    throw new Error(
+      "The Airport data file contains carrier rows. " +
+      "Use the airport–month summary CSV in the data folder."
+    );
+  }
+  if (!rows.length) throw new Error("The CSV contains no data rows.");
 
-  const keys = new Set();
+  const seen = new Set();
+  const parsed = rows.map((original, i) => {
+    const d = { ...original };
 
-  return rows.map((row, index) => {
-    const d = { ...row };
+    NUMERIC_FIELDS.forEach(k => d[k] = number(original[k]));
+    d.airport = String(original.airport ?? "").trim();
 
-    NUMERIC_FIELDS.forEach(key => {
-      const raw = String(row[key] ?? "").trim();
-      d[key] = raw !== "" && Number.isFinite(Number(raw))
-        ? Number(raw)
-        : NaN;
-    });
-
-    d.airport = String(d.airport ?? "").trim();
-    if (isCarrier) d.carrier = String(d.carrier ?? "").trim();
+    if (carrierMode) {
+      d.carrier = String(original.carrier ?? "").trim();
+    }
 
     if (
       !d.airport ||
-      (isCarrier && !d.carrier) ||
+      (carrierMode && !d.carrier) ||
       !Number.isInteger(d.year) ||
       !Number.isInteger(d.month) ||
-      d.month < 1 ||
-      d.month > 12 ||
-      !Number.isFinite(d.arr_flights) ||
-      d.arr_flights < 0
+      d.month < 1 || d.month > 12 ||
+      !Number.isFinite(d.arr_flights) || d.arr_flights < 0
     ) {
-      throw new Error("Invalid identifiers or counts at row " + (index + 2));
+      throw new Error("Invalid identifiers or flights at CSV row " + (i + 2));
     }
 
-    for (const key of ["arr_del15", "arr_cancelled", "arr_delay", "weather_ct"]) {
-      if (Number.isFinite(d[key]) && d[key] < 0) {
-        throw new Error("Negative " + key + " at row " + (index + 2));
-      }
-    }
-
-    for (const key of ["arr_del15", "arr_cancelled"]) {
-      if (Number.isFinite(d[key]) && d[key] > d.arr_flights) {
-        throw new Error(key + " exceeds flights at row " + (index + 2));
+    for (const k of ["arr_del15", "arr_cancelled", "arr_delay", "weather_ct"]) {
+      if (Number.isFinite(d[k]) && d[k] < 0) {
+        throw new Error("Negative " + k + " at CSV row " + (i + 2));
       }
     }
 
     d.date = `${d.year}-${String(d.month).padStart(2, "0")}`;
-    d.key = [
-      d.airport,
-      d.date,
-      isCarrier ? d.carrier : "all"
-    ].join("|");
+    d.key = JSON.stringify([
+      d.airport, d.date, carrierMode ? d.carrier : ""
+    ]);
 
-    if (keys.has(d.key)) {
-      throw new Error("Duplicate monthly record: " + d.key);
+    if (seen.has(d.key)) {
+      throw new Error(
+        "Duplicate CSV record at row " + (i + 2) + ": " +
+        [d.airport, d.date, carrierMode ? d.carrier : ""]
+          .filter(Boolean).join(" | ")
+      );
     }
-
-    keys.add(d.key);
-
-    d.delay_rate = d.arr_flights > 0
-      ? d.arr_del15 / d.arr_flights
-      : NaN;
-
-    d.cancellation_rate = d.arr_flights > 0
-      ? d.arr_cancelled / d.arr_flights
-      : NaN;
-
-    d.weather_rate = d.arr_flights > 0
-      ? d.weather_ct / d.arr_flights
-      : NaN;
-
-    d.mean_delay = d.arr_del15 > 0
-      ? d.arr_delay / d.arr_del15
-      : NaN;
-
+    seen.add(d.key);
     return d;
   });
+
+  return { rows: parsed, columns: rows.columns };
 }
 
-function populateControls() {
+function updateLoadInfo() {
+  const airportText = airportLoaded
+    ? `Airport: ${airportData.length.toLocaleString()} rows loaded`
+    : "Airport: not loaded";
+
+  const flightText = flightLoaded
+    ? `Flight: ${flightData.length.toLocaleString()} rows loaded (${flightName})`
+    : "Flight: upload optional";
+
+  $("loadInfo").textContent = airportText + " · " + flightText;
+}
+
+function populateControls(preferAirline = false) {
   const previousAirport = $("airport").value;
   const previousCarrier = $("carrier").value;
+  const hadData = $("from").value !== "";
 
-  const combined = [...airportData, ...carrierData];
-  const airportCodes = [...new Set(combined.map(d => d.airport))].sort();
+  const airportCodes = [...new Set(
+    [...airportData, ...flightData].map(d => d.airport)
+  )].sort();
 
   $("airport").replaceChildren(
-    new Option("All airports", "all"),
+    new Option("All airports", ""),
     ...airportCodes.map(code => new Option(code, code))
   );
 
-  $("airport").value = airportCodes.includes(previousAirport)
-    ? previousAirport
-    : airportCodes.includes("ABE")
-      ? "ABE"
-      : airportCodes[0] || "all";
-
-  const carriers = [...new Set(carrierData.map(d => d.carrier))].sort();
-
-  const carrierOptions = [];
-
-  if (airportData.length) {
-    carrierOptions.push(new Option("All airlines", "all"));
+  if (hadData && (previousAirport === "" || airportCodes.includes(previousAirport))) {
+    $("airport").value = previousAirport;
+  } else {
+    $("airport").value = airportCodes.includes("ABE")
+      ? "ABE" : airportCodes[0] || "";
   }
 
-  for (const code of carriers) {
-    const row = carrierData.find(d => d.carrier === code);
-    const name = row.carrier_name || code;
-    carrierOptions.push(new Option(`${code} · ${name}`, code));
-  }
+  const names = new Map();
+  flightData.forEach(d => names.set(d.carrier, d.carrier_name || d.carrier));
+  const carriers = [...names].sort((a, b) => a[0].localeCompare(b[0]));
 
-  if (!carrierOptions.length) {
-    carrierOptions.push(new Option("All airlines", "all"));
-  }
+  $("carrier").replaceChildren(
+    new Option("All airlines · Airport summary", ""),
+    ...carriers.map(([code, name]) => new Option(`${code} · ${name}`, code))
+  );
 
-  $("carrier").replaceChildren(...carrierOptions);
+  $("carrier").disabled = !flightLoaded;
 
-  if ([...$("carrier").options].some(d => d.value === previousCarrier)) {
+  if (names.has(previousCarrier)) {
     $("carrier").value = previousCarrier;
+  } else if (preferAirline && carriers.length) {
+    // After uploading Flight data, show an airline present at this airport.
+    const first = flightData.find(d =>
+      !$("airport").value || d.airport === $("airport").value
+    );
+    $("carrier").value = first ? first.carrier : carriers[0][0];
   }
 
-  const dates = combined.map(d => d.date).sort();
+  if (!hadData) {
+    setDateRange();
+  }
 
+  updateLoadInfo();
+  refresh();
+}
+
+function setDateRange() {
+  const dates = currentSource().map(d => d.date).sort();
   if (dates.length) {
     $("from").value = dates[0];
     $("to").value = dates[dates.length - 1];
   }
-
-  refresh();
-}
-
-function currentWeatherAxes() {
-  const key = $("extra").value;
-  return [...WEATHER_BASE, [key, ...EXTRA_AXES[key]]];
 }
 
 function refresh() {
-  $("error").textContent = "";
+  $("tooltip").style.display = "none";
 
-  if (
-    $("from").value &&
-    $("to").value &&
-    $("from").value > $("to").value
-  ) {
+  if ($("from").value && $("to").value && $("from").value > $("to").value) {
     $("error").textContent = "Start month must not be after end month.";
     return;
   }
 
-  if (!Number.isInteger(Number($("splitYear").value))) {
+  if (!$("splitYear").value ||
+      !Number.isInteger(Number($("splitYear").value))) {
     $("error").textContent = "Enter a valid split year.";
     return;
   }
 
+  $("error").textContent = "";
   brushes.clear();
 
-  const carrier = $("carrier").value;
-
-  const source = carrier === "all"
-    ? airportData
-    : carrierData.filter(d => d.carrier === carrier);
-
-  filtered = source.filter(d =>
-    ($("airport").value === "all" || d.airport === $("airport").value) &&
+  filtered = currentSource().filter(d =>
+    (!$("airport").value || d.airport === $("airport").value) &&
     (!$("from").value || d.date >= $("from").value) &&
     (!$("to").value || d.date <= $("to").value) &&
-    ($("month").value === "all" || d.month === Number($("month").value)) &&
+    (!$("month").value || d.month === Number($("month").value)) &&
     d.arr_flights >= Math.max(0, Number($("minFlights").value) || 0)
   );
 
-  const split = Number($("splitYear").value);
-
-  $("earlyLabel").textContent = `Before ${split}`;
-  $("lateLabel").textContent = `${split} onward`;
+  $("earlyLabel").textContent = `Before ${$("splitYear").value}`;
+  $("lateLabel").textContent = `${$("splitYear").value} onward`;
+  $("export").disabled = !filtered.length;
 
   buildPlots();
 }
 
 function buildPlots() {
-  const weatherAxes = currentWeatherAxes();
-
   plots = [
-    buildPlot("weatherPlot", weatherAxes),
+    buildPlot("weatherPlot", weatherAxes()),
     buildPlot("flightPlot", FLIGHT_AXES)
   ];
 
-  $("coverage").textContent = weatherAxes.map(([key, label]) => {
-    const available = filtered.filter(d => Number.isFinite(d[key])).length;
-    return `${label}: ${available}/${filtered.length} available`;
-  }).join(" · ");
+  $("coverage").textContent = weatherAxes().map(([key, label]) =>
+    `${label}: ${filtered.filter(d => Number.isFinite(d[key])).length}` +
+    `/${filtered.length} available`
+  ).join(" · ");
 
   updateSelection();
 }
@@ -602,83 +443,59 @@ function buildPlot(id, axes) {
   const host = $(id);
   host.replaceChildren();
 
-  const width = Math.max(850, host.clientWidth);
-  const height = 350;
-  const top = 62;
-  const bottom = 310;
-
+  const width = Math.max(1050, host.clientWidth);
+  const height = 365, top = 70, bottom = 320;
+  const ratio = window.devicePixelRatio || 1;
   const canvas = document.createElement("canvas");
-  const pixelRatio = window.devicePixelRatio || 1;
 
-  canvas.width = width * pixelRatio;
-  canvas.height = height * pixelRatio;
+  canvas.width = Math.round(width * ratio);
+  canvas.height = Math.round(height * ratio);
   canvas.style.width = width + "px";
   canvas.style.height = height + "px";
-
   host.append(canvas);
 
   const ctx = canvas.getContext("2d");
-  ctx.scale(pixelRatio, pixelRatio);
+  ctx.scale(ratio, ratio);
 
-  const svg = d3.select(host)
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height);
+  const svg = d3.select(host).append("svg")
+    .attr("width", width).attr("height", height);
 
   const x = d3.scalePoint()
     .domain(axes.map(d => d[0]))
-    .range([95, width - 105]);
+    .range([110, width - 120]);
 
   const scales = {};
-  const brushObjects = {};
+  const controls = {};
 
-  axes.forEach(([key, label, unit]) => {
-    const values = filtered
-      .map(d => d[key])
-      .filter(Number.isFinite);
-
+  for (const [key, label, unit] of axes) {
+    const values = filtered.map(d => d[key]).filter(Number.isFinite);
     let domain = values.length ? d3.extent(values) : [0, 1];
 
+    if (key !== "noaa_TAVG") domain[0] = Math.min(0, domain[0]);
     if (domain[0] === domain[1]) {
-      const padding = Math.abs(domain[0]) * 0.1 || 1;
-      domain = [domain[0] - padding, domain[1] + padding];
+      if (domain[0] === 0) domain = [0, 1];
+      else {
+        const pad = Math.abs(domain[0]) * .1 || 1;
+        domain = [domain[0] - pad, domain[1] + pad];
+      }
     }
 
-    if (unit === "%" || key === "arr_flights") {
-      domain = [0, Math.max(domain[1], unit === "%" ? 0.01 : 1)];
-    } else if (key !== "noaa_TAVG" && values.length) {
-      domain[0] = Math.min(0, domain[0]);
-    }
-
-    const y = d3.scaleLinear()
-      .domain(domain)
-      .nice()
-      .range([bottom, top]);
-
+    const y = d3.scaleLinear().domain(domain).nice().range([bottom, top]);
     scales[key] = y;
 
     const g = svg.append("g")
       .attr("transform", `translate(${x(key)},0)`);
 
-    g.append("g")
-      .attr("class", "axis")
-      .call(
-        d3.axisLeft(y)
-          .ticks(5)
-          .tickFormat(unit === "%" ? d3.format(".0%") : d3.format("~g"))
-      );
+    g.append("g").attr("class", "axis")
+      .call(d3.axisLeft(y).ticks(5).tickFormat(
+        unit === "%" ? d3.format(".0%") : d3.format("~g")
+      ));
 
-    g.append("text")
-      .attr("class", "axis-title")
-      .attr("text-anchor", "middle")
-      .attr("y", 20)
-      .text(label);
+    g.append("text").attr("class", "axis-title")
+      .attr("text-anchor", "middle").attr("y", 22).text(label);
 
-    g.append("text")
-      .attr("class", "axis-unit")
-      .attr("text-anchor", "middle")
-      .attr("y", 39)
-      .text(unit);
+    g.append("text").attr("class", "axis-unit")
+      .attr("text-anchor", "middle").attr("y", 42).text(unit);
 
     const brush = d3.brushY()
       .extent([[-18, top], [18, bottom]])
@@ -686,46 +503,36 @@ function buildPlot(id, axes) {
         if (event.selection) {
           const [a, b] = event.selection;
           brushes.set(key, [y.invert(b), y.invert(a)]);
-        } else {
-          brushes.delete(key);
-        }
-
+        } else brushes.delete(key);
         updateSelection();
       });
 
-    const brushGroup = g.append("g").call(brush);
-    brushObjects[key] = { brush, group: brushGroup };
-  });
+    controls[key] = { brush, group: g.append("g").call(brush) };
+  }
 
-  const plot = {
-    ctx, width, height, axes, x, scales, brushObjects
-  };
+  if (!filtered.length) {
+    svg.append("text")
+      .attr("x", width / 2).attr("y", 185)
+      .attr("text-anchor", "middle").attr("fill", "#637184")
+      .text("No records available for the current data and filters.");
+  }
+
+  const plot = { ctx, width, height, axes, x, scales, controls };
 
   svg.on("mousemove", event => {
     if (event.buttons) return;
-
     const [px, py] = d3.pointer(event);
-    let closest = null;
-    let distance = 7;
+    let closest = null, distance = 6;
 
     for (const d of selected) {
       for (let i = 1; i < axes.length; i++) {
-        const left = axes[i - 1][0];
-        const right = axes[i][0];
-
-        if (!Number.isFinite(d[left]) || !Number.isFinite(d[right])) {
-          continue;
-        }
-
-        const xa = x(left);
-        const xb = x(right);
-
+        const left = axes[i - 1][0], right = axes[i][0];
+        if (!Number.isFinite(d[left]) || !Number.isFinite(d[right])) continue;
+        const xa = x(left), xb = x(right);
         if (px < xa || px > xb) continue;
 
-        const ya = scales[left](d[left]);
-        const yb = scales[right](d[right]);
-        const lineY = ya + (yb - ya) * (px - xa) / (xb - xa);
-        const delta = Math.abs(py - lineY);
+        const ya = scales[left](d[left]), yb = scales[right](d[right]);
+        const delta = Math.abs(py - (ya + (yb - ya) * (px - xa) / (xb - xa)));
 
         if (delta < distance) {
           closest = d;
@@ -733,19 +540,152 @@ function buildPlot(id, axes) {
         }
       }
     }
-
-    if (closest) {
-      showTooltip(event, closest);
-    } else {
-      $("tooltip").style.display = "none";
-    }
+    if (closest) showTooltip(event, closest);
+    else $("tooltip").style.display = "none";
   });
 
-  svg.on("mouseleave", () => {
-    $("tooltip").style.display = "none";
-  });
-
+  svg.on("mouseleave", () => $("tooltip").style.display = "none");
   return plot;
+}
+
+function drawPlot(plot) {
+  const { ctx, width, height, axes, x, scales } = plot;
+  ctx.clearRect(0, 0, width, height);
+  const selectedKeys = new Set(selected.map(d => d.key));
+
+  function stroke(d, color, opacity) {
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.globalAlpha = opacity;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+
+    let connected = false;
+    for (const [key] of axes) {
+      if (!Number.isFinite(d[key])) {
+        connected = false;
+        continue;
+      }
+      const px = x(key), py = scales[key](d[key]);
+      if (connected) ctx.lineTo(px, py);
+      else ctx.moveTo(px, py);
+      connected = true;
+    }
+    ctx.stroke();
+
+    for (const [key] of axes) {
+      if (!Number.isFinite(d[key])) continue;
+      ctx.beginPath();
+      ctx.arc(x(key), scales[key](d[key]), 1.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  filtered.forEach(d => {
+    if (!selectedKeys.has(d.key)) stroke(d, "#d5dde7", .16);
+  });
+
+  const opacity = Math.max(.035, Math.min(.65, 35 / Math.max(1, selected.length)));
+  selected.forEach(d => stroke(
+    d, d.year < Number($("splitYear").value) ? "#2474b5" : "#b34887",
+    opacity
+  ));
+  ctx.globalAlpha = 1;
+}
+
+function aggregate(rows) {
+  function rate(key) {
+    const valid = rows.filter(d =>
+      Number.isFinite(d[key]) && Number.isFinite(d.arr_flights)
+    );
+    const denominator = d3.sum(valid, d => d.arr_flights);
+    return denominator > 0
+      ? d3.sum(valid, d => d[key]) / denominator : NaN;
+  }
+
+  const valid = rows.filter(d =>
+    Number.isFinite(d.arr_delay) && Number.isFinite(d.arr_del15)
+  );
+  const delayed = d3.sum(valid, d => d.arr_del15);
+
+  return [
+    rows.length,
+    d3.sum(rows, d => d.arr_flights),
+    rate("arr_del15"),
+    rate("arr_cancelled"),
+    delayed > 0 ? d3.sum(valid, d => d.arr_delay) / delayed : NaN
+  ];
+}
+
+function updateSelection() {
+  selected = filtered.filter(d =>
+    [...brushes].every(([key, [low, high]]) =>
+      Number.isFinite(d[key]) && d[key] >= low && d[key] <= high
+    )
+  );
+
+  plots.forEach(drawPlot);
+
+  const mode = airlineMode();
+  const unit = mode ? "carrier–airport–months" : "airport–months";
+  const sourceName = mode
+    ? `Airline ${$("carrier").value}` : "All airlines · Airport summary";
+
+  $("status").textContent =
+    `${sourceName} · ${filtered.length.toLocaleString()} ${unit} in filters · ` +
+    `${selected.length.toLocaleString()} selected`;
+
+  const definitions = [...weatherAxes(), ...FLIGHT_AXES];
+
+  $("brushes").replaceChildren(...[...brushes].map(([key, [low, high]]) => {
+    const def = definitions.find(d => d[0] === key);
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    chip.textContent =
+      `${def[1]}: ${fmt(low, def[2] === "%")} – ${fmt(high, def[2] === "%")}`;
+    return chip;
+  }));
+
+  const keys = new Set(selected.map(d => d.key));
+  const other = filtered.filter(d => !keys.has(d.key));
+  const a = aggregate(selected), b = aggregate(other);
+  const labels = [
+    mode ? "Carrier–airport–months" : "Airport–months",
+    "Reported flights", "Delay rate", "Cancellation rate", "Mean delay (min)"
+  ];
+
+  $("summary").replaceChildren(...labels.map((label, i) => {
+    const rate = i === 2 || i === 3;
+    const delta = a[i] - b[i];
+    let difference = "—";
+
+    if (selected.length && other.length && Number.isFinite(delta)) {
+      difference = rate
+        ? d3.format("+.1f")(delta * 100) + " pp"
+        : d3.format("+,.1f")(delta);
+    }
+
+    return tr([
+      label,
+      !selected.length ? "—" : i < 2 ? a[i].toLocaleString() : fmt(a[i], rate),
+      !other.length ? "—" : i < 2 ? b[i].toLocaleString() : fmt(b[i], rate),
+      difference
+    ]);
+  }));
+
+  const sorted = [...selected].sort((a, b) =>
+    a.airport.localeCompare(b.airport) || a.date.localeCompare(b.date)
+  );
+
+  $("records").replaceChildren(...sorted.slice(0, 150).map(d => tr([
+    d.airport, d.date, mode ? d.carrier : "All airlines",
+    d.arr_flights.toLocaleString(), fmt(d.noaa_PRCP),
+    fmt(d.delay_rate, true), fmt(d.cancellation_rate, true), fmt(d[MEAN])
+  ])));
+
+  $("recordNote").textContent =
+    `Showing ${Math.min(150, selected.length)} of ${selected.length} selected records. ` +
+    "Export includes the full selection.";
 }
 
 function showTooltip(event, d) {
@@ -753,357 +693,153 @@ function showTooltip(event, d) {
   tooltip.replaceChildren();
 
   const title = document.createElement("strong");
-  title.textContent = `${d.airport} · ${d.date}` +
-    (d.carrier ? ` · ${d.carrier}` : "");
+  title.textContent = [
+    d.airport, d.date, airlineMode() ? d.carrier : "All airlines"
+  ].join(" · ");
+  tooltip.append(title);
 
-  tooltip.append(title, document.createElement("br"));
-
-  const lines = [
+  [
+    d.airport_name || "",
+    airlineMode() ? d.carrier_name || "" : "",
     `Flights: ${d.arr_flights.toLocaleString()}`,
-    `Precipitation: ${formatValue(d.noaa_PRCP)} mm`,
-    `Delay rate: ${formatValue(d.delay_rate, true)}`,
-    `Cancellation rate: ${formatValue(d.cancellation_rate, true)}`,
-    `Mean delay: ${formatValue(d.mean_delay)} min`
-  ];
-
-  lines.forEach(text => {
+    `Precipitation: ${fmt(d.noaa_PRCP)} mm`,
+    `Delay rate: ${fmt(d.delay_rate, true)}`,
+    `Cancellation rate: ${fmt(d.cancellation_rate, true)}`,
+    `Mean delay: ${fmt(d[MEAN])} min`
+  ].filter(Boolean).forEach(text => {
     const line = document.createElement("div");
     line.textContent = text;
     tooltip.append(line);
   });
 
   tooltip.style.display = "block";
-
   const bounds = tooltip.getBoundingClientRect();
-
-  tooltip.style.left = Math.max(
-    8,
-    Math.min(event.clientX + 14, innerWidth - bounds.width - 10)
-  ) + "px";
-
-  tooltip.style.top = Math.max(
-    8,
-    Math.min(event.clientY + 14, innerHeight - bounds.height - 10)
-  ) + "px";
-}
-
-function drawPlot(plot) {
-  const { ctx, width, height, axes, x, scales } = plot;
-  ctx.clearRect(0, 0, width, height);
-
-  const selectedKeys = new Set(selected.map(d => d.key));
-
-  function strokeRecord(d, color, opacity) {
-    ctx.strokeStyle = color;
-    ctx.globalAlpha = opacity;
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-
-    let connected = false;
-
-    for (const [key] of axes) {
-      if (!Number.isFinite(d[key])) {
-        connected = false;
-        continue;
-      }
-
-      const px = x(key);
-      const py = scales[key](d[key]);
-
-      if (connected) ctx.lineTo(px, py);
-      else ctx.moveTo(px, py);
-
-      connected = true;
-    }
-
-    ctx.stroke();
-  }
-
-  filtered.forEach(d => {
-    if (!selectedKeys.has(d.key)) {
-      strokeRecord(d, "#d5dde7", 0.16);
-    }
-  });
-
-  const opacity = Math.max(
-    0.035,
-    Math.min(0.65, 35 / Math.max(1, selected.length))
-  );
-
-  selected.forEach(d => {
-    const color = d.year < Number($("splitYear").value)
-      ? "#2474b5"
-      : "#b34887";
-
-    strokeRecord(d, color, opacity);
-  });
-
-  ctx.globalAlpha = 1;
-}
-
-function aggregate(rows) {
-  function pooledRate(numerator) {
-    const valid = rows.filter(d =>
-      Number.isFinite(d[numerator]) &&
-      Number.isFinite(d.arr_flights)
-    );
-
-    const denominator = d3.sum(valid, d => d.arr_flights);
-
-    return denominator > 0
-      ? d3.sum(valid, d => d[numerator]) / denominator
-      : NaN;
-  }
-
-  const validDelay = rows.filter(d =>
-    Number.isFinite(d.arr_delay) &&
-    Number.isFinite(d.arr_del15)
-  );
-
-  const delayed = d3.sum(validDelay, d => d.arr_del15);
-
-  return [
-    rows.length,
-    d3.sum(rows, d => d.arr_flights),
-    pooledRate("arr_del15"),
-    pooledRate("arr_cancelled"),
-    pooledRate("weather_ct"),
-    delayed > 0
-      ? d3.sum(validDelay, d => d.arr_delay) / delayed
-      : NaN
-  ];
-}
-
-function updateSelection() {
-  selected = filtered.filter(d =>
-    [...brushes].every(([key, [low, high]]) =>
-      Number.isFinite(d[key]) &&
-      d[key] >= low &&
-      d[key] <= high
-    )
-  );
-
-  plots.forEach(drawPlot);
-
-  $("status").textContent =
-    `${filtered.length.toLocaleString()} airport–months in current filters · ` +
-    `${selected.length.toLocaleString()} selected · ` +
-    `${new Set(filtered.map(d => d.airport)).size} airports`;
-
-  const allAxes = [...currentWeatherAxes(), ...FLIGHT_AXES];
-
-  $("brushes").replaceChildren(
-    ...[...brushes].map(([key, [low, high]]) => {
-      const definition = allAxes.find(d => d[0] === key);
-      const chip = document.createElement("span");
-      chip.className = "chip";
-      chip.textContent =
-        `${definition[1]}: ` +
-        `${formatValue(low, definition[2] === "%")} – ` +
-        `${formatValue(high, definition[2] === "%")}`;
-      return chip;
-    })
-  );
-
-  const selectedKeys = new Set(selected.map(d => d.key));
-  const other = filtered.filter(d => !selectedKeys.has(d.key));
-
-  const a = aggregate(selected);
-  const b = aggregate(other);
-
-  const labels = [
-    "Airport–months",
-    "Reported flights",
-    "Delay rate",
-    "Cancellation rate",
-    "Weather-attributed delay rate",
-    "Mean delay (min)"
-  ];
-
-  $("summary").replaceChildren(
-    ...labels.map((label, index) => {
-      const rate = index >= 2 && index <= 4;
-      const difference = a[index] - b[index];
-
-      let differenceText = "—";
-
-      if (Number.isFinite(difference)) {
-        differenceText = rate
-          ? d3.format("+.1f")(difference * 100) + " pp"
-          : d3.format("+,.1f")(difference);
-      }
-
-      const values = [
-        label,
-        index < 2 ? a[index].toLocaleString() : formatValue(a[index], rate),
-        index < 2 ? b[index].toLocaleString() : formatValue(b[index], rate),
-        differenceText
-      ];
-
-      return tableRow(values);
-    })
-  );
-
-  const sorted = [...selected].sort((a, b) =>
-    a.airport.localeCompare(b.airport) ||
-    a.date.localeCompare(b.date)
-  );
-
-  $("records").replaceChildren(
-    ...sorted.slice(0, 150).map(d => tableRow([
-      `${d.airport} · ${d.date}`,
-      d.arr_flights.toLocaleString(),
-      formatValue(d.noaa_PRCP),
-      formatValue(d.delay_rate, true),
-      formatValue(d.cancellation_rate, true),
-      formatValue(d.mean_delay)
-    ]))
-  );
-
-  $("recordNote").textContent =
-    `Showing ${Math.min(150, selected.length)} of ` +
-    `${selected.length} selected records. Export includes the full selection.`;
-}
-
-function tableRow(values) {
-  const row = document.createElement("tr");
-
-  values.forEach(value => {
-    const cell = document.createElement("td");
-    cell.textContent = value;
-    row.append(cell);
-  });
-
-  return row;
+  tooltip.style.left = Math.max(8,
+    Math.min(event.clientX + 14, innerWidth - bounds.width - 10)) + "px";
+  tooltip.style.top = Math.max(8,
+    Math.min(event.clientY + 14, innerHeight - bounds.height - 10)) + "px";
 }
 
 for (let month = 1; month <= 12; month++) {
-  const label = new Date(2000, month - 1, 1)
-    .toLocaleString("en", { month: "long" });
-
-  $("month").append(new Option(label, month));
+  $("month").append(new Option(
+    new Date(2000, month - 1, 1).toLocaleString("en", { month: "long" }), month
+  ));
 }
 
 [
-  "airport", "carrier", "from", "to",
-  "month", "minFlights", "splitYear", "extra"
-].forEach(id => {
-  $(id).addEventListener("change", refresh);
-});
+  "airport", "from", "to", "month", "minFlights", "splitYear", "extra"
+].forEach(id => $(id).addEventListener("change", refresh));
 
-$("reset").addEventListener("click", () => {
-  brushes.clear();
-
-  plots.forEach(plot => {
-    Object.values(plot.brushObjects).forEach(({ brush, group }) => {
-      group.call(brush.move, null);
-    });
-  });
-
-  updateSelection();
-});
-
-$("export").addEventListener("click", () => {
-  const columns = [
-    "airport", "carrier", "date",
-    "arr_flights", "arr_del15", "arr_cancelled",
-    "arr_delay", "weather_ct",
-    "noaa_PRCP", "noaa_TAVG", "noaa_AWND",
-    "noaa_SNOW", "noaa_DYTS", "noaa_DYFG", "noaa_WSF2",
-    "delay_rate", "cancellation_rate", "weather_rate", "mean_delay"
-  ];
-
-  const rows = selected.map(d =>
-    Object.fromEntries(columns.map(key => [
-      key,
-      typeof d[key] === "number" && !Number.isFinite(d[key])
-        ? ""
-        : d[key] ?? ""
-    ]))
-  );
-
-  const blob = new Blob(
-    [d3.csvFormat(rows, columns)],
-    { type: "text/csv;charset=utf-8" }
-  );
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "selected_weather_flight_months.csv";
-  link.click();
-
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+$("carrier").addEventListener("change", () => {
+  setDateRange();
+  refresh();
 });
 
 $("flightFile").addEventListener("change", async event => {
   const file = event.target.files[0];
   if (!file) return;
 
-  $("status").textContent = `Reading ${file.name}…`;
+  const version = ++uploadVersion;
   $("error").textContent = "";
+  $("loadInfo").textContent = `Reading Flight CSV: ${file.name}…`;
 
   try {
-    const rows = parseCSV(await file.text());
+    const text = await file.text();
+    if (version !== uploadVersion) return;
 
-    flightData = rows;
-    populateControls();
+    const parsed = parseCSV(text, true);
+    flightData = parsed.rows;
+    flightColumns = parsed.columns;
+    flightName = file.name;
+    flightLoaded = true;
 
+    populateControls(true);
+    setDateRange();
+    refresh();
   } catch (error) {
-    $("error").textContent = error.message;
-    $("status").textContent = "Failed to load CSV.";
+    if (version !== uploadVersion) return;
+    updateLoadInfo();
+    $("error").textContent = "Flight CSV: " + error.message;
   }
 });
 
-let resizeTimer;
+$("reset").addEventListener("click", () => {
+  brushes.clear();
+  buildPlots();
+});
 
+$("export").addEventListener("click", () => {
+  const columns = airlineMode() ? flightColumns : airportColumns;
+  if (!columns.length || !selected.length) return;
+
+  const rows = selected.map(d => Object.fromEntries(columns.map(key => [
+    key,
+    typeof d[key] === "number" && !Number.isFinite(d[key]) ? "" : d[key] ?? ""
+  ])));
+
+  const blob = new Blob([d3.csvFormat(rows, columns)], {
+    type: "text/csv;charset=utf-8"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = airlineMode()
+    ? "selected_airline_weather_records.csv"
+    : "selected_airport_weather_records.csv";
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+
+let resizeTimer;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
-
   resizeTimer = setTimeout(() => {
-    const savedBrushes = new Map(brushes);
+    if (typeof d3 === "undefined") return;
+    const saved = new Map(brushes);
     buildPlots();
 
     for (const plot of plots) {
-      for (const [key, limits] of savedBrushes) {
-        const control = plot.brushObjects[key];
+      for (const [key, [low, high]] of saved) {
+        const control = plot.controls[key];
         if (!control) continue;
-
         const y = plot.scales[key];
-
-        control.group.call(
-          control.brush.move,
-          [y(limits[1]), y(limits[0])]
-        );
+        control.group.call(control.brush.move, [y(high), y(low)]);
       }
     }
   }, 200);
 });
 
-(async function initialize() {
-  try {
-    const response = await fetch(DEFAULT_AIRPORT_CSV);
-
-    if (!response.ok) {
-      throw new Error("Default airport CSV is unavailable.");
-    }
-
-    const text = await response.text();
-
-    if (!text.trim()) {
-      throw new Error("Default airport CSV is empty.");
-    }
-
-    airportData = parseCSV(text);
-    populateControls();
-
-  } catch (error) {
-    populateControls();
-
-    $("error").textContent =
-      `${error.message} Upload your airport–month CSV above.`;
+async function initialize() {
+  if (typeof d3 === "undefined") {
+    $("error").textContent = "D3 failed to load. Check your connection and reload.";
+    $("status").textContent = "Charts could not initialize.";
+    return;
   }
-})();
+
+  buildPlots();
+
+  try {
+    const response = await fetch(AIRPORT_URL);
+    if (!response.ok) {
+      throw new Error(
+        `Cannot load ${AIRPORT_URL} (HTTP ${response.status}). ` +
+        "Check the file path and GitHub Pages deployment."
+      );
+    }
+
+    const parsed = parseCSV(await response.text(), false);
+    airportData = parsed.rows;
+    airportColumns = parsed.columns;
+    airportLoaded = true;
+    populateControls();
+  } catch (error) {
+    updateLoadInfo();
+    $("error").textContent = "Airport CSV: " + error.message;
+  }
+}
+
+initialize();
 </script>
 </body>
 </html>
