@@ -373,6 +373,64 @@ th {
 
 </section>
 
+<!-- GUIDE TO INTERPRETING ALL THREE VISUALIZATIONS -->
+<section class="panel" id="interpretationGuide">
+  <h2>How to Interpret Weather–Delay Correlations</h2>
+  <div class="association-explanation">
+
+    <h3>Understanding the Correlation Measure</h3>
+
+    <p>
+      <strong>Spearman's correlation coefficient (ρ)</strong>
+      measures whether months with higher values of a weather factor
+      tend to have higher or lower flight disruption rates.
+    </p>
+
+    <div class="correlation-guide">
+
+      <div>
+        <strong class="positive-corr">Positive correlation (ρ &gt; 0)</strong>
+        <p>
+          Higher weather-factor values tend to coincide with
+          higher disruption rates.
+        </p>
+      </div>
+
+      <div>
+        <strong class="negative-corr">Negative correlation (ρ &lt; 0)</strong>
+        <p>
+          Higher weather-factor values tend to coincide with
+          lower disruption rates.
+        </p>
+      </div>
+
+      <div>
+        <strong>Correlation strength (|ρ|)</strong>
+        <p>
+          Values closer to 1 indicate stronger monotonic associations.
+          Correlation does not establish causation.
+        </p>
+      </div>
+
+    </div>
+
+    <p>
+      <strong>Why does this matter?</strong>
+      Comparing these associations helps identify which weather factors
+      are most strongly related to flight disruptions, how patterns
+      differ across airports, and how they evolve over time.
+    </p>
+
+    <p class="note">
+      Correlations use the selected historical window ending in the
+      displayed month. Weather measurements and flight statistics
+      refer to the displayed month only.
+    </p>
+
+  </div>
+
+</section>
+
 <!-- WEATHER FACTOR OVERVIEW -->
 
 <section class="panel">
@@ -552,59 +610,6 @@ th {
     across U.S. airports. Sort numerical columns, filter by weather factor,
     or select an airport to highlight it on the network map.
   </p>
-
-  <div class="association-explanation">
-
-    <h3>How to Interpret Weather–Delay Correlations</h3>
-
-    <p>
-      <strong>Spearman's correlation coefficient (ρ)</strong>
-      measures whether months with higher values of a weather factor
-      tend to have higher or lower flight disruption rates.
-    </p>
-
-    <div class="correlation-guide">
-
-      <div>
-        <strong class="positive-corr">Positive correlation (ρ &gt; 0)</strong>
-        <p>
-          Higher weather-factor values tend to coincide with
-          higher disruption rates.
-        </p>
-      </div>
-
-      <div>
-        <strong class="negative-corr">Negative correlation (ρ &lt; 0)</strong>
-        <p>
-          Higher weather-factor values tend to coincide with
-          lower disruption rates.
-        </p>
-      </div>
-
-      <div>
-        <strong>Correlation strength (|ρ|)</strong>
-        <p>
-          Values closer to 1 indicate stronger monotonic associations.
-          Correlation does not establish causation.
-        </p>
-      </div>
-
-    </div>
-
-    <p>
-      <strong>Why does this matter?</strong>
-      Comparing these associations helps identify which weather factors
-      are most strongly related to flight disruptions, how patterns
-      differ across airports, and how they evolve over time.
-    </p>
-
-    <p class="note">
-      Correlations use the selected historical window ending in the
-      displayed month. Weather measurements and flight statistics
-      refer to the displayed month only.
-    </p>
-
-  </div>
 
   <div class="airport-table-controls">
 
