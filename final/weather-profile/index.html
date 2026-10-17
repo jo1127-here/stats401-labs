@@ -274,6 +274,30 @@ th {
     font-size: 23px;
   }
 }
+
+/* Section 3: sortable, filterable airport table */
+.association-explanation { margin:18px 0 22px; padding:18px 20px; border:1px solid #dce4ed; border-radius:8px; background:#f8fafc; font-size:13px; line-height:1.65; }
+.association-explanation h3 { margin:0 0 12px; font-size:15px; }
+.correlation-guide { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:15px 0; }
+.correlation-guide > div { padding:12px; background:white; border:1px solid #e2e8f0; border-radius:6px; }
+.correlation-guide p { font-size:12px; color:#526477; }
+.positive-corr { color:#167b57; }
+.negative-corr { color:#c0525c; }
+.airport-table-controls { display:flex; align-items:end; flex-wrap:wrap; gap:14px; margin:18px 0; }
+.airport-table-controls label { display:flex; flex-direction:column; gap:6px; font-size:12px; font-weight:600; }
+.airport-table-controls input,.airport-table-controls select { min-width:180px; padding:8px 10px; }
+.table-status { margin-bottom:10px; color:#64748b; font-size:12px; }
+.airport-table-scroll { width:100%; max-height:480px; overflow:auto; border:1px solid #e2e8f0; border-radius:7px; }
+.airport-association-table { width:100%; border-collapse:collapse; font-size:12px; }
+.airport-association-table th { position:sticky; top:0; z-index:2; padding:12px; background:#eef3f8; cursor:pointer; user-select:none; }
+.airport-association-table th:hover { background:#dce9f4; }
+.airport-association-table th.active-sort { background:#d5e7f5; color:#174d78; }
+.airport-association-table td { padding:10px 12px; border-bottom:1px solid #edf1f5; white-space:nowrap; }
+.airport-association-table tbody tr { cursor:pointer; }
+.airport-association-table tbody tr:hover { background:#edf5fc; }
+.airport-association-table tbody tr.selected { background:#dcecf8; font-weight:600; }
+@media(max-width:700px) { .correlation-guide { grid-template-columns:1fr; } }
+
 </style>
 </head>
 
@@ -638,6 +662,8 @@ th {
 
 </section>
 
+</main>
+<script>
 /* ============================================================
    CONFIGURATION
 ============================================================ */
@@ -1487,7 +1513,7 @@ function drawMap() {
 
   if (!month) {
     $("status").textContent = "No available monthly records.";
-    $("rows").replaceChildren();
+    drawTable([], new Map());
     return;
   }
 
@@ -1679,93 +1705,147 @@ function drawMap() {
     `They do not represent actual routes or causal influence. ` +
     `${rows.length - mapped.length} airports lack usable map coordinates.`;
 
-  drawDetails(rows, allAssoc);
   drawTable(rows, allAssoc);
 
 }
 
 /* ============================================================
-   AIRPORT DETAILS
+   SECTION 3: SORTABLE AND FILTERABLE AIRPORT TABLE
 ============================================================ */
+let tableRows = [];
+let tableSortKey = "rho";
+let tableSortAscending = false;
 
-function drawDetails(rows, associations) {
-
-  const d = rows.find(
-    row => row.airport === selectedAirport
-  );
-
-  if (!d) {
-
-    $("details").textContent =
-      "Click an airport to inspect its weather conditions " +
-      "and weather–delay associations.";
-
-    return;
-  }
-
-  const a = dominantAssociation(
-    associations.get(d.airport)
-  );
-
-  $("details").textContent =
-    `${d.airport} · ${d.date} | ` +
-    `Main factor: ${a ? factorNames[a.factor] : "—"} | ` +
-    `Spearman ρ: ${a ? a.rho.toFixed(3) : "—"} | ` +
-    `Paired months: ${a ? a.n : "—"} | ` +
-    `PRCP: ${fmt(d.noaa_PRCP)} | ` +
-    `SNOW: ${fmt(d.noaa_SNOW)} | ` +
-    `AWND: ${fmt(d.noaa_AWND)} | ` +
-    `TAVG: ${fmt(d.noaa_TAVG)} | ` +
-    `Delay rate: ${fmt(d.delay_rate, true)}`;
-
+function tableNumber(v, digits = 2) {
+  return Number.isFinite(v) ? v.toFixed(digits) : "—";
+}
+function tableInteger(v) {
+  return Number.isFinite(v) ? v.toLocaleString() : "—";
 }
 
-/* ============================================================
-   TABLE
-============================================================ */
+// Determine the dominant weather factor across ALL available factors.
+// Unlike the map's dominantAssociation(), this does not depend on its filter.
+function tableDominantAssociation(factorMap) {
+  if (!factorMap) return null;
+  const valid = FACTORS.map(f => factorMap.get(f))
+    .filter(a => a && Number.isFinite(a.rho));
+  valid.sort((a,b) => Math.abs(b.rho) - Math.abs(a.rho));
+  return valid[0] || null;
+}
 
 function drawTable(rows, associations) {
+  tableRows = rows.map(d => {
+    const a = tableDominantAssociation(associations.get(d.airport));
+    return {...d, topFactor: a ? a.factor : null, rho: a ? a.rho : NaN};
+  });
+  updateTableFactorOptions();
+  renderAirportTable();
+}
 
-  const ordered = [...rows].sort(
-    (a, b) => a.airport.localeCompare(b.airport)
-  );
+function updateTableFactorOptions() {
+  const select = $("tableFactor");
+  const previous = select.value;
+  const factors = [...new Set(tableRows.map(d => d.topFactor).filter(Boolean))]
+    .sort((a,b) => (factorNames[a] || a).localeCompare(factorNames[b] || b));
+  select.replaceChildren(new Option("All Weather Factors", "all"));
+  factors.forEach(f => select.add(new Option(factorNames[f] || f, f)));
+  select.add(new Option("Insufficient Data", "missing"));
+  select.value = [...select.options].some(o => o.value === previous) ? previous : "all";
+}
 
-  const trs = ordered.map(d => {
+function sortAirportRows(rows) {
+  return [...rows].sort((a,b) => {
+    const key = tableSortKey;
+    const av = key === "factor" ? (a.topFactor ? factorNames[a.topFactor] || a.topFactor : null) : a[key];
+    const bv = key === "factor" ? (b.topFactor ? factorNames[b.topFactor] || b.topFactor : null) : b[key];
+    const missing = v => v == null || (typeof v === "number" && !Number.isFinite(v));
+    if (missing(av) && missing(bv)) return a.airport.localeCompare(b.airport);
+    if (missing(av)) return 1;
+    if (missing(bv)) return -1;
+    const cmp = typeof av === "string" ? av.localeCompare(bv) : av - bv;
+    return (tableSortAscending ? cmp : -cmp) || a.airport.localeCompare(b.airport);
+  });
+}
 
+function renderAirportTable() {
+  const search = $("tableSearch").value.trim().toUpperCase();
+  const factor = $("tableFactor").value;
+  const visible = sortAirportRows(tableRows.filter(d =>
+    d.airport.toUpperCase().includes(search) &&
+    (factor === "all" || (factor === "missing" ? !d.topFactor : d.topFactor === factor))
+  ));
+  $("tableStatus").textContent = `Showing ${visible.length} of ${tableRows.length} airports`;
+  document.querySelectorAll(".airport-association-table th[data-sort]").forEach(th => {
+    const active = th.dataset.sort === tableSortKey;
+    const label = th.textContent.replace(/[↕↑↓]\s*$/, "").trim();
+    th.textContent = label + " " + (active ? (tableSortAscending ? "↑" : "↓") : "↕");
+    th.classList.toggle("active-sort", active);
+    th.setAttribute("aria-sort", active ? (tableSortAscending ? "ascending" : "descending") : "none");
+  });
+  const tbody = $("airportTableBody");
+  tbody.replaceChildren();
+  if (!visible.length) {
     const tr = document.createElement("tr");
-
-    const a = dominantAssociation(
-      associations.get(d.airport)
-    );
-
+    const td = document.createElement("td");
+    td.colSpan = 9;
+    td.textContent = "No matching airports found.";
+    td.style.textAlign = "center";
+    tr.append(td);
+    tbody.append(tr);
+    return;
+  }
+  for (const d of visible) {
+    const tr = document.createElement("tr");
+    tr.classList.toggle("selected", d.airport === selectedAirport);
     const values = [
       d.airport,
-      d.date,
-      a ? factorNames[a.factor] : "—",
-      a ? a.rho.toFixed(3) : "—",
-      fmt(d.noaa_PRCP),
-      fmt(d.noaa_SNOW),
-      fmt(d.noaa_AWND),
-      fmt(d.noaa_TAVG),
-      fmt(d.delay_rate, true)
+      d.topFactor ? factorNames[d.topFactor] || d.topFactor : "—",
+      Number.isFinite(d.rho) ? (d.rho > 0 ? "+" : "") + d.rho.toFixed(3) : "—",
+      tableInteger(d.arr_flights),
+      fmt(d.delay_rate, true),
+      tableNumber(d.noaa_PRCP),
+      tableNumber(d.noaa_SNOW),
+      tableNumber(d.noaa_AWND),
+      tableNumber(d.noaa_TAVG)
     ];
-
-    values.forEach(value => {
-
+    values.forEach((value,i) => {
       const td = document.createElement("td");
-
       td.textContent = value;
-
+      if (i === 1 && d.topFactor) {
+        td.style.color = factorColors[d.topFactor] || "inherit";
+        td.style.fontWeight = "600";
+      }
+      if (i === 2 && Number.isFinite(d.rho)) {
+        td.style.color = d.rho > 0 ? "#167b57" : d.rho < 0 ? "#c0525c" : "inherit";
+      }
       tr.append(td);
-
     });
-
-    return tr;
-  });
-
-  $("rows").replaceChildren(...trs);
-
+    tr.addEventListener("click", () => {
+      selectedAirport = selectedAirport === d.airport ? "" : d.airport;
+      $("airport").value = selectedAirport;
+      drawMap();
+    });
+    tbody.append(tr);
+  }
 }
+
+document.querySelectorAll(".airport-association-table th[data-sort]").forEach(th => {
+  th.addEventListener("click", () => {
+    const key = th.dataset.sort;
+    if (tableSortKey === key) tableSortAscending = !tableSortAscending;
+    else { tableSortKey = key; tableSortAscending = false; }
+    renderAirportTable();
+  });
+});
+$("tableSearch").addEventListener("input", renderAirportTable);
+$("tableFactor").addEventListener("change", renderAirportTable);
+$("tableReset").addEventListener("click", () => {
+  $("tableSearch").value = "";
+  $("tableFactor").value = "all";
+  tableSortKey = "rho";
+  tableSortAscending = false;
+  renderAirportTable();
+});
 
 /* ============================================================
    COMBINED DRAW
