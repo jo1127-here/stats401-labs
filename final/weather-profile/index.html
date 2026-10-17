@@ -519,53 +519,124 @@ th {
 
 <!-- DETAILS -->
 
-<section class="panel">
+<section class="panel" id="airportTableSection">
 
-  <h2>3. Selected Airport · Monthly Detail</h2>
+  <h2>3. Airport Weather–Delay Associations</h2>
 
-  <div id="details">
-    Click an airport node to inspect its monthly weather
-    conditions and statistical associations.
+  <p class="note">
+    Explore how weather conditions are associated with flight disruptions
+    across U.S. airports. Sort numerical columns, filter by weather factor,
+    or select an airport to highlight it on the network map.
+  </p>
+
+  <div class="association-explanation">
+
+    <h3>How to Interpret Weather–Delay Correlations</h3>
+
+    <p>
+      <strong>Spearman's correlation coefficient (ρ)</strong>
+      measures whether months with higher values of a weather factor
+      tend to have higher or lower flight disruption rates.
+    </p>
+
+    <div class="correlation-guide">
+
+      <div>
+        <strong class="positive-corr">Positive correlation (ρ &gt; 0)</strong>
+        <p>
+          Higher weather-factor values tend to coincide with
+          higher disruption rates.
+        </p>
+      </div>
+
+      <div>
+        <strong class="negative-corr">Negative correlation (ρ &lt; 0)</strong>
+        <p>
+          Higher weather-factor values tend to coincide with
+          lower disruption rates.
+        </p>
+      </div>
+
+      <div>
+        <strong>Correlation strength (|ρ|)</strong>
+        <p>
+          Values closer to 1 indicate stronger monotonic associations.
+          Correlation does not establish causation.
+        </p>
+      </div>
+
+    </div>
+
+    <p>
+      <strong>Why does this matter?</strong>
+      Comparing these associations helps identify which weather factors
+      are most strongly related to flight disruptions, how patterns
+      differ across airports, and how they evolve over time.
+    </p>
+
+    <p class="note">
+      Correlations use the selected historical window ending in the
+      displayed month. Weather measurements and flight statistics
+      refer to the displayed month only.
+    </p>
+
   </div>
 
-</section>
+  <div class="airport-table-controls">
 
-<!-- TABLE -->
+    <label>
+      Search Airport
+      <input
+        type="search"
+        id="tableSearch"
+        placeholder="Search airport code..."
+      >
+    </label>
 
-<section class="panel">
+    <label>
+      Filter by Top Weather Factor
+      <select id="tableFactor">
+        <option value="all">All Weather Factors</option>
+      </select>
+    </label>
 
-  <h2>Current Month Weather Associations by Airport</h2>
+    <button type="button" id="tableReset">
+      Reset Table
+    </button>
 
-  <div class="table-wrap">
+  </div>
 
-    <table>
+  <div class="table-status" id="tableStatus"></div>
+
+  <div class="airport-table-scroll">
+    <table class="airport-association-table">
 
       <thead>
         <tr>
-          <th>Airport</th>
-          <th>Month</th>
-          <th>Top Factor</th>
-          <th>Spearman ρ</th>
-          <th>PRCP</th>
-          <th>SNOW</th>
-          <th>AWND</th>
-          <th>TAVG</th>
-          <th>Delay Rate</th>
+          <th data-sort="airport">Airport ↕</th>
+          <th data-sort="factor">Top Weather Factor ↕</th>
+          <th data-sort="rho">Spearman ρ ↕</th>
+          <th data-sort="arr_flights">Arrivals ↕</th>
+          <th data-sort="delay_rate">Delay Rate ↕</th>
+          <th data-sort="noaa_PRCP">PRCP ↕</th>
+          <th data-sort="noaa_SNOW">SNOW ↕</th>
+          <th data-sort="noaa_AWND">AWND ↕</th>
+          <th data-sort="noaa_TAVG">TAVG ↕</th>
         </tr>
       </thead>
 
-      <tbody id="rows"></tbody>
+      <tbody id="airportTableBody"></tbody>
 
     </table>
-
   </div>
 
+  <p class="note">
+    Click a column header to sort. Click again to reverse the order.
+    Click an airport row to highlight the corresponding airport
+    on the network map.
+  </p>
+
 </section>
-
-</main>
-
-<script>
-"use strict";
 
 /* ============================================================
    CONFIGURATION
