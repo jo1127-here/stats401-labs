@@ -1,52 +1,2045 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Monthly Airport Weather Network</title><script src="https://d3js.org/d3.v7.min.js"></script><script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script><style>
-*{box-sizing:border-box}body{margin:0;font:14px system-ui,Arial;color:#25354a;background:#fff}main{max-width:1500px;margin:auto;padding:24px}h1{font-size:26px;margin:0}h2{font-size:17px}.muted{color:#64748b;font-size:12px}.panel{border:1px solid #dce3eb;border-radius:9px;padding:16px;margin-top:16px}.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-top:16px}label{font-size:12px;display:grid;gap:5px}select,input,button{background:white;color:#25354a;border:1px solid #cbd5e1;border-radius:5px;padding:8px;font:inherit}button{cursor:pointer}button:hover{background:#f1f5f9}input[type=range]{padding:0;min-width:180px}#timeline{width:min(100%,680px)}#map{width:100%;height:620px;display:block;background:#f8fbfe;border-radius:6px}#status{color:#42566e;margin-top:12px}#error{color:#b42318;white-space:pre-wrap}.timeline{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.legend{display:flex;gap:18px;flex-wrap:wrap;color:#64748b;font-size:12px}.swatch{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:middle;margin-right:5px}#details{line-height:1.8;min-height:110px}.mapwrap{position:relative}#tooltip{position:absolute;display:none;background:white;border:1px solid #cbd5e1;box-shadow:0 4px 18px #0002;border-radius:6px;padding:10px;pointer-events:none;max-width:290px;font-size:12px}table{border-collapse:collapse;width:100%;font-size:12px}th,td{border-bottom:1px solid #e5eaf0;padding:7px;text-align:left}.tablewrap{overflow:auto;max-height:290px}.selected{font-weight:700}#map .airport{cursor:pointer}#map .edge{pointer-events:none}.note{max-width:1000px;line-height:1.55}</style></head><body><main>
-<h1>Monthly Weather Drivers of Airport Disruption</h1><p class="muted note">Weather-first view: node size = strength of historical weather–delay association; node color = strongest associated weather factor. Connections link airports sharing the same dominant factor (not actual flight routes). Monthly conditions appear in tooltips. Associations are not causal effects.</p>
-<div class="panel"><div class="controls"><label>Airport CSV (optional fallback)<input type="file" id="airportFile" accept=".csv"></label><label>Flight CSV (optional; carrier-level)<input type="file" id="flightFile" accept=".csv"></label><label>Airline<select id="carrier"><option value="">All airlines (airport summary)</option></select></label><label>Focus airport<select id="airport"><option value="">All airports</option></select></label><label>Outcome<select id="outcome"><option value="delay_rate">Delay rate</option><option value="cancellation_rate">Cancellation rate</option><option value="mean_delay_minutes_per_delayed_arrival">Mean delay minutes</option></select></label><label>Weather factor<select id="factor"><option value="all">Strongest factor</option><option value="noaa_PRCP">Precipitation</option><option value="noaa_SNOW">Snowfall</option><option value="noaa_AWND">Wind</option><option value="noaa_TAVG">Temperature</option><option value="noaa_DYFG">Fog days</option><option value="noaa_DYTS">Thunderstorm days</option></select></label><label>Association window<select id="window"><option value="12">Past 12 months</option><option value="24" selected>Past 24 months</option><option value="36">Past 36 months</option><option value="999">All history to date</option></select></label><label>Max links per airport<select id="neighbors"><option>0</option><option selected>1</option><option>2</option><option>3</option></select></label><label>Minimum monthly flights<input id="minFlights" type="number" value="0" min="0" style="width:105px"></label><label>Minimum |Spearman ρ| <span id="thresholdLabel">0.30</span><input type="range" id="threshold" min="0" max="1" step="0.05" value="0.3"></label><label><span>Show shared-factor links</span><input id="showEdges" type="checkbox" checked></label></div>
-<div id="status">Loading airport summary…</div><div id="error"></div></div>
-<div class="panel"><div class="timeline"><button id="play">▶ Play</button><button id="prev">◀</button><button id="next">▶</button><strong id="monthLabel">—</strong><input id="timeline" type="range" min="0" max="0" value="0"><label>Playback speed<select id="speed"><option value="1500">Slow</option><option value="850" selected>Normal</option><option value="350">Fast</option></select></label></div><p class="muted">Drag to any available month; Pause keeps the current month. Missing months are not invented.</p></div>
-<div class="panel"><div class="legend"><span>Node size = |Spearman ρ|</span><span>Node color = weather factor</span><span>Link width = weaker of two association strengths</span><span>Grey = insufficient data</span></div><div class="mapwrap"><svg id="map" role="img" aria-label="United States airport monthly network"></svg><div id="tooltip"></div></div><p class="muted" id="mapNote"></p></div>
-<div class="panel"><h2>Selected Airport · Monthly Detail</h2><div id="details">Click an airport to inspect its monthly records.</div></div>
-<div class="panel"><h2>Current Month Weather Factors by Airport</h2><div class="tablewrap"><table><thead><tr><th>Airport</th><th>Month</th><th>Top weather factor</th><th>Spearman ρ</th><th>PRCP</th><th>SNOW</th><th>AWND</th><th>TAVG</th><th>Delay rate</th></tr></thead><tbody id="rows"></tbody></table></div></div>
-</main><script>
-'use strict';
-const $=id=>document.getElementById(id), AIRPORT_URL='../data/airport_weather_monthly.csv';
-const US_URL='https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json';
-const COORD_URL='https://raw.githubusercontent.com/jpatokal/openflights/master/data/airports.dat';
-const numeric=['year','month','arr_flights','arr_del15','arr_cancelled','arr_delay','weather_ct','delay_rate','cancellation_rate','mean_delay_minutes_per_delayed_arrival','noaa_PRCP','noaa_TAVG','noaa_AWND','noaa_SNOW','noaa_DYFG','noaa_DYTS'];
-let airportData=[],flightData=[],coords=new Map(),months=[],monthIndex=0,selectedAirport='',timer=null,states=null;
-const svg=d3.select('#map'),width=1150,height=620,projection=d3.geoAlbersUsa().translate([width/2,height/2]).scale(1250),path=d3.geoPath(projection);
-svg.attr('viewBox',`0 0 ${width} ${height}`);const base=svg.append('g'),edgeLayer=svg.append('g'),nodeLayer=svg.append('g');
-const fmt=(v,p=false)=>Number.isFinite(v)?(p?d3.format('.1%')(v):d3.format(',.1f')(v)):'—';
-function parse(text,carrier){const data=d3.csvParse(text.replace(/^\uFEFF/,''));const required=['airport','year','month','arr_flights','delay_rate'];if(carrier)required.push('carrier');const missing=required.filter(k=>!data.columns.includes(k));if(missing.length)throw Error('Missing columns: '+missing.join(', ')+'. Found: '+data.columns.join(', '));return data.map(d=>{const o={...d};numeric.forEach(k=>o[k]=d[k]==null||d[k].trim()===''?NaN:Number(d[k]));o.airport=(d.airport||'').trim().toUpperCase();o.carrier=(d.carrier||'').trim();o.date=`${o.year}-${String(o.month).padStart(2,'0')}`;return o}).filter(d=>d.airport&&Number.isInteger(d.year)&&d.month>=1&&d.month<=12&&Number.isFinite(d.arr_flights));}
-function source(){return $('carrier').value?flightData.filter(d=>d.carrier===$('carrier').value):airportData;}
-function updateControls(){const codes=[...new Set([...airportData,...flightData].map(d=>d.airport))].sort();$('airport').replaceChildren(new Option('All airports',''),...codes.map(c=>new Option(c,c)));$('airport').value=codes.includes(selectedAirport)?selectedAirport:'';const carriers=[...new Set(flightData.map(d=>d.carrier).filter(Boolean))].sort();const old=$('carrier').value;$('carrier').replaceChildren(new Option('All airlines (airport summary)',''),...carriers.map(c=>new Option(c,c)));$('carrier').value=carriers.includes(old)?old:'';updateMonths();}
-function updateMonths(){const dates=[...new Set(source().map(d=>d.date))].sort();const prev=months[monthIndex];months=dates;monthIndex=Math.max(0,months.indexOf(prev));$('timeline').max=Math.max(0,months.length-1);$('timeline').value=monthIndex;draw();}
-function currentRows(){const m=months[monthIndex];const raw=source().filter(d=>d.date===m&&d.arr_flights>=Math.max(0,+$('minFlights').value||0));const by=new Map();for(const d of raw){if(!by.has(d.airport))by.set(d.airport,d);}return [...by.values()];}
-const FACTORS=['noaa_PRCP','noaa_SNOW','noaa_AWND','noaa_TAVG','noaa_DYFG','noaa_DYTS'];
-const factorNames={noaa_PRCP:'Precipitation',noaa_SNOW:'Snowfall',noaa_AWND:'Wind',noaa_TAVG:'Temperature',noaa_DYFG:'Fog',noaa_DYTS:'Thunderstorms'};
-const factorColors={noaa_PRCP:'#2176ae',noaa_SNOW:'#7b66b1',noaa_AWND:'#d38b24',noaa_TAVG:'#d85a60',noaa_DYFG:'#478e83',noaa_DYTS:'#b65b96'};
-function ranks(values){const sorted=values.map((v,i)=>({v,i})).sort((a,b)=>a.v-b.v);const out=Array(values.length);for(let i=0;i<sorted.length;){let j=i+1;while(j<sorted.length&&sorted[j].v===sorted[i].v)j++;for(let k=i;k<j;k++)out[sorted[k].i]=(i+j-1)/2+1;i=j;}return out;}
-function spearman(pairs){if(pairs.length<6)return NaN;const x=ranks(pairs.map(p=>p[0])),y=ranks(pairs.map(p=>p[1]));const mx=d3.mean(x),my=d3.mean(y);let num=0,xx=0,yy=0;for(let i=0;i<x.length;i++){const a=x[i]-mx,b=y[i]-my;num+=a*b;xx+=a*a;yy+=b*b;}return xx&&yy?num/Math.sqrt(xx*yy):NaN;}
-function associations(month){const outcome=$('outcome').value,selected=$('factor').value,window=+$('window').value;const end=+month.slice(0,4)*12+(+month.slice(5)-1);const grouped=d3.group(source(),d=>d.airport);const out=new Map();for(const [airport,records] of grouped){const history=records.filter(d=>{const t=d.year*12+d.month-1;return t<=end&&end-t<window;});const candidates=(selected==='all'?FACTORS:[selected]).map(f=>{const pairs=history.filter(d=>Number.isFinite(d[f])&&Number.isFinite(d[outcome])).map(d=>[d[f],d[outcome]]);return {factor:f,rho:spearman(pairs),n:pairs.length};}).filter(d=>Number.isFinite(d.rho));candidates.sort((a,b)=>Math.abs(b.rho)-Math.abs(a.rho));out.set(airport,candidates[0]||null);}return out;}
-function edgesFor(rows,assoc){const candidates=rows.filter(d=>coords.has(d.airport)&&assoc.get(d.airport)&&Math.abs(assoc.get(d.airport).rho)>=+$('threshold').value);const result=new Map(),maxN=+$('neighbors').value;for(const a of candidates){const x=assoc.get(a.airport);const others=candidates.filter(b=>b.airport!==a.airport&&assoc.get(b.airport).factor===x.factor&&Math.sign(assoc.get(b.airport).rho)===Math.sign(x.rho)).map(b=>({a:a.airport,b:b.airport,factor:x.factor,score:Math.min(Math.abs(x.rho),Math.abs(assoc.get(b.airport).rho))})).sort((p,q)=>q.score-p.score).slice(0,maxN);for(const e of others){const key=[e.a,e.b].sort().join('|');result.set(key,e);}}return [...result.values()];}
-function draw(){const rows=currentRows(),m=months[monthIndex];$('monthLabel').textContent=m||'No data';$('timeline').value=monthIndex;$('thresholdLabel').textContent=(+$('threshold').value).toFixed(2);edgeLayer.selectAll('*').remove();nodeLayer.selectAll('*').remove();if(!rows.length){$('status').textContent='No records for selected month and filters';$('rows').replaceChildren();return;}
-const valid=rows.filter(d=>coords.has(d.airport)&&projection(coords.get(d.airport)));const assoc=associations(m),radius=d3.scaleSqrt([0,1],[3,17]);const edges=$('showEdges').checked?edgesFor(valid,assoc):[];
-edgeLayer.selectAll('line').data(edges).join('line').attr('class','edge').attr('x1',d=>projection(coords.get(d.a))[0]).attr('y1',d=>projection(coords.get(d.a))[1]).attr('x2',d=>projection(coords.get(d.b))[0]).attr('y2',d=>projection(coords.get(d.b))[1]).attr('stroke',d=>factorColors[d.factor]).attr('stroke-opacity',d=>selectedAirport&&d.a!==selectedAirport&&d.b!==selectedAirport?.04:.35).attr('stroke-width',d=>.5+5*d.score);
-const nodes=nodeLayer.selectAll('circle').data(valid,d=>d.airport).join('circle').attr('class','airport').attr('cx',d=>projection(coords.get(d.airport))[0]).attr('cy',d=>projection(coords.get(d.airport))[1]).attr('r',d=>radius(Math.abs(assoc.get(d.airport)?.rho||0))+(selectedAirport===d.airport?3:0)).attr('fill',d=>factorColors[assoc.get(d.airport)?.factor]||'#aab5c2').attr('stroke',d=>selectedAirport===d.airport?'#222':'#fff').attr('stroke-width',d=>selectedAirport===d.airport?3:1).attr('opacity',d=>selectedAirport&&selectedAirport!==d.airport?.45:.9);
-nodes.on('click',(event,d)=>{selectedAirport=selectedAirport===d.airport?'':d.airport;$('airport').value=selectedAirport;draw()}).on('mousemove',(event,d)=>{const a=assoc.get(d.airport),p=$('tooltip');p.style.display='block';p.textContent='';const lines=[`${d.airport} · ${d.date}`,a?`${factorNames[a.factor]} vs ${$('outcome').selectedOptions[0].text}: Spearman ρ=${a.rho.toFixed(2)} (n=${a.n})`:'Insufficient historical data',`Precipitation: ${fmt(d.noaa_PRCP)}`,`Snowfall: ${fmt(d.noaa_SNOW)}`,`Wind: ${fmt(d.noaa_AWND)}`,`Temperature: ${fmt(d.noaa_TAVG)}`,`Delay rate: ${fmt(d.delay_rate,true)}`];lines.forEach(line=>{const el=document.createElement('div');el.textContent=line;p.append(el)});const box=$('map').getBoundingClientRect();p.style.left=Math.min(event.clientX-box.left+12,box.width-270)+'px';p.style.top=Math.max(0,event.clientY-box.top-25)+'px'}).on('mouseleave',()=>$('tooltip').style.display='none');
-$('status').textContent=`${m} · ${valid.length} mapped airports · ${edges.length} shared-factor links · ${$('carrier').value||'all airlines'}`;
-$('mapNote').textContent=`Associations use up to ${$('window').selectedOptions[0].text.toLowerCase()} ending at the displayed month, at least 6 paired observations, and Spearman ρ. No future observations are used. Lines show shared dominant weather factor and association direction, NOT flight routes or causal influence. ${rows.length-valid.length} airports lack usable US coordinates.`;
-const detail=selectedAirport?rows.find(d=>d.airport===selectedAirport):null;const a=detail?assoc.get(detail.airport):null;$('details').textContent=detail?`${detail.airport} · ${m} | Main weather factor: ${a?factorNames[a.factor]:'not enough observations'} | Spearman ρ: ${a?a.rho.toFixed(3):'—'} | n: ${a?a.n:'—'} | PRCP: ${fmt(detail.noaa_PRCP)} | SNOW: ${fmt(detail.noaa_SNOW)} | AWND: ${fmt(detail.noaa_AWND)} | TAVG: ${fmt(detail.noaa_TAVG)} | Delay rate: ${fmt(detail.delay_rate,true)}`:'Click an airport to inspect its weather factor and monthly values.';
-const ordered=[...rows].sort((a,b)=>a.airport.localeCompare(b.airport));$('rows').replaceChildren(...ordered.map(d=>{const tr=document.createElement('tr');const a=assoc.get(d.airport);[d.airport,d.date,a?factorNames[a.factor]:'—',a?a.rho.toFixed(2):'—',fmt(d.noaa_PRCP),fmt(d.noaa_SNOW),fmt(d.noaa_AWND),fmt(d.noaa_TAVG),fmt(d.delay_rate,true)].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});return tr}));}
-function stop(){if(timer!==null){clearInterval(timer);timer=null}$('play').textContent='▶ Play';}
-function step(n){if(!months.length)return;monthIndex=(monthIndex+n+months.length)%months.length;draw();}
-function play(){if(timer!==null){stop();return;}if(months.length<2)return;$('play').textContent='❚❚ Pause';timer=setInterval(()=>step(1),+$('speed').value);}
-$('play').onclick=play;$('prev').onclick=()=>{stop();step(-1)};$('next').onclick=()=>{stop();step(1)};$('timeline').oninput=e=>{monthIndex=+e.target.value;draw()};$('speed').onchange=()=>{if(timer!==null){stop();play()}};
-for(const id of ['outcome','factor','window','neighbors','threshold','minFlights','showEdges'])$(id).addEventListener('input',draw);
-$('airport').onchange=e=>{selectedAirport=e.target.value;draw()};$('carrier').onchange=()=>{stop();updateMonths()};
-$('airportFile').onchange=async e=>{try{const f=e.target.files[0];if(!f)return;airportData=parse(await f.text(),false);$('error').textContent='';updateControls();}catch(err){$('error').textContent='Airport CSV: '+err.message}};
-$('flightFile').onchange=async e=>{try{const f=e.target.files[0];if(!f)return;flightData=parse(await f.text(),true);$('error').textContent='';updateControls();}catch(err){$('error').textContent='Flight CSV: '+err.message}};
-async function init(){try{const [topo,airports]=await Promise.all([d3.json(US_URL),d3.text(COORD_URL)]);states=topo;base.selectAll('path').data(topojson.feature(topo,topo.objects.states).features).join('path').attr('d',path).attr('fill','#edf3f8').attr('stroke','#b7c7d5').attr('stroke-width',.8);for(const row of d3.csvParseRows(airports)){const code=(row[4]||'').trim().toUpperCase(),lat=+row[6],lon=+row[7];if(/^[A-Z]{3}$/.test(code)&&Number.isFinite(lat)&&Number.isFinite(lon)&&!coords.has(code))coords.set(code,[lon,lat]);}try{const response=await fetch(AIRPORT_URL);if(!response.ok)throw Error(`HTTP ${response.status}`);airportData=parse(await response.text(),false);updateControls();}catch(err){$('error').textContent=`Airport summary could not load automatically (${err.message}). Use Airport CSV upload above.`;$('status').textContent='Upload Airport CSV to start.';}}catch(err){$('error').textContent='Map basemap or airport coordinates could not load: '+err.message+'; check network/CDN access.';}}
-init();
-</script></body></html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather Drivers of Airport Disruption</title>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #ffffff;
+  color: #263548;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+}
+
+main {
+  max-width: 1500px;
+  margin: auto;
+  padding: 28px;
+}
+
+h1 {
+  font-size: 28px;
+  margin: 0 0 8px;
+}
+
+h2 {
+  font-size: 19px;
+  margin: 0 0 8px;
+}
+
+p {
+  line-height: 1.6;
+}
+
+.subtitle,
+.note {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.panel {
+  border: 1px solid #dce4ed;
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 18px;
+  background: white;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: end;
+  margin-top: 15px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: #52647b;
+}
+
+select,
+input,
+button {
+  font: inherit;
+  color: #263548;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  background: #f1f5f9;
+}
+
+input[type="range"] {
+  padding: 0;
+  accent-color: #467eaf;
+}
+
+input[type="checkbox"] {
+  accent-color: #467eaf;
+}
+
+#status {
+  margin-top: 14px;
+  color: #52647b;
+  font-size: 13px;
+}
+
+#error {
+  color: #b42318;
+  white-space: pre-wrap;
+  margin-top: 8px;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.overview-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#heatmap {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-top: 15px;
+}
+
+#heatmap .cell {
+  cursor: pointer;
+}
+
+#heatmap .cell:hover {
+  stroke: #24364b;
+  stroke-width: 2;
+}
+
+#heatmap .selected-cell {
+  stroke: #24364b;
+  stroke-width: 2.5;
+}
+
+#heatmap .row-label {
+  cursor: pointer;
+}
+
+#heatmap .row-label:hover {
+  fill: #2563a5;
+}
+
+.overview-legend,
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+#timeline {
+  flex: 1;
+  min-width: 240px;
+}
+
+#monthLabel {
+  min-width: 72px;
+}
+
+#map {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: #f8fbfe;
+  border-radius: 7px;
+}
+
+.map-wrap {
+  position: relative;
+  margin-top: 14px;
+}
+
+#tooltip {
+  position: absolute;
+  display: none;
+  background: white;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 18px #0002;
+  border-radius: 7px;
+  padding: 11px;
+  pointer-events: none;
+  max-width: 310px;
+  font-size: 12px;
+  line-height: 1.7;
+  z-index: 10;
+}
+
+#details {
+  line-height: 1.8;
+  min-height: 75px;
+}
+
+.table-wrap {
+  overflow: auto;
+  max-height: 340px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+}
+
+th,
+td {
+  border-bottom: 1px solid #e5eaf0;
+  padding: 9px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+th {
+  background: #f8fafc;
+  position: sticky;
+  top: 0;
+}
+
+#map .airport {
+  cursor: pointer;
+}
+
+#map .edge {
+  pointer-events: none;
+}
+
+@media(max-width: 700px) {
+  main {
+    padding: 12px;
+  }
+
+  .panel {
+    padding: 12px;
+  }
+
+  h1 {
+    font-size: 23px;
+  }
+}
+</style>
+</head>
+
+<body>
+<main>
+
+<header>
+  <h1>Weather Drivers of Airport Disruption</h1>
+  <p class="subtitle">
+    Exploring monthly weather conditions and flight disruption
+    across US airports through coordinated statistical and geographic views.
+    Correlations describe associations, not causal effects.
+  </p>
+</header>
+
+<!-- DATA AND GLOBAL CONTROLS -->
+
+<section class="panel">
+
+  <h2>Data & Global Controls</h2>
+
+  <div class="controls">
+
+    <label>
+      Airport Weather CSV (optional fallback)
+      <input type="file" id="airportFile" accept=".csv">
+    </label>
+
+    <label>
+      Flight CSV (local upload)
+      <input type="file" id="flightFile" accept=".csv">
+    </label>
+
+    <label>
+      Airline
+      <select id="carrier">
+        <option value="">All airlines (airport summary)</option>
+      </select>
+    </label>
+
+    <label>
+      Focus Airport
+      <select id="airport">
+        <option value="">All airports</option>
+      </select>
+    </label>
+
+    <label>
+      Outcome
+      <select id="outcome">
+        <option value="delay_rate">Delay Rate</option>
+        <option value="cancellation_rate">Cancellation Rate</option>
+        <option value="mean_delay_minutes_per_delayed_arrival">
+          Mean Delay Minutes
+        </option>
+      </select>
+    </label>
+
+    <label>
+      Association Window
+      <select id="window">
+        <option value="12">Past 12 Months</option>
+        <option value="24" selected>Past 24 Months</option>
+        <option value="36">Past 36 Months</option>
+        <option value="999">All History to Date</option>
+      </select>
+    </label>
+
+  </div>
+
+  <div id="status">Loading airport weather data...</div>
+  <div id="error"></div>
+
+</section>
+
+<!-- WEATHER FACTOR OVERVIEW -->
+
+<section class="panel">
+
+  <div class="section-heading">
+
+    <div>
+      <h2>1. Weather Impact Overview</h2>
+      <p class="note">
+        Mean absolute Spearman correlation between each weather
+        factor and the selected flight disruption outcome,
+        averaged across airports with valid correlations.
+        Click a cell to filter the map by weather factor and month.
+      </p>
+    </div>
+
+    <div class="overview-controls">
+
+      <label>
+        Overview Year
+        <select id="overviewYear"></select>
+      </label>
+
+      <button id="resetOverview">Reset Filter</button>
+
+    </div>
+
+  </div>
+
+  <svg id="heatmap" aria-label="Weather factor by month heatmap"></svg>
+
+  <div class="overview-legend">
+    <span>Mean |Spearman ρ|:</span>
+    <span>Weak</span>
+    <span id="heatmapLegend"></span>
+    <span>Strong</span>
+    <span id="overviewInfo"></span>
+  </div>
+
+</section>
+
+<!-- NETWORK CONTROLS -->
+
+<section class="panel">
+
+  <h2>2. Geographic Weather Association Network</h2>
+
+  <p class="note">
+    Airports are connected when they share the same weather factor
+    and association direction. Links prioritize geographically
+    nearby airports. These are similarity connections, not flight routes.
+  </p>
+
+  <div class="controls">
+
+    <label>
+      Weather Factor
+      <select id="factor">
+        <option value="all">Strongest Weather Factor</option>
+        <option value="noaa_PRCP">Precipitation</option>
+        <option value="noaa_SNOW">Snowfall</option>
+        <option value="noaa_AWND">Wind</option>
+        <option value="noaa_TAVG">Temperature</option>
+        <option value="noaa_DYFG">Fog Days</option>
+        <option value="noaa_DYTS">Thunderstorm Days</option>
+      </select>
+    </label>
+
+    <label>
+      Minimum |Spearman ρ|:
+      <span id="thresholdLabel">0.50</span>
+      <input
+        id="threshold"
+        type="range"
+        min="0.5"
+        max="1"
+        step="0.05"
+        value="0.5"
+      >
+    </label>
+
+    <label>
+      Maximum Links per Airport
+      <select id="neighbors">
+        <option value="0">0</option>
+        <option value="1">1</option>
+        <option value="2" selected>2</option>
+        <option value="3">3</option>
+      </select>
+    </label>
+
+    <label>
+      Minimum Monthly Flights
+      <input
+        id="minFlights"
+        type="number"
+        min="0"
+        value="0"
+        style="width:110px"
+      >
+    </label>
+
+    <label>
+      Show Shared-Factor Links
+      <input id="showEdges" type="checkbox" checked>
+    </label>
+
+  </div>
+
+</section>
+
+<!-- MONTHLY TIMELINE -->
+
+<section class="panel">
+
+  <div class="timeline">
+
+    <button id="play">▶ Play</button>
+    <button id="prev">◀</button>
+    <button id="next">▶</button>
+
+    <strong id="monthLabel">—</strong>
+
+    <input
+      id="timeline"
+      type="range"
+      min="0"
+      max="0"
+      value="0"
+    >
+
+    <label>
+      Playback Speed
+      <select id="speed">
+        <option value="1500">Slow</option>
+        <option value="850" selected>Normal</option>
+        <option value="350">Fast</option>
+      </select>
+    </label>
+
+  </div>
+
+  <p class="note">
+    Drag the slider to inspect any available month.
+    Pause preserves the current month.
+  </p>
+
+</section>
+
+<!-- MAP -->
+
+<section class="panel">
+
+  <div class="map-legend" id="factorLegend"
+     style="display:flex;flex-wrap:wrap;gap:20px;
+            padding:14px 16px;background:#f8fafc;
+            border:1px solid #e2e8f0;border-radius:8px;">
+  </div>
+
+  <div class="map-wrap">
+    <svg id="map" aria-label="US airport weather association network"></svg>
+    <div id="tooltip"></div>
+  </div>
+
+  <p id="mapNote" class="note"></p>
+
+</section>
+
+<!-- DETAILS -->
+
+<section class="panel">
+
+  <h2>3. Selected Airport · Monthly Detail</h2>
+
+  <div id="details">
+    Click an airport node to inspect its monthly weather
+    conditions and statistical associations.
+  </div>
+
+</section>
+
+<!-- TABLE -->
+
+<section class="panel">
+
+  <h2>Current Month Weather Associations by Airport</h2>
+
+  <div class="table-wrap">
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>Airport</th>
+          <th>Month</th>
+          <th>Top Factor</th>
+          <th>Spearman ρ</th>
+          <th>PRCP</th>
+          <th>SNOW</th>
+          <th>AWND</th>
+          <th>TAVG</th>
+          <th>Delay Rate</th>
+        </tr>
+      </thead>
+
+      <tbody id="rows"></tbody>
+
+    </table>
+
+  </div>
+
+</section>
+
+</main>
+
+<script>
+"use strict";
+
+/* ============================================================
+   CONFIGURATION
+============================================================ */
+
+const $ = id => document.getElementById(id);
+
+const AIRPORT_URL = "../data/airport_weather_monthly.csv";
+
+const US_URL =
+  "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
+
+const COORD_URL =
+  "https://raw.githubusercontent.com/jpatokal/openflights/master/data/airports.dat";
+
+const FACTORS = [
+  "noaa_PRCP",
+  "noaa_SNOW",
+  "noaa_AWND",
+  "noaa_TAVG",
+  "noaa_DYFG",
+  "noaa_DYTS"
+];
+
+const factorNames = {
+  noaa_PRCP: "Precipitation",
+  noaa_SNOW: "Snowfall",
+  noaa_AWND: "Wind",
+  noaa_TAVG: "Temperature",
+  noaa_DYFG: "Fog",
+  noaa_DYTS: "Thunderstorms"
+};
+
+const factorColors = {
+  noaa_PRCP: "#2176ae",
+  noaa_SNOW: "#7b66b1",
+  noaa_AWND: "#d38b24",
+  noaa_TAVG: "#d85a60",
+  noaa_DYFG: "#478e83",
+  noaa_DYTS: "#b65b96"
+};
+
+const numericColumns = [
+  "year",
+  "month",
+  "arr_flights",
+  "arr_del15",
+  "arr_cancelled",
+  "arr_delay",
+  "weather_ct",
+  "delay_rate",
+  "cancellation_rate",
+  "mean_delay_minutes_per_delayed_arrival",
+  ...FACTORS
+];
+
+/* ============================================================
+   STATE
+============================================================ */
+
+let airportData = [];
+let flightData = [];
+
+let coords = new Map();
+
+let months = [];
+let monthIndex = 0;
+
+let selectedAirport = "";
+let timer = null;
+
+let activeHeatmapCell = null;
+
+let states = null;
+
+/* ============================================================
+   MAP SETUP
+============================================================ */
+
+const width = 1150;
+const height = 620;
+
+const svg = d3.select("#map");
+
+const projection = d3.geoAlbersUsa()
+  .translate([width / 2, height / 2])
+  .scale(1250);
+
+const path = d3.geoPath(projection);
+
+svg.attr("viewBox", `0 0 ${width} ${height}`);
+
+const baseLayer = svg.append("g");
+const edgeLayer = svg.append("g");
+const nodeLayer = svg.append("g");
+
+/* ============================================================
+   UTILITIES
+============================================================ */
+
+function fmt(v, percent = false) {
+  if (!Number.isFinite(v)) return "—";
+
+  return percent
+    ? d3.format(".1%")(v)
+    : d3.format(",.2f")(v);
+}
+
+function monthString(year, month) {
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+function monthNumber(date) {
+  return Number(date.slice(0, 4)) * 12 +
+    Number(date.slice(5, 7)) - 1;
+}
+
+function source() {
+  const carrier = $("carrier").value;
+
+  if (!carrier) return airportData;
+
+  return flightData.filter(d => d.carrier === carrier);
+}
+
+function availableFactors() {
+  return FACTORS.filter(f =>
+    source().some(d => Number.isFinite(d[f]))
+  );
+}
+
+/* ============================================================
+   CSV PARSING
+============================================================ */
+
+function parseCSV(text, requireCarrier = false) {
+
+  const data = d3.csvParse(
+    text.replace(/^\uFEFF/, "")
+  );
+
+  const required = [
+    "airport",
+    "year",
+    "month",
+    "arr_flights",
+    "delay_rate"
+  ];
+
+  if (requireCarrier) {
+    required.push("carrier");
+  }
+
+  const missing = required.filter(
+    c => !data.columns.includes(c)
+  );
+
+  if (missing.length) {
+    throw new Error(
+      "Missing CSV columns: " + missing.join(", ") +
+      ". Found: " + data.columns.join(", ")
+    );
+  }
+
+  return data.map(d => {
+
+    const row = { ...d };
+
+    numericColumns.forEach(col => {
+      const value = d[col];
+
+      row[col] =
+        value == null || String(value).trim() === ""
+          ? NaN
+          : Number(value);
+    });
+
+    row.airport = String(d.airport || "")
+      .trim()
+      .toUpperCase();
+
+    row.carrier = String(d.carrier || "").trim();
+
+    row.date = monthString(
+      row.year,
+      row.month
+    );
+
+    return row;
+
+  }).filter(d =>
+    d.airport &&
+    Number.isInteger(d.year) &&
+    Number.isInteger(d.month) &&
+    d.month >= 1 &&
+    d.month <= 12 &&
+    Number.isFinite(d.arr_flights)
+  );
+
+}
+
+/* ============================================================
+   SPEARMAN CORRELATION
+============================================================ */
+
+function ranks(values) {
+
+  const sorted = values
+    .map((value, index) => ({ value, index }))
+    .sort((a, b) => a.value - b.value);
+
+  const result = new Array(values.length);
+
+  for (let i = 0; i < sorted.length;) {
+
+    let j = i + 1;
+
+    while (
+      j < sorted.length &&
+      sorted[j].value === sorted[i].value
+    ) {
+      j++;
+    }
+
+    const rank = (i + j - 1) / 2 + 1;
+
+    for (let k = i; k < j; k++) {
+      result[sorted[k].index] = rank;
+    }
+
+    i = j;
+  }
+
+  return result;
+}
+
+function spearman(pairs) {
+
+  if (pairs.length < 6) return NaN;
+
+  const x = ranks(pairs.map(p => p[0]));
+  const y = ranks(pairs.map(p => p[1]));
+
+  const mx = d3.mean(x);
+  const my = d3.mean(y);
+
+  let numerator = 0;
+  let xx = 0;
+  let yy = 0;
+
+  for (let i = 0; i < x.length; i++) {
+
+    const a = x[i] - mx;
+    const b = y[i] - my;
+
+    numerator += a * b;
+    xx += a * a;
+    yy += b * b;
+  }
+
+  if (xx === 0 || yy === 0) return NaN;
+
+  return numerator / Math.sqrt(xx * yy);
+}
+
+/* ============================================================
+   ASSOCIATION CALCULATION
+============================================================ */
+
+function associationForFactor(records, factor, outcome) {
+
+  const pairs = records
+    .filter(d =>
+      Number.isFinite(d[factor]) &&
+      Number.isFinite(d[outcome])
+    )
+    .map(d => [
+      d[factor],
+      d[outcome]
+    ]);
+
+  return {
+    factor,
+    rho: spearman(pairs),
+    n: pairs.length
+  };
+}
+
+function associationHistory(month) {
+
+  const end = monthNumber(month);
+  const windowSize = Number($("window").value);
+
+  const grouped = d3.group(
+    source(),
+    d => d.airport
+  );
+
+  const result = new Map();
+
+  for (const [airport, records] of grouped) {
+
+    const history = records.filter(d => {
+
+      const t = d.year * 12 + d.month - 1;
+
+      return (
+        t <= end &&
+        end - t < windowSize
+      );
+
+    });
+
+    result.set(airport, history);
+  }
+
+  return result;
+}
+
+function allAssociations(month) {
+
+  const outcome = $("outcome").value;
+  const history = associationHistory(month);
+
+  const result = new Map();
+
+  for (const [airport, records] of history) {
+
+    const factorMap = new Map();
+
+    for (const factor of FACTORS) {
+
+      factorMap.set(
+        factor,
+        associationForFactor(
+          records,
+          factor,
+          outcome
+        )
+      );
+
+    }
+
+    result.set(airport, factorMap);
+  }
+
+  return result;
+}
+
+function dominantAssociation(factorMap) {
+
+  if (!factorMap) return null;
+
+  const selectedFactor = $("factor").value;
+
+  const factors = selectedFactor === "all"
+    ? FACTORS
+    : [selectedFactor];
+
+  const candidates = factors
+    .map(f => factorMap.get(f))
+    .filter(d => d && Number.isFinite(d.rho));
+
+  if (!candidates.length) return null;
+
+  candidates.sort(
+    (a, b) => Math.abs(b.rho) - Math.abs(a.rho)
+  );
+
+  return candidates[0];
+}
+
+/* ============================================================
+   DATA CONTROLS
+============================================================ */
+
+function updateControls() {
+
+  const codes = [
+    ...new Set(
+      [...airportData, ...flightData]
+        .map(d => d.airport)
+    )
+  ].sort();
+
+  $("airport").replaceChildren(
+    new Option("All airports", ""),
+    ...codes.map(c => new Option(c, c))
+  );
+
+  $("airport").value =
+    codes.includes(selectedAirport)
+      ? selectedAirport
+      : "";
+
+  const carriers = [
+    ...new Set(
+      flightData
+        .map(d => d.carrier)
+        .filter(Boolean)
+    )
+  ].sort();
+
+  const previousCarrier = $("carrier").value;
+
+  $("carrier").replaceChildren(
+    new Option("All airlines (airport summary)", ""),
+    ...carriers.map(c => new Option(c, c))
+  );
+
+  $("carrier").value =
+    carriers.includes(previousCarrier)
+      ? previousCarrier
+      : "";
+
+  updateMonths();
+}
+
+function updateMonths() {
+
+  const previous = months[monthIndex];
+
+  months = [
+    ...new Set(source().map(d => d.date))
+  ].sort();
+
+  const index = months.indexOf(previous);
+
+  monthIndex = index >= 0
+    ? index
+    : Math.max(0, months.length - 1);
+
+  $("timeline").max = Math.max(0, months.length - 1);
+  $("timeline").value = monthIndex;
+
+  updateOverviewYears();
+  drawAll();
+}
+
+function currentRows() {
+
+  const month = months[monthIndex];
+
+  const minFlights = Math.max(
+    0,
+    Number($("minFlights").value) || 0
+  );
+
+  const records = source().filter(d =>
+    d.date === month &&
+    d.arr_flights >= minFlights
+  );
+
+  const byAirport = new Map();
+
+  for (const d of records) {
+
+    if (!byAirport.has(d.airport)) {
+      byAirport.set(d.airport, d);
+    }
+
+  }
+
+  return [...byAirport.values()];
+}
+
+/* ============================================================
+   OVERVIEW YEAR CONTROLS
+============================================================ */
+
+function updateOverviewYears() {
+
+  const years = [
+    ...new Set(source().map(d => d.year))
+  ].sort((a, b) => a - b);
+
+  const previous = $("overviewYear").value;
+
+  $("overviewYear").replaceChildren(
+    ...years.map(y => new Option(y, y))
+  );
+
+  const currentYear = months[monthIndex]
+    ? months[monthIndex].slice(0, 4)
+    : "";
+
+  $("overviewYear").value =
+    years.map(String).includes(previous)
+      ? previous
+      : currentYear;
+
+}
+
+/* ============================================================
+   HEATMAP OVERVIEW
+============================================================ */
+
+function drawHeatmap() {
+
+  const heatmap = d3.select("#heatmap");
+
+  heatmap.selectAll("*").remove();
+
+  const year = Number($("overviewYear").value);
+
+  if (!Number.isFinite(year)) return;
+
+  const available = availableFactors();
+
+  const W = 1100;
+  const left = 145;
+  const right = 40;
+  const top = 45;
+  const rowHeight = 47;
+  const bottom = 55;
+
+  const H =
+    top + available.length * rowHeight + bottom;
+
+  heatmap.attr("viewBox", `0 0 ${W} ${H}`);
+
+  const cellWidth = (W - left - right) / 12;
+
+  const monthsInYear = months.filter(
+    m => Number(m.slice(0, 4)) === year
+  );
+
+  const data = [];
+
+  for (const month of monthsInYear) {
+
+    const associations = allAssociations(month);
+
+    for (const factor of available) {
+
+      const correlations = [];
+
+      for (const factorMap of associations.values()) {
+
+        const a = factorMap.get(factor);
+
+        if (a && Number.isFinite(a.rho)) {
+          correlations.push(Math.abs(a.rho));
+        }
+
+      }
+
+      data.push({
+        month,
+        factor,
+        value: correlations.length
+          ? d3.mean(correlations)
+          : NaN,
+        count: correlations.length
+      });
+
+    }
+
+  }
+
+  const color = d3.scaleSequential()
+    .domain([0, 1])
+    .interpolator(d3.interpolateBlues);
+
+  const monthLabels = [
+    "Jan", "Feb", "Mar", "Apr",
+    "May", "Jun", "Jul", "Aug",
+    "Sep", "Oct", "Nov", "Dec"
+  ];
+
+  heatmap.selectAll(".month-label")
+    .data(monthLabels)
+    .join("text")
+    .attr("x", (d, i) =>
+      left + i * cellWidth + cellWidth / 2
+    )
+    .attr("y", 28)
+    .attr("text-anchor", "middle")
+    .attr("font-size", 13)
+    .attr("fill", "#64748b")
+    .text(d => d);
+
+  heatmap.selectAll(".row-label")
+    .data(available)
+    .join("text")
+    .attr("class", "row-label")
+    .attr("x", left - 15)
+    .attr("y", (d, i) =>
+      top + i * rowHeight + rowHeight / 2 + 5
+    )
+    .attr("text-anchor", "end")
+    .attr("font-size", 13)
+    .attr("fill", d =>
+      $("factor").value === d
+        ? factorColors[d]
+        : "#42566e"
+    )
+    .attr("font-weight", d =>
+      $("factor").value === d ? "bold" : "normal"
+    )
+    .text(d => factorNames[d])
+    .on("click", (event, factor) => {
+      $("factor").value = factor;
+      drawAll();
+    });
+
+  const cells = heatmap.selectAll(".cell")
+    .data(data)
+    .join("rect")
+    .attr("class", d =>
+      "cell" +
+      (
+        activeHeatmapCell &&
+        activeHeatmapCell.month === d.month &&
+        activeHeatmapCell.factor === d.factor
+          ? " selected-cell"
+          : ""
+      )
+    )
+    .attr("x", d =>
+      left +
+      (Number(d.month.slice(5, 7)) - 1) * cellWidth + 3
+    )
+    .attr("y", d =>
+      top +
+      available.indexOf(d.factor) * rowHeight + 3
+    )
+    .attr("width", cellWidth - 6)
+    .attr("height", rowHeight - 6)
+    .attr("rx", 4)
+    .attr("fill", d =>
+      Number.isFinite(d.value)
+        ? color(d.value)
+        : "#e8edf2"
+    )
+    .on("click", (event, d) => {
+
+      const index = months.indexOf(d.month);
+
+      if (index >= 0) {
+        monthIndex = index;
+      }
+
+      $("factor").value = d.factor;
+
+      activeHeatmapCell = {
+        month: d.month,
+        factor: d.factor
+      };
+
+      stopPlayback();
+      drawAll();
+
+    });
+
+  cells.append("title")
+    .text(d =>
+      `${factorNames[d.factor]} · ${d.month}\n` +
+      `Mean |Spearman ρ|: ${fmt(d.value)}\n` +
+      `Valid airports: ${d.count}`
+    );
+
+  // Add missing-month placeholders.
+
+  const existing = new Set(
+    monthsInYear.map(m => Number(m.slice(5, 7)))
+  );
+
+  for (let month = 1; month <= 12; month++) {
+
+    if (existing.has(month)) continue;
+
+    available.forEach((factor, row) => {
+
+      heatmap.append("rect")
+        .attr("x", left + (month - 1) * cellWidth + 3)
+        .attr("y", top + row * rowHeight + 3)
+        .attr("width", cellWidth - 6)
+        .attr("height", rowHeight - 6)
+        .attr("rx", 4)
+        .attr("fill", "#f1f5f9");
+
+    });
+
+  }
+
+  // Legend.
+
+  const legend = $("heatmapLegend");
+
+  legend.replaceChildren();
+
+  for (let i = 0; i < 7; i++) {
+
+    const box = document.createElement("span");
+
+    box.style.display = "inline-block";
+    box.style.width = "24px";
+    box.style.height = "11px";
+    box.style.background = color(i / 6);
+
+    legend.append(box);
+  }
+
+  $("overviewInfo").textContent =
+    `Year ${year} · ${available.length} weather factors`;
+
+}
+
+/* ============================================================
+   GEOGRAPHIC DISTANCE
+============================================================ */
+
+function geographicDistance(a, b) {
+
+  const ca = coords.get(a);
+  const cb = coords.get(b);
+
+  if (!ca || !cb) return Infinity;
+
+  const lon1 = ca[0] * Math.PI / 180;
+  const lat1 = ca[1] * Math.PI / 180;
+
+  const lon2 = cb[0] * Math.PI / 180;
+  const lat2 = cb[1] * Math.PI / 180;
+
+  const dLat = lat2 - lat1;
+  const dLon = lon2 - lon1;
+
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) *
+    Math.cos(lat2) *
+    Math.sin(dLon / 2) ** 2;
+
+  return 6371 * 2 *
+    Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+/* ============================================================
+   NETWORK EDGES
+============================================================ */
+
+function buildEdges(rows, associations) {
+
+  const threshold = Number($("threshold").value);
+  const maxNeighbors = Number($("neighbors").value);
+
+  if (maxNeighbors === 0) return [];
+
+  const valid = rows.filter(d => {
+
+    const a = dominantAssociation(
+      associations.get(d.airport)
+    );
+
+    return (
+      coords.has(d.airport) &&
+      a &&
+      Math.abs(a.rho) >= threshold
+    );
+
+  });
+
+  const edges = new Map();
+
+  for (const airport of valid) {
+
+    const a = dominantAssociation(
+      associations.get(airport.airport)
+    );
+
+    const candidates = valid
+      .filter(other => {
+
+        if (other.airport === airport.airport) {
+          return false;
+        }
+
+        const b = dominantAssociation(
+          associations.get(other.airport)
+        );
+
+        return (
+          b &&
+          b.factor === a.factor &&
+          Math.sign(b.rho) === Math.sign(a.rho)
+        );
+
+      })
+      .map(other => {
+
+        const b = dominantAssociation(
+          associations.get(other.airport)
+        );
+
+        return {
+          a: airport.airport,
+          b: other.airport,
+          factor: a.factor,
+          score: Math.min(
+            Math.abs(a.rho),
+            Math.abs(b.rho)
+          ),
+          distance: geographicDistance(
+            airport.airport,
+            other.airport
+          )
+        };
+
+      })
+      .sort((a, b) =>
+        a.distance - b.distance ||
+        b.score - a.score
+      )
+      .slice(0, maxNeighbors);
+
+    for (const edge of candidates) {
+
+      const key = [edge.a, edge.b]
+        .sort()
+        .join("|");
+
+      edges.set(key, edge);
+    }
+
+  }
+
+  return [...edges.values()];
+}
+
+/* ============================================================
+   NETWORK DRAWING
+============================================================ */
+
+function drawMap() {
+
+  edgeLayer.selectAll("*").remove();
+  nodeLayer.selectAll("*").remove();
+
+  const month = months[monthIndex];
+
+  $("monthLabel").textContent = month || "No data";
+  $("timeline").value = monthIndex;
+
+  $("thresholdLabel").textContent =
+    Number($("threshold").value).toFixed(2);
+
+  if (!month) {
+    $("status").textContent = "No available monthly records.";
+    $("rows").replaceChildren();
+    return;
+  }
+
+  const rows = currentRows();
+
+  const allAssoc = allAssociations(month);
+
+  const mapped = rows.filter(d =>
+    coords.has(d.airport) &&
+    projection(coords.get(d.airport))
+  );
+
+  const threshold = Number($("threshold").value);
+
+  const edges = $("showEdges").checked
+    ? buildEdges(mapped, allAssoc)
+    : [];
+
+  const radius = d3.scaleSqrt()
+    .domain([0, 1])
+    .range([3, 12]);
+
+  /* EDGES */
+
+  edgeLayer.selectAll("line")
+    .data(edges)
+    .join("line")
+    .attr("class", "edge")
+    .attr("x1", d =>
+      projection(coords.get(d.a))[0]
+    )
+    .attr("y1", d =>
+      projection(coords.get(d.a))[1]
+    )
+    .attr("x2", d =>
+      projection(coords.get(d.b))[0]
+    )
+    .attr("y2", d =>
+      projection(coords.get(d.b))[1]
+    )
+    .attr("stroke", d => factorColors[d.factor])
+    .attr("stroke-opacity", d =>
+      selectedAirport &&
+      d.a !== selectedAirport &&
+      d.b !== selectedAirport
+        ? 0.04
+        : 0.38
+    )
+    .attr("stroke-width", d =>
+      0.6 + 4.5 * d.score
+    );
+
+  /* NODES */
+
+  const nodes = nodeLayer.selectAll("circle")
+    .data(mapped, d => d.airport)
+    .join("circle")
+    .attr("class", "airport")
+    .attr("cx", d =>
+      projection(coords.get(d.airport))[0]
+    )
+    .attr("cy", d =>
+      projection(coords.get(d.airport))[1]
+    )
+    .attr("r", d => {
+
+      const a = dominantAssociation(
+        allAssoc.get(d.airport)
+      );
+
+      const strength = a
+        ? Math.abs(a.rho)
+        : 0;
+
+      return radius(strength) +
+        (selectedAirport === d.airport ? 3 : 0);
+
+    })
+    .attr("fill", d => {
+
+      const a = dominantAssociation(
+        allAssoc.get(d.airport)
+      );
+
+      return a
+        ? factorColors[a.factor]
+        : "#aab5c2";
+
+    })
+    .attr("stroke", d =>
+      selectedAirport === d.airport
+        ? "#263548"
+        : "#ffffff"
+    )
+    .attr("stroke-width", d =>
+      selectedAirport === d.airport ? 3 : 1
+    )
+    .attr("opacity", d =>
+      selectedAirport &&
+      selectedAirport !== d.airport
+        ? 0.45
+        : 0.9
+    );
+
+  /* NODE INTERACTION */
+
+  nodes.on("click", (event, d) => {
+
+    selectedAirport =
+      selectedAirport === d.airport
+        ? ""
+        : d.airport;
+
+    $("airport").value = selectedAirport;
+
+    drawMap();
+
+  });
+
+  nodes.on("mousemove", (event, d) => {
+
+    const a = dominantAssociation(
+      allAssoc.get(d.airport)
+    );
+
+    const tooltip = $("tooltip");
+
+    tooltip.replaceChildren();
+
+    const lines = [
+      `${d.airport} · ${d.date}`,
+      a
+        ? `${factorNames[a.factor]}: ρ = ${a.rho.toFixed(3)} (n = ${a.n})`
+        : "Insufficient historical observations",
+      `Precipitation: ${fmt(d.noaa_PRCP)}`,
+      `Snowfall: ${fmt(d.noaa_SNOW)}`,
+      `Wind: ${fmt(d.noaa_AWND)}`,
+      `Temperature: ${fmt(d.noaa_TAVG)}`,
+      `Delay rate: ${fmt(d.delay_rate, true)}`
+    ];
+
+    lines.forEach(line => {
+
+      const div = document.createElement("div");
+
+      div.textContent = line;
+
+      tooltip.append(div);
+    });
+
+    tooltip.style.display = "block";
+
+    const box = $("map").getBoundingClientRect();
+
+    tooltip.style.left =
+      Math.max(
+        0,
+        Math.min(
+          event.clientX - box.left + 12,
+          box.width - 310
+        )
+      ) + "px";
+
+    tooltip.style.top =
+      Math.max(
+        0,
+        event.clientY - box.top - 20
+      ) + "px";
+
+  });
+
+  nodes.on("mouseleave", () => {
+    $("tooltip").style.display = "none";
+  });
+
+  /* STATUS */
+
+  $("status").textContent =
+    `${month} · ${mapped.length} mapped airports · ` +
+    `${edges.length} shared-factor links · ` +
+    `|ρ| threshold ≥ ${threshold.toFixed(2)} · ` +
+    `${$("carrier").value || "all airlines"}`;
+
+  $("mapNote").textContent =
+    `Associations use ${$("window").selectedOptions[0].text} ` +
+    `ending at ${month}, with at least 6 paired observations. ` +
+    `Links connect geographically nearby airports with the ` +
+    `same dominant weather factor and correlation direction. ` +
+    `They do not represent actual routes or causal influence. ` +
+    `${rows.length - mapped.length} airports lack usable map coordinates.`;
+
+  drawDetails(rows, allAssoc);
+  drawTable(rows, allAssoc);
+
+}
+
+/* ============================================================
+   AIRPORT DETAILS
+============================================================ */
+
+function drawDetails(rows, associations) {
+
+  const d = rows.find(
+    row => row.airport === selectedAirport
+  );
+
+  if (!d) {
+
+    $("details").textContent =
+      "Click an airport to inspect its weather conditions " +
+      "and weather–delay associations.";
+
+    return;
+  }
+
+  const a = dominantAssociation(
+    associations.get(d.airport)
+  );
+
+  $("details").textContent =
+    `${d.airport} · ${d.date} | ` +
+    `Main factor: ${a ? factorNames[a.factor] : "—"} | ` +
+    `Spearman ρ: ${a ? a.rho.toFixed(3) : "—"} | ` +
+    `Paired months: ${a ? a.n : "—"} | ` +
+    `PRCP: ${fmt(d.noaa_PRCP)} | ` +
+    `SNOW: ${fmt(d.noaa_SNOW)} | ` +
+    `AWND: ${fmt(d.noaa_AWND)} | ` +
+    `TAVG: ${fmt(d.noaa_TAVG)} | ` +
+    `Delay rate: ${fmt(d.delay_rate, true)}`;
+
+}
+
+/* ============================================================
+   TABLE
+============================================================ */
+
+function drawTable(rows, associations) {
+
+  const ordered = [...rows].sort(
+    (a, b) => a.airport.localeCompare(b.airport)
+  );
+
+  const trs = ordered.map(d => {
+
+    const tr = document.createElement("tr");
+
+    const a = dominantAssociation(
+      associations.get(d.airport)
+    );
+
+    const values = [
+      d.airport,
+      d.date,
+      a ? factorNames[a.factor] : "—",
+      a ? a.rho.toFixed(3) : "—",
+      fmt(d.noaa_PRCP),
+      fmt(d.noaa_SNOW),
+      fmt(d.noaa_AWND),
+      fmt(d.noaa_TAVG),
+      fmt(d.delay_rate, true)
+    ];
+
+    values.forEach(value => {
+
+      const td = document.createElement("td");
+
+      td.textContent = value;
+
+      tr.append(td);
+
+    });
+
+    return tr;
+  });
+
+  $("rows").replaceChildren(...trs);
+
+}
+
+/* ============================================================
+   COMBINED DRAW
+============================================================ */
+
+function drawAll() {
+  drawHeatmap();
+  drawMap();
+}
+
+/* ============================================================
+   PLAYBACK
+============================================================ */
+
+function stopPlayback() {
+
+  if (timer !== null) {
+    clearInterval(timer);
+    timer = null;
+  }
+
+  $("play").textContent = "▶ Play";
+}
+
+function stepMonth(delta) {
+
+  if (!months.length) return;
+
+  monthIndex =
+    (monthIndex + delta + months.length) %
+    months.length;
+
+  $("overviewYear").value =
+    months[monthIndex].slice(0, 4);
+
+  drawAll();
+}
+
+function play() {
+
+  if (timer !== null) {
+    stopPlayback();
+    return;
+  }
+
+  if (months.length < 2) return;
+
+  $("play").textContent = "❚❚ Pause";
+
+  timer = setInterval(
+    () => stepMonth(1),
+    Number($("speed").value)
+  );
+}
+
+/* ============================================================
+   EVENT HANDLERS
+============================================================ */
+
+$("play").onclick = play;
+
+$("prev").onclick = () => {
+  stopPlayback();
+  stepMonth(-1);
+};
+
+$("next").onclick = () => {
+  stopPlayback();
+  stepMonth(1);
+};
+
+$("timeline").oninput = event => {
+
+  stopPlayback();
+
+  monthIndex = Number(event.target.value);
+
+  $("overviewYear").value =
+    months[monthIndex].slice(0, 4);
+
+  drawAll();
+};
+
+$("speed").onchange = () => {
+
+  if (timer !== null) {
+    stopPlayback();
+    play();
+  }
+
+};
+
+$("overviewYear").onchange = () => {
+  activeHeatmapCell = null;
+  drawHeatmap();
+};
+
+$("resetOverview").onclick = () => {
+
+  activeHeatmapCell = null;
+
+  $("factor").value = "all";
+
+  drawAll();
+};
+
+$("airport").onchange = event => {
+
+  selectedAirport = event.target.value;
+
+  drawMap();
+};
+
+$("carrier").onchange = () => {
+
+  stopPlayback();
+  activeHeatmapCell = null;
+
+  updateMonths();
+};
+
+$("outcome").onchange = () => {
+  drawAll();
+};
+
+$("window").onchange = () => {
+  drawAll();
+};
+
+$("factor").onchange = () => {
+  activeHeatmapCell = null;
+  drawAll();
+};
+
+for (const id of [
+  "neighbors",
+  "threshold",
+  "minFlights",
+  "showEdges"
+]) {
+
+  $(id).addEventListener("input", drawMap);
+
+}
+
+/* ============================================================
+   FILE UPLOADS
+============================================================ */
+
+$("airportFile").onchange = async event => {
+
+  try {
+
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    airportData = parseCSV(
+      await file.text(),
+      false
+    );
+
+    $("error").textContent = "";
+
+    stopPlayback();
+    updateControls();
+
+  } catch (error) {
+
+    $("error").textContent =
+      "Airport CSV: " + error.message;
+
+  }
+
+};
+
+$("flightFile").onchange = async event => {
+
+  try {
+
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    flightData = parseCSV(
+      await file.text(),
+      true
+    );
+
+    $("error").textContent = "";
+
+    stopPlayback();
+    updateControls();
+
+  } catch (error) {
+
+    $("error").textContent =
+      "Flight CSV: " + error.message;
+
+  }
+
+};
+
+/* ============================================================
+   LEGEND
+============================================================ */
+function drawFactorLegend() {
+
+  const legend = $("factorLegend");
+  legend.replaceChildren();
+
+  const title = document.createElement("div");
+  title.style.width = "100%";
+  title.style.fontWeight = "bold";
+  title.style.fontSize = "13px";
+  title.textContent = "Weather Factor Color Legend";
+  legend.append(title);
+
+  for (const factor of FACTORS) {
+
+    const item = document.createElement("span");
+    item.className = "legend-item";
+
+    const dot = document.createElement("span");
+    dot.className = "legend-dot";
+    dot.style.backgroundColor = factorColors[factor];
+    dot.style.width = "14px";
+    dot.style.height = "14px";
+
+    const label = document.createElement("span");
+    label.textContent = factorNames[factor];
+
+    item.append(dot, label);
+    legend.append(item);
+  }
+
+  const explanation = document.createElement("div");
+  explanation.style.width = "100%";
+  explanation.style.fontSize = "12px";
+  explanation.style.color = "#64748b";
+  explanation.textContent =
+    "Node color = associated weather factor | " +
+    "Node size = |Spearman ρ| | " +
+    "Edge color = shared weather factor | " +
+    "Edge width = shared association strength";
+
+  legend.append(explanation);
+}
+
+/* ============================================================
+   INITIALIZATION
+============================================================ */
+
+async function initialize() {
+
+  try {
+
+    const [topology, airportCoordinates] =
+      await Promise.all([
+        d3.json(US_URL),
+        d3.text(COORD_URL)
+      ]);
+
+    states = topology;
+
+    baseLayer.selectAll("path")
+      .data(
+        topojson.feature(
+          topology,
+          topology.objects.states
+        ).features
+      )
+      .join("path")
+      .attr("d", path)
+      .attr("fill", "#edf3f8")
+      .attr("stroke", "#b7c7d5")
+      .attr("stroke-width", 0.8);
+
+    const coordinateRows =
+      d3.csvParseRows(airportCoordinates);
+
+    for (const row of coordinateRows) {
+
+      const code = String(row[4] || "")
+        .trim()
+        .toUpperCase();
+
+      const lat = Number(row[6]);
+      const lon = Number(row[7]);
+
+      if (
+        /^[A-Z]{3}$/.test(code) &&
+        Number.isFinite(lat) &&
+        Number.isFinite(lon) &&
+        !coords.has(code)
+      ) {
+
+        coords.set(code, [lon, lat]);
+
+      }
+
+    }
+
+    drawFactorLegend();
+
+    try {
+
+      const response = await fetch(AIRPORT_URL);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      airportData = parseCSV(
+        await response.text(),
+        false
+      );
+
+      updateControls();
+
+    } catch (error) {
+
+      $("error").textContent =
+        "Airport summary could not load automatically: " +
+        error.message +
+        ". Use the Airport CSV upload control.";
+
+      $("status").textContent =
+        "Upload Airport CSV to start.";
+
+    }
+
+  } catch (error) {
+
+    $("error").textContent =
+      "Map or coordinate data could not load: " +
+      error.message;
+
+  }
+
+}
+
+initialize();
+
+</script>
+
+</body>
+</html>
